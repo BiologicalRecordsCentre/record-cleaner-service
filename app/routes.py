@@ -21,7 +21,7 @@ async def read_root():
 @router.get("/hello/{name}")
 @router.get("/hello")
 async def read_name(
-        auth: Annotated[bool, Depends(auth.authenticate)],
+        auth: auth.Auth,
         name=None):
     now = datetime.now()
     formatted_now = now.strftime("%A, %d %B, %Y at %X")

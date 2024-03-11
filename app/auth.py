@@ -33,8 +33,6 @@ router = APIRouter()
 # Instantiate the security provider.
 # Set /token as the path to log in.
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
-# Create a type alias for brevity when defining an endpoint needing authorisation.
-Auth: TypeAlias = Annotated[str, Depends(oauth2_scheme)]
 
 # Load private settings from .env file.
 settings = config.get_settings()
@@ -84,6 +82,10 @@ async def authenticate(token:  Annotated[str, Depends(oauth2_scheme)]):
     if user is None:
         raise credentials_exception
     return True
+
+# Create a type alias for brevity when defining an endpoint needing
+# authentication.
+Auth: TypeAlias = Annotated[bool, Depends(authenticate)]
 
 
 @router.post("/token")
