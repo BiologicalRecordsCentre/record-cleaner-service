@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 
 import app.routes as routes
+from app.database import create_db_and_tables
 
 # Instantiate the app.
 app = FastAPI(
@@ -10,22 +11,38 @@ app = FastAPI(
     version="0.0.1",
     openapi_tags=[
         {
-            "name": "species",
+            "name": "Service",
+            "description": "Basic operations"
+        },
+        {
+            "name": "Users",
+            "description": "Operations on users"
+        },
+        {
+            "name": "Species",
             "description": "Operations on species"
         },
         {
-            "name": "counties",
-            "description": "Operations on counties"
-        },
-        {
-            "name": "rules",
+            "name": "Rules",
             "description": "Operations on rules"
         },
         {
-            "name": "users",
-            "description": "Operations on users"
+            "name": "Indicia",
+            "description": "Operations on the Indicia warehouse"
+        },
+        {
+            "name": "Species Cache",
+            "description": "Operations on the species cache"
+        },
+        {
+            "name": "Counties",
+            "description": "Operations on counties"
         }
     ]
 )
-# Attach all the routes we server.
+
+# Create the database tables.
+create_db_and_tables()
+
+# Attach all the routes we serve.
 app.include_router(routes.router)

@@ -88,7 +88,10 @@ async def authenticate(token:  Annotated[str, Depends(oauth2_scheme)]):
 Auth: TypeAlias = Annotated[bool, Depends(authenticate)]
 
 
-@router.post("/token")
+@router.post(
+    "/token",
+    tags=['Users'],
+    summary="Login user.")
 async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
     user = fake_users_db.get(form_data.username)
     if not user:

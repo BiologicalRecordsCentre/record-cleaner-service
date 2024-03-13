@@ -1,13 +1,15 @@
 import hmac
+import json
 import requests
 from enum import Enum
-from typing import Annotated
+from typing import Annotated, Optional
 
-from fastapi import APIRouter, Query, Depends, HTTPException, status
+from fastapi import APIRouter, Query, HTTPException, status
 from pydantic import BaseModel
 
 import app.config as config
 import app.auth as auth
+from app.models import Taxon
 
 settings = config.get_settings()
 router = APIRouter()
@@ -24,12 +26,12 @@ class IncludeParam(str, Enum):
 class IndiciaTaxon(BaseModel):
     taxa_taxon_list_id: int
     searchterm: str
-    highlighted: str
+    highlighted: Optional[str] = None
     taxon: str
     language_iso: str
     preferred_taxon: str
     preferred_authority: str
-    default_common_name: str
+    default_common_name: Optional[str] = None
     taxon_group: str
     preferred: bool
     preferred_taxa_taxon_list_id: int
@@ -42,10 +44,10 @@ class IndiciaTaxon(BaseModel):
 
 
 class IndiciaResponse(BaseModel):
-    data: list[IndiciaTaxon]
-    count: int
-    paging: dict
-    columns: list
+    data: list[IndiciaTaxon] | None = None
+    count: int | None = None
+    paging: dict | None = None
+    columns: dict | None = None
 
 
 class IndiciaAuth(requests.auth.AuthBase):
@@ -64,8 +66,8 @@ class IndiciaAuth(requests.auth.AuthBase):
 
 
 @router.get(
-    "/indicia/taxon",
-    tags=["species"],
+    '/species/indicia/taxon',
+    tags=['Indicia'],
     summary="Search Indicia for taxa matching your parameters.",
     response_model=IndiciaResponse)
 async def search_taxa(
@@ -85,6 +87,11 @@ async def search_taxa(
         Query(description="List of taxon group names to limit the search to. "
               "An alternative to using taxon_group_id.")
     ] = None,
+    scratchpad_list_id: Annotated[
+        list[int],
+        Query(description="List of IDs of taxa_taxon_list-related scratchpads "
+              "to limit the search to.")
+    ] = None,
     taxon_meaning_id: Annotated[
         list[int],
         Query(description="List of IDs of taxon meanings to limit the search "
@@ -97,19 +104,22 @@ async def search_taxa(
     ] = None,
     preferred_taxa_taxon_list_id: Annotated[
         list[int],
-        Query(description="List of IDs of taxon meanings to limit the search "
-              "to.")
-    ] = None,
-    preferred_taxon: Annotated[
-        list[str],
         Query(description="List of IDs of taxa taxon list records to limit "
               "the search to, using the preferred name's ID to filter "
               "against, therefore including synonyms and common names in the "
-              "search.")
+              "response.")
+    ] = None,
+    preferred_taxon: Annotated[
+        list[str],
+        Query(description="List of preferred names to limit the search to "
+              "(e.g. limit to a list of species names). Exact matches "
+              "required.")
     ] = None,
     external_key: Annotated[
         list[str],
-        Query(description="List of UKSI TVKs to limit the search to.")
+        Query(description="List of UKSI TVKs to limit the search to, using "
+              "the preferred name's TVK to filter against, therefore including "
+              "synonyms and common names in the response.")
     ] = None,
     parent_id: Annotated[
         list[int],
@@ -200,7 +210,7 @@ async def search_taxa(
               "include. If the count and paging data are not required then "
               "exclude them for better performance. Options available are "
               "['data','count','paging','columns'].")
-    ] = IncludeParam.DATA
+    ] = None
 ):
     """This is a proxy to the Indicia taxa/search API, limited to searcing
     the UK Species Inventory.
@@ -213,43 +223,46 @@ async def search_taxa(
     if searchQuery:
         params['searchQuery'] = searchQuery
     if taxon_group_id:
-        params['taxon_group_id'] = taxon_group_id
+        params['taxon_group_id'] = json.dumps(taxon_group_id)
     if taxon_group:
-        params['taxon_group'] = taxon_group
+        params['taxon_group'] = json.dumps(taxon_group)
+    if scratchpad_list_id:
+        params['scratchpad_list_id'] = json.dumps(scratchpad_list_id)
     if taxon_meaning_id:
-        params['taxon_meaning_id'] = taxon_meaning_id
+        params['taxon_meaning_id'] = json.dumps(taxon_meaning_id)
     if taxa_taxon_list_id:
-        params['taxa_taxon_list_id'] = taxa_taxon_list_id
+        params['taxa_taxon_list_id'] = json.dumps(taxa_taxon_list_id)
     if preferred_taxa_taxon_list_id:
-        params['preferred_taxa_taxon_list_id'] = preferred_taxa_taxon_list_id
+        params['preferred_taxa_taxon_list_id'] = json.dumps(
+            preferred_taxa_taxon_list_id)
     if preferred_taxon:
-        params['preferred_taxon'] = preferred_taxon
+        params['preferred_taxon'] = json.dumps(preferred_taxon)
     if external_key:
-        params['external_key'] = external_key
+        params['external_key'] = json.dumps(external_key)
     if parent_id:
-        params['parent_id'] = parent_id
+        params['parent_id'] = json.dumps(parent_id)
     if language:
-        params['language'] = language
+        params['language'] = json.dumps(language)
     if preferred is not None:
-        params['preferred'] = preferred
+        params['preferred'] = 'true' if preferred else 'false'
     if commonNames is not None:
-        params['commonNames'] = commonNames
+        params['commonNames'] = 'true' if commonNames else 'false'
     if synonyms is not None:
-        params['synonyms'] = synonyms
+        params['synonyms'] = 'true' if synonyms else 'false'
     if abbreviations:
-        params['abbreviations'] = abbreviations
+        params['abbreviations'] = 'true' if abbreviations else 'false'
     if marine_flag is not None:
-        params['marine_flag'] = marine_flag
+        params['marine_flag'] = 'true' if marine_flag else 'false'
     if freshwater_flag is not None:
-        params['freshwater_flag'] = freshwater_flag
+        params['freshwater_flag'] = 'true' if freshwater_flag else 'false'
     if terrestrial_flag is not None:
-        params['terrestrial_flag'] = terrestrial_flag
+        params['terrestrial_flag'] = 'true' if terrestrial_flag else 'false'
     if non_native_flag is not None:
-        params['non_native_flag'] = non_native_flag
+        params['non_native_flag'] = 'true' if non_native_flag else 'false'
     if searchAuthors is not None:
-        params['searchAuthors'] = searchAuthors
+        params['searchAuthors'] = 'true' if searchAuthors else 'false'
     if wholeWords is not None:
-        params['wholeWords'] = wholeWords
+        params['wholeWords'] = 'true' if wholeWords else 'false'
     if min_taxon_rank_sort_order is not None:
         params['min_taxon_rank_sort_order'] = min_taxon_rank_sort_order
     if max_taxon_rank_sort_order is not None:
@@ -259,16 +272,19 @@ async def search_taxa(
     if offset is not None:
         params['offset'] = offset
     if include:
-        params['include'] = []
+        # Convert the list of IncludeParam to a list of strings.
+        include_list = []
         for item in include:
-            params['include'].append(item.value)
+            include_list.append(item.value)
+        # Convert the list of strings to JSON.
+        params['include'] = json.dumps(include_list)
 
     response = make_search_request(params)
+    return parse_response_full(response)
 
-    return response
 
-
-def make_search_request(params):
+def make_search_request(params: dict) -> dict:
+    """Send a request to the Indicia taxa/searchAPI."""
     url = settings.indicia_url + 'taxa/search'
     params['taxon_list_id'] = settings.indicia_taxon_list_id
 
@@ -283,3 +299,28 @@ def make_search_request(params):
                 'message': 'Indicia API error',
                 'detail': r.json()
             })
+
+
+def parse_response_full(response: dict) -> IndiciaResponse:
+    """Fit the full json response in to the IndiciaResponse model."""
+    return IndiciaResponse(
+        data=[IndiciaTaxon(**taxon) for taxon in response['data']
+              ] if 'data' in response else None,
+        count=response['count'] if 'count' in response else None,
+        paging=response['paging'] if 'paging' in response else None,
+        columns=response['columns'] if 'columns' in response else None
+    )
+
+
+def parse_response_taxa(response: dict) -> list[Taxon]:
+    """Fit the taxon data in the response in to the Taxon model."""
+    taxa = []
+    if 'data' in response:
+        for taxon in response['data']:
+            taxa.append(Taxon(
+                external_key=taxon['external_key'],
+                organism_key=taxon['organism_key'],
+                taxon=taxon['taxon'],
+                preferred_taxon=taxon['preferred_taxon']
+            ))
+    return taxa

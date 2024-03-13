@@ -1,0 +1,111 @@
+from fastapi import APIRouter, HTTPException, status
+from sqlmodel import Session, func, select, delete
+
+from app.database import engine
+import app.auth as auth
+from app.models import Taxon
+import app.species.indicia as driver
+
+router = APIRouter()
+
+
+@router.get(
+    "/species/cache/count",
+    tags=['Species Cache'],
+    summary="Get number of records in species cache.",
+    response_model=int)
+async def read_cache_size(auth: auth.Auth):
+    with Session(engine) as session:
+        count = session.exec(
+            select(func.count(Taxon.id))
+        ).first()
+    return {"count": count}
+
+
+@router.get(
+    "/species/cache/{id}",
+    tags=['Species Cache'],
+    summary="Get item from species cache.",
+    response_model=Taxon)
+async def read_cache_item(
+        auth: auth.Auth,
+        id: int):
+    with Session(engine) as session:
+        taxon = session.get(Taxon, id)
+    if not taxon:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"No item found with ID {id}.")
+
+    return taxon
+
+
+@router.delete(
+    "/species/cache/all",
+    tags=['Species Cache'],
+    summary="Empty the species cache.",
+    response_model=bool)
+async def cache_clear(auth: auth.Auth):
+    with Session(engine) as session:
+        session.exec(
+            delete(Taxon)
+        )
+        session.commit()
+    return {"ok": True}
+
+
+@router.delete(
+    "/species/cache/{id}",
+    tags=['Species Cache'],
+    summary="Delete item from species cache.",
+    response_model=bool)
+async def delete_cache_item(
+        auth: auth.Auth,
+        id: int):
+    with Session(engine) as session:
+        session.exec(
+            delete(Taxon).where(Taxon.id == id)
+        )
+        session.commit()
+    return {"ok": True}
+
+
+@router.get(
+    "/species/cache/taxon_by_tvk/{tvk}",
+    tags=['Species Cache'],
+    summary="Get taxon with given TVK from cache.",
+    response_model=Taxon)
+async def read_taxon_by_tvk(
+        auth: auth.Auth,
+        tvk: str):
+    return get_taxon_by_tvk(tvk)
+
+
+def get_taxon_by_tvk(tvk: str) -> Taxon:
+    """Get taxon with given TVK from database."""
+    with Session(engine) as session:
+        taxon = session.exec(
+            select(Taxon).where(Taxon.external_key == tvk)
+        ).first()
+    return taxon
+
+
+def add_taxon_by_tvk(tvk: str) -> Taxon:
+    """Add taxon with given TVK to database."""
+    params = {
+        'external_key': tvk,
+        'preferred': 'true',
+        'include': '["data"]'
+    }
+    response = driver.make_search_request(params)
+    taxa = driver.parse_response_taxa(response)
+
+    if len(taxa) == 0:
+        return None
+    else:
+        taxon = taxa[0]
+        with Session(engine) as session:
+            session.add(taxon)
+            session.commit()
+            session.refresh(taxon)
+        return taxon

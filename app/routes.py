@@ -1,39 +1,34 @@
-from datetime import datetime
-import re
-from typing import Annotated
-
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter
+from pydantic import BaseModel
 
 import app.auth as auth
+import app.main as main
 import app.species as species
+import app.users as users
+
+
+class Service(BaseModel):
+    title: str
+    version: str
+    summary: str
+    docs_url: str
+
 
 # Instantiate a router.
 router = APIRouter()
 router.include_router(auth.router)
 router.include_router(species.router)
+router.include_router(users.router)
 
 
-@router.get("/")
-async def read_root():
-    return {"Hello": "FastAPI!"}
-
-
-@router.get("/hello/{name}")
-@router.get("/hello")
-async def read_name(
-        auth: auth.Auth,
-        name=None):
-    now = datetime.now()
-    formatted_now = now.strftime("%A, %d %B, %Y at %X")
-
-    match_object = None
-    if name:
-        match_object = re.match("[a-zA-Z]+", name)
-
-    if match_object:
-        clean_name = match_object.group(0)
-    else:
-        clean_name = "Friend"
-
-    content = "Hello there, " + clean_name + "! It's " + formatted_now
-    return {"content": content}
+@router.get(
+    "/",
+    tags=['Service'],
+    summary="Show service information.",
+    response_model=Service)
+async def read_service():
+    return Service(
+        title=main.app.title,
+        version=main.app.version,
+        summary=main.app.summary,
+        docs_url=main.app.docs_url)
