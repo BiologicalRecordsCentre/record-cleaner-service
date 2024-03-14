@@ -12,7 +12,11 @@ app = FastAPI(
     openapi_tags=[
         {
             "name": "Service",
-            "description": "Basic operations"
+            "description": "Basic information"
+        },
+        {
+            "name": "Checks",
+            "description": "Operations for testing records"
         },
         {
             "name": "Users",

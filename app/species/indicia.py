@@ -318,9 +318,10 @@ def parse_response_taxa(response: dict) -> list[Taxon]:
     if 'data' in response:
         for taxon in response['data']:
             taxa.append(Taxon(
-                external_key=taxon['external_key'],
+                tvk=taxon['external_key'],
+                preferred_tvk=taxon['external_key'],
                 organism_key=taxon['organism_key'],
-                taxon=taxon['taxon'],
-                preferred_taxon=taxon['preferred_taxon']
+                name=taxon['taxon'],
+                preferred_name=taxon['preferred_taxon']
             ))
     return taxa

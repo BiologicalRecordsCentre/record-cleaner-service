@@ -23,11 +23,9 @@ async def read_taxon(
 
     taxon = cache.get_taxon_by_tvk(tvk)
     if not taxon:
-        taxon = cache.add_taxon_by_tvk(tvk)
-    if not taxon:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Taxon not found")
+            detail=f"Taxon not found with TVK {tvk}.")
 
     return taxon
 

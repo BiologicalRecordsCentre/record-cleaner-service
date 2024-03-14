@@ -4,6 +4,7 @@ from pydantic import BaseModel
 import app.auth as auth
 import app.main as main
 import app.species as species
+import app.checks as checks
 import app.users as users
 
 
@@ -18,6 +19,7 @@ class Service(BaseModel):
 router = APIRouter()
 router.include_router(auth.router)
 router.include_router(species.router)
+router.include_router(checks.router)
 router.include_router(users.router)
 
 

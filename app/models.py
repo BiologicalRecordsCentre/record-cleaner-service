@@ -5,10 +5,11 @@ from sqlmodel import Field, SQLModel
 
 class Taxon(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
-    external_key: str = Field(index=True)
+    tvk: str = Field(index=True)
+    preferred_tvk: str = Field(index=True)
     organism_key: str
-    taxon: str
-    preferred_taxon: str
+    name: str
+    preferred_name: str
     rule_id: Optional[int]
 
 

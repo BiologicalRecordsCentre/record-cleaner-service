@@ -82,16 +82,21 @@ async def read_taxon_by_tvk(
 
 
 def get_taxon_by_tvk(tvk: str) -> Taxon:
-    """Get taxon with given TVK from database."""
+    """Look up taxon with given TVK."""
+
+    # First check our local database
     with Session(engine) as session:
         taxon = session.exec(
-            select(Taxon).where(Taxon.external_key == tvk)
+            select(Taxon).where(Taxon.tvk == tvk)
         ).first()
+    if not taxon:
+        # If not found, add from the remote database.
+        taxon = add_taxon_by_tvk(tvk)
     return taxon
 
 
 def add_taxon_by_tvk(tvk: str) -> Taxon:
-    """Add taxon with given TVK to database."""
+    """Look up taxon and add to cache."""
     params = {
         'external_key': tvk,
         'preferred': 'true',
