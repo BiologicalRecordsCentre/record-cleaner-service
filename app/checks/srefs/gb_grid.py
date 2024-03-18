@@ -28,8 +28,8 @@ class GbGrid:
             len(eastnorth) % 2 != 0 or
             len(eastnorth) > 10
         ) and (
-            not re.match(r'^[0-9][0-9][A-NP-Z]$', eastnorth))
-        ):
+            not re.match(r'^[0-9][0-9][A-NP-Z]$', eastnorth)
+        )):
             return False
 
         return True

@@ -5,7 +5,8 @@ from pydantic import BaseModel
 
 import app.auth as auth
 import app.species.cache as cache
-import app.checks.srefs as srefs
+from .srefs import srefs
+from .vague_dates import VagueDate
 
 
 router = APIRouter()
@@ -69,6 +70,15 @@ async def check_by_tvk(
             results.append(Checked(**result_data))
             continue
 
+        # 3. Confirm date is valid.
+        vague_date = VagueDate(record.date)
+        if not vague_date.validate():
+            result_data['ok'] = False
+            result_data['message'] = 'Invalid date.'
+            results.append(Checked(**result_data))
+            continue
+
+        # 4. Check the record against the rules.
         results.append(Checked(**result_data))
 
     return results

@@ -19,10 +19,6 @@ app = FastAPI(
             "description": "Operations for testing records"
         },
         {
-            "name": "Users",
-            "description": "Operations on users"
-        },
-        {
             "name": "Species",
             "description": "Operations on species"
         },
@@ -41,6 +37,10 @@ app = FastAPI(
         {
             "name": "Counties",
             "description": "Operations on counties"
+        },
+        {
+            "name": "Users",
+            "description": "Operations on users"
         }
     ]
 )
