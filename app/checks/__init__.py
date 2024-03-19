@@ -5,7 +5,7 @@ from pydantic import BaseModel
 
 import app.auth as auth
 import app.species.cache as cache
-from .srefs import srefs
+from . import srefs as srefs
 from .vague_dates import VagueDate
 
 
@@ -46,40 +46,44 @@ async def check_by_tvk(
 
     results = []
     for record in records:
+        # Our response begins with the input data.
         result_data = record.model_dump()
 
-        # 1. Confirm TVK is valid.
-        taxon = cache.get_taxon_by_tvk(record.tvk)
+        try:
+            # 1. Confirm TVK is valid.
+            taxon = cache.get_taxon_by_tvk(record.tvk)
 
-        if not taxon:
+            if not taxon:
+                result_data['ok'] = False
+                result_data['message'] = 'Unknown TVK.'
+                results.append(Checked(**result_data))
+                continue
+            else:
+                result_data['name'] = taxon.name
+
+            # 2. Confirm sref is valid.
+            # Look up the class for the sref system.
+            sref_system_class = srefs.class_map[record.sref_system]
+            # Instantiate an sref object of that class.
+            sref = sref_system_class(record.sref)
+            if not sref.validate():
+                result_data['ok'] = False
+                result_data['message'] = 'Invalid spatial reference.'
+                results.append(Checked(**result_data))
+                continue
+
+            # 3. Confirm date is valid.
+            vague_date = VagueDate(record.date)
+            result_data['date'] = str(vague_date)
+
+            # 4. Check the record against the rules.
+            results.append(Checked(**result_data))
+
+        except ValueError as e:
             result_data['ok'] = False
-            result_data['message'] = 'Unknown TVK.'
+            result_data['message'] = str(e)
             results.append(Checked(**result_data))
             continue
-        else:
-            result_data['name'] = taxon.name
-
-        # 2. Confirm sref is valid.
-        # Look up the class for the sref system.
-        sref_system_class = srefs.class_map[record.sref_system]
-        # Instantiate an sref object of that class.
-        sref = sref_system_class(record.sref)
-        if not sref.validate():
-            result_data['ok'] = False
-            result_data['message'] = 'Invalid spatial reference.'
-            results.append(Checked(**result_data))
-            continue
-
-        # 3. Confirm date is valid.
-        vague_date = VagueDate(record.date)
-        if not vague_date.validate():
-            result_data['ok'] = False
-            result_data['message'] = 'Invalid date.'
-            results.append(Checked(**result_data))
-            continue
-
-        # 4. Check the record against the rules.
-        results.append(Checked(**result_data))
 
     return results
 
