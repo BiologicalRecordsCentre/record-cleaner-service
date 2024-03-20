@@ -48,40 +48,42 @@ class VagueDate:
     ]
 
     """
-    List of regex strings used to try to capture date ranges.
+    Lists of regex strings used to try to identify date formats.
     """
-    date_range_strings = [
-        # Any range with space around hyphen, e.g. "anything - anything"
+    iso8601_regexes = [
+        # Day, e.g. yyyy-mm-dd
+        re.compile(r"^\d{4}-\d{2}-\d{2}$"),
+        # Month, e.g. yyyy-mm
+        re.compile(r"^\d{4}-\d{2}$")
+    ]
+
+    iso8601_range_regexes = [
+        # Day, e.g. yyyy-mm-dd - yyyy-mm-dd
+        re.compile(r"""
+            ^
+            (?P<before>\d{4}-\d{2}-\d{2})
+            (?P<sep>\ -\ )  # Spaces have to be escaped when using verbose.
+            (?P<after>\d{4}-\d{2}-\d{2})
+            $
+            """, re.VERBOSE),
+        # Month, e.g. yyyy-mm - yyyy-mm
+        re.compile(r"""
+            ^
+            (?P<before>\d{4}-\d{2})
+            (?P<sep>\ -\ )
+            (?P<after>\d{4}-\d{2})
+            $
+            """, re.VERBOSE)
+    ]
+
+    range_regexes = [
+        # Date range, e.g. "d-d/m/yy"
         re.compile(r"""
             (?P<before>.+)
-            (?P<sep> - )
+            (?P<sep>-)
             (?P<after>.+)
             """, re.VERBOSE),
-        # Date range, e.g. "dd/mm/yyyy-dd/mm/yyyy"
-        re.compile(r"""
-            ^
-            (?P<before>\d{2}[\/\.]\d{2}[\/\.]\d{2}(\d{2})?)
-            (?P<sep>-)
-            (?P<after>\d{2}[\/\.]\d{2}[\/\.]\d{2}(\d{2})?)
-            $
-            """, re.VERBOSE),
-        # Month in year range, e.g. "mm/yyyy-mm/yyyy"
-        re.compile(r"""
-            ^
-            (?P<before>\d{2}[\/\.]\d{2}(\d{2})?)
-            (?P<sep>-)
-            (?P<after>\d{2}[\/\.]\d{2}(\d{2})?)
-            $
-            """, re.VERBOSE),
-        # Year range, e.g. "yyyy-yyyy"
-        re.compile(r"""
-            ^
-            (?P<before>\d{4})
-            (?P<sep>-)
-            (?P<after>\d{4})
-            $
-            """, re.VERBOSE),
-        # To year, e.g. "-yyyy"
+        # Range with no start, e.g. "-yyyy"
         re.compile(r"""
             ^
             (?P<sep>-)
@@ -139,6 +141,10 @@ class VagueDate:
         '%m/%Y',
         # 06/96
         '%m/%y',
+        # 06.1998
+        '%m.%Y',
+        # 06.96
+        '%m.%y',
         # June 1998
         '%B %Y',
         # Jun 1998
@@ -195,25 +201,47 @@ class VagueDate:
     def value(self, string):
         """Sets a vague date from a string"""
 
-        date_range = False
-        start_date = False
-        end_date = False
-        end_precision = False
+        single_date = None
+        start_date = None
+        end_date = None
+        end_precision = None
 
-        # 1. Determine whether the string is a date range.
-        for regex in self.date_range_strings:
+        # 1. Determine whether the string is an ISO 8601 date and, if not,
+        # whether it is a date range.
+        # Have to treat ISO 8601 dates as a special case as they use the
+        # hyphen to separate parts which is also our range separator.
+        for regex in self.iso8601_regexes:
             match = regex.match(string)
             if match:
-                start = match['before'].strip()
-                end = match['after'].strip()
-                date_range = True
+                single_date = True
                 break
 
+        if single_date is None:
+            for regex in self.iso8601_range_regexes:
+                match = regex.match(string)
+                if match:
+                    start = match['before'].strip()
+                    end = match['after'].strip()
+                    single_date = False
+                    break
+
+        if single_date is None:
+            for regex in self.range_regexes:
+                match = regex.match(string)
+                if match:
+                    start = match['before'].strip()
+                    end = match['after'].strip()
+                    single_date = False
+                    break
+
+        # Assume a single date if no pattern is matched.
+        single_date = True if single_date is None else single_date
+
         # 2. Extract a date and precision either from
-            # the end date if a range else
-            # the whole string if not a range
-        # Use end_date because this contains more info, e.g. 15 - 18 Aug 2008
-        date_part = end if date_range else string
+        # the end date if a range else
+        # the whole string if not a range
+        # Use end_date because this contains more info, e.g. 15-18 Aug 2008
+        date_part = string if single_date else end
         whole_formats = {
             DatePrecision.WHOLE_DAY: self.whole_day_formats,
             DatePrecision.WHOLE_MONTH: self.whole_month_formats,
@@ -224,7 +252,7 @@ class VagueDate:
         # 3. Determine the type from the
 
         if end_precision == DatePrecision.WHOLE_DAY:
-            if not date_range:
+            if single_date:
                 # Type is D.
                 self._value = {
                     'start': end_date,
@@ -263,7 +291,7 @@ class VagueDate:
             # the month.
             last_day = calendar.monthrange(end_date.year, end_date.month)[1]
 
-            if not date_range:
+            if single_date:
                 # Type is O.
                 self._value = {
                     'start': end_date,
@@ -302,7 +330,7 @@ class VagueDate:
             # Vague date must start on the first day and end on the last day of
             # the year.
 
-            if not date_range:
+            if single_date:
                 # Type is Y.
                 self._value = {
                     'start': end_date,
@@ -338,6 +366,10 @@ class VagueDate:
                     }
         else:
             raise ValueError('Unreocognised date format.')
+
+        # A final check that the date is in the past.
+        if self._value['end'] > datetime.now():
+            raise ValueError('Date is in the future.')
 
     def parse_date(self, string: str, parse_formats: dict):
         """

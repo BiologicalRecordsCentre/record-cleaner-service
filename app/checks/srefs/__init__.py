@@ -1,7 +1,7 @@
 from enum import Enum
 
 from .gb_grid import GbGrid
-from .ni_grid import NiGrid
+from .ie_grid import IeGrid
 from .ci_grid import CiGrid
 
 
@@ -18,7 +18,7 @@ class SrefSystem(int, Enum):
 
 class_map = {
     SrefSystem.GB_GRID: GbGrid,
-    SrefSystem.NI_GRID: NiGrid,
+    SrefSystem.NI_GRID: IeGrid,
     SrefSystem.CI_GRID: CiGrid
     #     SrefSystem.GB_NI_CI_GRID,
     #     SrefSystem.WGS84,

@@ -52,25 +52,13 @@ async def check_by_tvk(
         try:
             # 1. Confirm TVK is valid.
             taxon = cache.get_taxon_by_tvk(record.tvk)
-
-            if not taxon:
-                result_data['ok'] = False
-                result_data['message'] = 'Unknown TVK.'
-                results.append(Checked(**result_data))
-                continue
-            else:
-                result_data['name'] = taxon.name
+            result_data['name'] = taxon.name
 
             # 2. Confirm sref is valid.
             # Look up the class for the sref system.
             sref_system_class = srefs.class_map[record.sref_system]
             # Instantiate an sref object of that class.
             sref = sref_system_class(record.sref)
-            if not sref.validate():
-                result_data['ok'] = False
-                result_data['message'] = 'Invalid spatial reference.'
-                results.append(Checked(**result_data))
-                continue
 
             # 3. Confirm date is valid.
             vague_date = VagueDate(record.date)

@@ -17,7 +17,7 @@ router.include_router(cache.router)
     tags=['Species'],
     summary="Get taxon with given TVK.",
     response_model=Taxon)
-async def read_taxon(
+async def read_taxon_by_tvk(
         auth: auth.Auth,
         tvk: str):
 
