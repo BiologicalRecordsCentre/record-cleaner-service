@@ -288,17 +288,26 @@ def make_search_request(params: dict) -> dict:
     url = settings.indicia_url + 'taxa/search'
     params['taxon_list_id'] = settings.indicia_taxon_list_id
 
-    r = requests.get(url, params=params,
-                     auth=IndiciaAuth(settings.indicia_rest_password))
-    if r.status_code == requests.codes.ok:
-        return r.json()
-    else:
+    try:
+        r = requests.get(url, params=params,
+                         auth=IndiciaAuth(settings.indicia_rest_password))
+    except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail={
-                'message': 'Indicia API error',
-                'detail': r.json()
-            })
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail={'message': "Indicia API connection error. Unable to "
+                    "look up species information from Indicia.",
+                    'detail': str(e)}
+        )
+    else:
+        if r.status_code == requests.codes.ok:
+            return r.json()
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail={
+                    'message': 'Indicia API error',
+                    'detail': r.json()
+                })
 
 
 def parse_response_full(response: dict) -> IndiciaResponse:

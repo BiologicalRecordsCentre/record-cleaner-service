@@ -15,8 +15,12 @@ app = FastAPI(
             "description": "Basic information"
         },
         {
-            "name": "Checks",
-            "description": "Operations for testing records"
+            "name": "Validate",
+            "description": "Operations to validate record data."
+        },
+        {
+            "name": "Verify",
+            "description": "Operations to verify records against rules."
         },
         {
             "name": "Species",
