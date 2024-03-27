@@ -1,43 +1,46 @@
 import re
 
+from math import log10
 
-class CiGrid:
+from . import Sref, SrefAccuracy
+from .sref_base import SrefBase
 
-    _srid = 23030
-    _sref = None
 
-    def __init__(self, sref: str):
-        self.sref = sref
+class CiGrid(SrefBase):
 
-    @property
-    def srid(self):
-        return self._srid
+    def __init__(self, sref: Sref):
+        self.value = sref
 
-    @property
-    def gridref(self):
-        return self._sref
+    @SrefBase.value.setter
+    def value(self, value: Sref):
 
-    @property
-    def sref(self):
-        return self._sref
+        if value.gridref is not None:
+            self.validate_gridref(value)
+        elif value.easting is not None and \
+                value.northing is not None and \
+                value.accuracy is not None:
+            self.coord_to_gridref(value)
+        else:
+            raise ValueError("Invalid grid reference for Great Britain.")
 
-    @sref.setter
-    def sref(self, value):
+        self._value = value
 
+    @staticmethod
+    def validate_gridref(value: Sref):
         # Ignore any spaces in the grid ref.
-        value = value.replace(' ', '')
+        gridref = value.gridref.replace(' ', '').upper()
 
         # Check the first two letters are a valid combination.
         # Column is in range S-Z
         # Rows in the range U-V and A-G
-        sq100 = value[:2].upper()
+        sq100 = gridref[:2]
         if not re.match(r'[S-Z]([U-V]|[A-G])', sq100):
             raise ValueError("Invalid grid reference for Channel Islands.")
 
         # Check either remaining chars are all numeric and an equal
         # number, up to 10 digits OR for DINTY Tetrads, 2 numbers followed by a
         # letter (Excluding O, including I).
-        eastnorth = value[2:]
+        eastnorth = gridref[2:]
         if ((
             not re.match(r'^[0-9]*$', eastnorth) or
             len(eastnorth) % 2 != 0 or
@@ -47,4 +50,51 @@ class CiGrid:
         )):
             raise ValueError("Invalid grid reference for Channel Islands.")
 
-        self._sref = value
+        value.gridref = gridref
+
+    @staticmethod
+    def coord_to_gridref(value: Sref):
+
+        easting = value.easting
+        northing = value.northing
+        accuracy = value.accuracy
+        gridref = None
+
+        if (easting < 100000 or easting > 900000 or
+                northing < 5300000 or northing > 6200000):
+            raise ValueError('Invalid grid reference for Channel Islands.')
+
+        hundredKmE = easting // 100000
+        hundredKmN = northing // 100000
+        firstLetter = chr(ord('S') + hundredKmE - 1)
+
+        if hundredKmN < 55:
+            index = ord('U') + hundredKmN - 53
+        else:
+            index = ord('A') + hundredKmN - 55
+        secondLetter = chr(index)
+
+        if accuracy == SrefAccuracy.KM2:
+            # DINTY TETRADS
+            # 2 numbers at start equivalent to precision = 2
+            e = (easting - (100000 * hundredKmE)) // 10000
+            n = (northing - (100000 * hundredKmN)) // 10000
+            letter = (
+                65 +
+                (northing - (100000 * hundredKmN) - (n * 10000)) // 2000 +
+                5 * (easting - (100000 * hundredKmE) - (e * 10000)) // 2000
+            )
+            if letter >= 79:
+                letter += 1  # Adjust for no O
+            gridref = firstLetter + secondLetter + e + n + chr(letter)
+        else:
+            accuracy_digits = int(5 - log10(accuracy))
+            # From 10km accuracy with 1 digit to 1m accuracy with 5.
+            e = (easting - (100000 * hundredKmE)) // accuracy
+            n = (northing - (100000 * hundredKmN)) // accuracy
+            gridref = (
+                firstLetter + secondLetter +
+                str(e).zfill(accuracy_digits) + str(n).zfill(accuracy_digits)
+            )
+
+        value.gridref = gridref

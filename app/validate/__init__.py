@@ -5,7 +5,8 @@ from pydantic import BaseModel
 
 import app.auth as auth
 import app.species.cache as cache
-from . import srefs as srefs
+from .srefs import Sref
+from .srefs.sref_factory import SrefFactory
 from .vice_counties.vc_checker import VcChecker
 from .vague_dates import VagueDate
 
@@ -17,8 +18,7 @@ vc_checker = VcChecker()
 class Validate(BaseModel):
     id: int
     date: str
-    sref: str
-    sref_system: srefs.SrefSystem
+    sref: Sref
     vc: Optional[str | int] = None
 
 
@@ -61,16 +61,14 @@ async def validate_by_tvk(
             result_data['date'] = str(vague_date)
 
             # 3. Confirm sref is valid.
-            # Look up the class for the sref system.
-            sref_system_class = srefs.class_map[record.sref_system]
-            # Instantiate an sref object of that class.
-            sref = sref_system_class(record.sref)
+            sref = SrefFactory(record.sref)
+            result_data['sref']['gridref'] = sref.gridref
 
             # 4. Check sref in vice county.
             if record.vc is not None:
                 code = vc_checker.prepare_code(record.vc)
                 result_data['vc'] = code
-                gridref = vc_checker.prepare_gridref(sref.gridref)
+                gridref = vc_checker.prepare_sref(sref.gridref)
                 vc_checker.check(gridref, code)
 
             results.append(Validateed(**result_data))

@@ -1,0 +1,18 @@
+import pytest
+
+from app.validate.srefs.wgs84 import Wgs84
+
+
+class TestWgs84:
+
+    def test_okay(self):
+        g = Wgs84(0, 0)
+        assert g.sref == (0, 0)
+
+    def test_latitude_error(self):
+        with pytest.raises(ValueError):
+            Wgs84(120, 0)
+
+    def test_longitude_error(self):
+        with pytest.raises(ValueError):
+            Wgs84(0, 200)
