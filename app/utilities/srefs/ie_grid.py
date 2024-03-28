@@ -2,13 +2,14 @@ import re
 
 from math import log10
 
-from . import Sref, SrefAccuracy
+from . import Sref, SrefAccuracy, SrefCountry
 from .sref_base import SrefBase
 
 
 class IeGrid(SrefBase):
 
     def __init__(self, sref: Sref):
+        sref.country = SrefCountry.IE
         self.value = sref
 
     @SrefBase.value.setter

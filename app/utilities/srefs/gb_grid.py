@@ -2,13 +2,16 @@ import re
 
 from math import log10
 
-from . import Sref, SrefAccuracy
+from . import Sref, SrefAccuracy, SrefCountry
 from .sref_base import SrefBase
 
 
 class GbGrid(SrefBase):
 
+    _srid = 27700
+
     def __init__(self, sref: Sref):
+        sref.country = SrefCountry.GB
         self.value = sref
 
     @SrefBase.value.setter
@@ -16,17 +19,21 @@ class GbGrid(SrefBase):
 
         if value.gridref is not None:
             self.validate_gridref(value)
-        elif value.easting is not None and \
-                value.northing is not None and \
-                value.accuracy is not None:
-            self.coord_to_gridref(value)
+        elif (value.easting is not None and
+                value.northing is not None and
+                value.accuracy is not None):
+            self.validate_coord(value)
         else:
-            raise ValueError("Invalid grid reference for Great Britain.")
+            raise ValueError("""Invalid spatial reference. Either a gridref or
+                             easting, northing and accuracy must be
+                             provided.""")
 
         self._value = value
 
     @staticmethod
     def validate_gridref(value: Sref):
+        """Ensure gridref is valid."""
+
         # Ignore any spaces in the grid ref.
         gridref = value.gridref.replace(' ', '').upper()
 
@@ -52,16 +59,22 @@ class GbGrid(SrefBase):
         value.gridref = gridref
 
     @staticmethod
-    def coord_to_gridref(value: Sref):
+    def validate_coord(value: Sref):
+        """Ensure coordinates are valid."""
 
-        easting = value.easting
-        northing = value.northing
-        accuracy = value.accuracy
+        if value.easting < 0 or value.easting > 700000:
+            raise ValueError("""Invalid spatial reference. Easting must be
+                             between 0 and 700000""")
+        if value.northing < 0 or value.northing > 1300000:
+            raise ValueError("""Invalid spatial reference. Northing must be
+                             between 0 and 1300000""")
+
+    def calculate_gridref(self):
+
+        easting = self.value.easting
+        northing = self.value.northing
+        accuracy = self.value.accuracy
         gridref = None
-
-        if (easting < 0 or easting > 700000 or
-                northing < 0 or northing > 1300000):
-            raise ValueError("Invalid grid reference for Great Britain.")
 
         hundredKmE = easting // 100000
         hundredKmN = northing // 100000
@@ -112,4 +125,4 @@ class GbGrid(SrefBase):
                 str(e).zfill(accuracy_digits) + str(n).zfill(accuracy_digits)
             )
 
-        value.gridref = gridref
+        self._value.gridref = gridref

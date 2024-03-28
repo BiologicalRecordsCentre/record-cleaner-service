@@ -10,9 +10,16 @@ class SrefFactory:
         match sref.srid:
             case SrefSystem.GB_GRID:
                 return GbGrid(sref)
-            case SrefSystem.NI_GRID:
+            case SrefSystem.IE_GRID:
                 return IeGrid(sref)
             case SrefSystem.CI_GRID:
                 return CiGrid(sref)
+            case SrefSystem.GB_NI_CI_GRID:
+                if sref.gridref[:2] == "WA" or sref.gridref[:2] == "WV":
+                    return CiGrid(sref)
+                elif self.gridref[1:2].is_numeric():
+                    return IeGrid(sref)
+                else:
+                    return GbGrid(sref)
             case SrefSystem.WGS84:
-                return Wgs84()
+                return Wgs84(sref)

@@ -1,7 +1,7 @@
 import pytest
 from datetime import datetime, timedelta
 
-from app.validate.vague_dates import VagueDate
+from app.utilities.vague_dates import VagueDate
 
 
 class TestVagueDates:

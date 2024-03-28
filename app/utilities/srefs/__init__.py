@@ -6,11 +6,11 @@ from pydantic import BaseModel
 
 class SrefSystem(int, Enum):
     GB_GRID = 27700
-    NI_GRID = 29901
+    IE_GRID = 29903
     CI_GRID = 23030
-    GB_NI_CI_GRID = 4
+    GB_NI_CI_GRID = 0
     WGS84 = 4326
-    OSGB36 = 6
+    OSGB36 = 4277
     IRENET75 = 7
     UTM30N = 8
 
@@ -24,6 +24,12 @@ class SrefAccuracy(int, Enum):
     M1 = 1
 
 
+class SrefCountry(str, Enum):
+    GB = 'Great Britain'
+    IE = 'Ireland'
+    CI = 'Channel Islands'
+
+
 class Sref(BaseModel):
     srid: SrefSystem
     gridref: Optional[str] = None
@@ -32,3 +38,4 @@ class Sref(BaseModel):
     easting: Optional[int] = None
     northing: Optional[int] = None
     accuracy: Optional[SrefAccuracy] = 1000
+    country: Optional[SrefCountry] = None

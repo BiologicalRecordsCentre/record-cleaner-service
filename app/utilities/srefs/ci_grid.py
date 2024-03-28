@@ -2,13 +2,14 @@ import re
 
 from math import log10
 
-from . import Sref, SrefAccuracy
+from . import Sref, SrefAccuracy, SrefCountry
 from .sref_base import SrefBase
 
 
 class CiGrid(SrefBase):
 
     def __init__(self, sref: Sref):
+        sref.country = SrefCountry.CI
         self.value = sref
 
     @SrefBase.value.setter
@@ -21,7 +22,7 @@ class CiGrid(SrefBase):
                 value.accuracy is not None:
             self.coord_to_gridref(value)
         else:
-            raise ValueError("Invalid grid reference for Great Britain.")
+            raise ValueError("Invalid grid reference for Channel Islands.")
 
         self._value = value
 

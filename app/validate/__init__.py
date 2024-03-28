@@ -5,10 +5,10 @@ from pydantic import BaseModel
 
 import app.auth as auth
 import app.species.cache as cache
-from .srefs import Sref
-from .srefs.sref_factory import SrefFactory
-from .vice_counties.vc_checker import VcChecker
-from .vague_dates import VagueDate
+from app.utilities.srefs import Sref
+from app.utilities.srefs.sref_factory import SrefFactory
+from app.utilities.vice_counties.vc_checker import VcChecker
+from app.utilities.vague_dates import VagueDate
 
 
 router = APIRouter()
@@ -54,19 +54,24 @@ async def validate_by_tvk(
         try:
             # 1. Confirm TVK is valid.
             taxon = cache.get_taxon_by_tvk(record.tvk)
+            # Return name associated with TVK.
             result_data['name'] = taxon.name
 
             # 2. Confirm date is valid.
             vague_date = VagueDate(record.date)
+            # Return date in preferred format.
             result_data['date'] = str(vague_date)
 
             # 3. Confirm sref is valid.
             sref = SrefFactory(record.sref)
-            result_data['sref']['gridref'] = sref.gridref
+            if record.sref.gridref is not None:
+                # Return cleaned up gridref.
+                result_data['sref']['gridref'] = sref.gridref
 
             # 4. Check sref in vice county.
             if record.vc is not None:
                 code = vc_checker.prepare_code(record.vc)
+                # Return code if name was supplied.
                 result_data['vc'] = code
                 gridref = vc_checker.prepare_sref(sref.gridref)
                 vc_checker.check(gridref, code)
