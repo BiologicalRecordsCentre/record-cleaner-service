@@ -1,6 +1,6 @@
 import pytest
 
-from app.validate.srefs.gb_grid import GbGrid
+from app.utilities.srefs.gb_grid import GbGrid
 
 
 class TestGbGrid:

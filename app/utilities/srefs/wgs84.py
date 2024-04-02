@@ -1,6 +1,6 @@
 from pyproj import Transformer
 
-from . import Sref, SrefAccuracy, SrefCountry
+from . import Sref, SrefCountry
 from .sref_base import SrefBase
 from .ci_grid import CiGrid
 from .ie_grid import IeGrid
@@ -9,26 +9,29 @@ from .gb_grid import GbGrid
 
 class Wgs84(SrefBase):
 
+    _srid = 4326
+
     def __init__(self, sref: Sref):
+        sref.country = None
+        sref.gridref = None
         self.value = sref
 
-    @SrefBase.value.setter
-    def value(self, value: Sref):
+    @classmethod
+    def validate(clas, value: Sref):
 
+        # Validate the input.
         if value.latitude is None or \
                 value.longitude is None or \
                 value.accuracy is None:
             raise ValueError("""Invalid spatial reference. Latitude, longitude
                              and accuracy are required.""")
 
-        if value.latitude < -90 or value.latitude > 90:
+        if value.latitude < 48.0 or value.latitude > 62.0:
             raise ValueError("""Invalid spatial reference. Latitude must be
-                             between -90 and 90.""")
-        if value.longitude < -180 or value.longitude > 180:
+                             roughly between 48 and 62.""")
+        if value.longitude < -12.0 or value.longitude > 4.0:
             raise ValueError("""Invalid spatial reference. Longitude must be
-                             between -180 and 180.""")
-
-        self._value = value
+                             roughly between -12 and 4.""")
 
     def calculate_gridref(self):
         """Determines the GB, IE or CI grid reference."""
@@ -41,11 +44,16 @@ class Wgs84(SrefBase):
                 sref_class = CiGrid
 
         # Convert the lat/lon to coords in the country grid ref system.
-        sref_data = {'accuracy': self.accuracy}
-        transformer = Transformer.from_crs(self.srid, sref_class.srid)
-        sref_data['easting'], sref_data['northing'] = \
-            transformer.transform(self.latitude, self.longitude)
+        transformer = Transformer.from_crs(self._srid, sref_class._srid)
+        e, n = transformer.transform(self.latitude, self.longitude)
 
         # Instantiate an object of the grid ref class with the calculated
         # values and get the grid reference.
-        self._value.gridref = sref_class(**sref_data).gridref
+        sref = Sref(
+            srid=sref_class._srid,
+            accuracy=self.accuracy,
+            easting=int(e),
+            northing=int(n)
+        )
+        sref_instance = sref_class(sref)
+        return sref_instance.gridref

@@ -28,14 +28,12 @@ class VcChecker:
         )
 
     @lru_cache
-    def prepare_code(self, value: str) -> str:
+    def prepare_code(self, value: str | int) -> str:
         """Takes a supplied VC value and returns a code."""
 
         # British VC codes are in the range 1 to 112.
-        match_gb = re.match(r'^(?P<num>\d\d?\d?)$', value)
-        if match_gb:
-            num = int(match_gb['num'])
-            if num > 0 and num < 113:
+        if value is int:
+            if value > 0 and value < 113:
                 # A valid British VC code was supplied
                 return value
             else:
@@ -54,6 +52,8 @@ class VcChecker:
         # Search the VC names for a match if value was not a code.
         seek = value.lower()
         df = self.vc_names
+        # Locate in the dataframe of vc_names, the code where the name matches
+        # the entered value.
         series = df.loc[df['name'] == seek, 'code']
         if series.size == 1:
             return series.iloc[0]

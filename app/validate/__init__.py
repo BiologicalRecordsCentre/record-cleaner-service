@@ -30,7 +30,7 @@ class ValidateTvk(Validate):
     tvk: str
 
 
-class Validateed(Validate):
+class Validated(Validate):
     name: Optional[str] = None
     tvk: Optional[str] = None
     ok: bool = True
@@ -41,7 +41,7 @@ class Validateed(Validate):
     "/validate/records_by_tvk",
     tags=['Validate'],
     summary="Validate records identified by TVK.",
-    response_model=list[Validateed])
+    response_model=list[Validated])
 async def validate_by_tvk(
         auth: auth.Auth,
         records: list[ValidateTvk]):
@@ -76,12 +76,12 @@ async def validate_by_tvk(
                 gridref = vc_checker.prepare_sref(sref.gridref)
                 vc_checker.check(gridref, code)
 
-            results.append(Validateed(**result_data))
+            results.append(Validated(**result_data))
 
         except ValueError as e:
             result_data['ok'] = False
             result_data['message'] = str(e)
-            results.append(Validateed(**result_data))
+            results.append(Validated(**result_data))
             continue
 
     return results
@@ -91,7 +91,7 @@ async def validate_by_tvk(
     "/validate/records_by_name",
     tags=['Validate'],
     summary="Validate records identified by name.",
-    response_model=list[Validateed])
+    response_model=list[Validated])
 async def validate_by_name(
         auth: auth.Auth,
         records: list[ValidateName]):

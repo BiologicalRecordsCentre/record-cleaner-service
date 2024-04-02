@@ -1,6 +1,6 @@
 import pytest
 
-from app.validate.srefs.ci_grid import CiGrid
+from app.utilities.srefs.ci_grid import CiGrid
 
 
 class TestCiGrid:

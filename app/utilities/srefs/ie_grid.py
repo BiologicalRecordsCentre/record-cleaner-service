@@ -8,26 +8,28 @@ from .sref_base import SrefBase
 
 class IeGrid(SrefBase):
 
+    _srid = 29903
+
     def __init__(self, sref: Sref):
         sref.country = SrefCountry.IE
         self.value = sref
 
-    @SrefBase.value.setter
-    def value(self, value):
+    @classmethod
+    def validate(cls, value):
 
         if value.gridref is not None:
-            self.validate_gridref(value)
+            cls.validate_gridref(value)
+            # Remove any spurious data.
+            value.easting = value.northing = None
         elif value.easting is not None and \
                 value.northing is not None and \
                 value.accuracy is not None:
-            self.coord_to_gridref(value)
+            cls.validate_coord(value)
         else:
             raise ValueError("Invalid grid reference for Ireland.")
 
-        self._value = value
-
-    @staticmethod
-    def validate_gridref(value: Sref):
+    @classmethod
+    def validate_gridref(cls, value: Sref):
         # Ignore any spaces in the grid ref.
         gridref = value.gridref.replace(' ', '').upper()
 
@@ -49,20 +51,24 @@ class IeGrid(SrefBase):
         )):
             raise ValueError("Invalid grid reference for Ireland.")
 
-        value.gridref = gridref
+    @classmethod
+    def validate_coord(cls, value: Sref):
+        """Ensure coordinates are valid."""
 
-    @staticmethod
-    def coord_to_gridref(value: Sref):
+        if value.easting < 0 or value.easting > 500000:
+            raise ValueError("""Invalid spatial reference. Easting must be
+                             between 0 and 500000""")
+        if value.northing < 0 or value.northing > 500000:
+            raise ValueError("""Invalid spatial reference. Northing must be
+                             between 0 and 500000""")
 
-        easting = value.easting
-        northing = value.northing
-        accuracy = value.accuracy
+    def calculate_gridref(self):
+        """Calculate grid reference from easting and northing."""
+
+        easting = self.easting
+        northing = self.northing
+        accuracy = self.accuracy
         gridref = None
-
-        # ensure the point is within the range of the grid
-        if (easting < 0 or easting > 500000 or
-                northing < 0 or northing > 500000):
-            raise ValueError('Invalid grid reference for Ireland.')
 
         hundred_km_e = easting // 100000
         hundred_km_n = northing // 100000
@@ -98,4 +104,4 @@ class IeGrid(SrefBase):
                 str(n).zfill(accuracy_digits)
             )
 
-        value.gridref = gridref
+        return gridref

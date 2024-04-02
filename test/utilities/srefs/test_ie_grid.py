@@ -1,6 +1,6 @@
 import pytest
 
-from app.validate.srefs.ie_grid import IeGrid
+from app.utilities.srefs.ie_grid import IeGrid
 
 
 class TestCiGrid:

@@ -8,26 +8,28 @@ from .sref_base import SrefBase
 
 class CiGrid(SrefBase):
 
+    _srid = 23030
+
     def __init__(self, sref: Sref):
         sref.country = SrefCountry.CI
         self.value = sref
 
-    @SrefBase.value.setter
-    def value(self, value: Sref):
+    @classmethod
+    def validate(cls, value: Sref):
 
         if value.gridref is not None:
-            self.validate_gridref(value)
+            cls.validate_gridref(value)
+            # Remove any spurious data.
+            value.easting = value.northing = None
         elif value.easting is not None and \
                 value.northing is not None and \
                 value.accuracy is not None:
-            self.coord_to_gridref(value)
+            cls.validate_coord(value)
         else:
             raise ValueError("Invalid grid reference for Channel Islands.")
 
-        self._value = value
-
-    @staticmethod
-    def validate_gridref(value: Sref):
+    @classmethod
+    def validate_gridref(cls, value: Sref):
         # Ignore any spaces in the grid ref.
         gridref = value.gridref.replace(' ', '').upper()
 
@@ -51,19 +53,24 @@ class CiGrid(SrefBase):
         )):
             raise ValueError("Invalid grid reference for Channel Islands.")
 
-        value.gridref = gridref
+    @classmethod
+    def validate_coord(cls, value: Sref):
+        """Ensure coordinates are valid."""
 
-    @staticmethod
-    def coord_to_gridref(value: Sref):
+        if value.easting < 100000 or value.easting > 900000:
+            raise ValueError("""Invalid spatial reference. Easting must be
+                             between 100000 and 900000""")
+        if value.northing < 5300000 or value.northing > 6200000:
+            raise ValueError("""Invalid spatial reference. Northing must be
+                             between 5300000 and 6200000""")
 
-        easting = value.easting
-        northing = value.northing
-        accuracy = value.accuracy
+    def calculate_gridref(self):
+        """Calculate grid reference from easting and northing."""
+
+        easting = self.easting
+        northing = self.northing
+        accuracy = self.accuracy
         gridref = None
-
-        if (easting < 100000 or easting > 900000 or
-                northing < 5300000 or northing > 6200000):
-            raise ValueError('Invalid grid reference for Channel Islands.')
 
         hundredKmE = easting // 100000
         hundredKmN = northing // 100000
@@ -98,4 +105,4 @@ class CiGrid(SrefBase):
                 str(e).zfill(accuracy_digits) + str(n).zfill(accuracy_digits)
             )
 
-        value.gridref = gridref
+        return gridref

@@ -14,24 +14,24 @@ class GbGrid(SrefBase):
         sref.country = SrefCountry.GB
         self.value = sref
 
-    @SrefBase.value.setter
-    def value(self, value: Sref):
+    @classmethod
+    def validate(cls, value: Sref):
 
         if value.gridref is not None:
-            self.validate_gridref(value)
+            cls.validate_gridref(value)
+            # Remove any spurious data.
+            value.easting = value.northing = None
         elif (value.easting is not None and
                 value.northing is not None and
                 value.accuracy is not None):
-            self.validate_coord(value)
+            cls.validate_coord(value)
         else:
             raise ValueError("""Invalid spatial reference. Either a gridref or
                              easting, northing and accuracy must be
                              provided.""")
 
-        self._value = value
-
-    @staticmethod
-    def validate_gridref(value: Sref):
+    @classmethod
+    def validate_gridref(cls, value: Sref):
         """Ensure gridref is valid."""
 
         # Ignore any spaces in the grid ref.
@@ -58,8 +58,8 @@ class GbGrid(SrefBase):
 
         value.gridref = gridref
 
-    @staticmethod
-    def validate_coord(value: Sref):
+    @classmethod
+    def validate_coord(cls, value: Sref):
         """Ensure coordinates are valid."""
 
         if value.easting < 0 or value.easting > 700000:
@@ -70,10 +70,11 @@ class GbGrid(SrefBase):
                              between 0 and 1300000""")
 
     def calculate_gridref(self):
+        """Calculate grid reference from easting and northing."""
 
-        easting = self.value.easting
-        northing = self.value.northing
-        accuracy = self.value.accuracy
+        easting = self.easting
+        northing = self.northing
+        accuracy = self.accuracy
         gridref = None
 
         hundredKmE = easting // 100000
@@ -125,4 +126,4 @@ class GbGrid(SrefBase):
                 str(e).zfill(accuracy_digits) + str(n).zfill(accuracy_digits)
             )
 
-        self._value.gridref = gridref
+        return gridref
