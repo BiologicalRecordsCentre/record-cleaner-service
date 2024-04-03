@@ -126,12 +126,12 @@ class TestVagueDates:
         assert str(v) == '03/2024'
 
     def test_yyyy(self):
-        v = VagueDate('2024')
-        assert str(v) == '2024'
+        v = VagueDate('2023')
+        assert str(v) == '2023'
 
     def test_yy(self):
-        v = VagueDate('24')
-        assert str(v) == '2024'
+        v = VagueDate('23')
+        assert str(v) == '2023'
 
     def test_day_range_iso(self):
         v = VagueDate('2024-03-02 - 2024-03-20')
@@ -162,12 +162,12 @@ class TestVagueDates:
         assert str(v) == '02/2024 - 03/2024'
 
     def test_year_range_iso(self):
-        v = VagueDate('2023 - 2024')
-        assert str(v) == '2023 - 2024'
+        v = VagueDate('2022 - 2023')
+        assert str(v) == '2022 - 2023'
 
     def test_year_range_whole(self):
-        v = VagueDate('2023-2024')
-        assert str(v) == '2023 - 2024'
+        v = VagueDate('2022-2023')
+        assert str(v) == '2022 - 2023'
 
     def test_day_range_error(self):
         with pytest.raises(ValueError):

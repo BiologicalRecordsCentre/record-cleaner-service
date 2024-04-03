@@ -1,34 +1,42 @@
 import pytest
 
+from app.utilities.srefs import Sref, SrefSystem
 from app.utilities.srefs.ci_grid import CiGrid
 
 
 class TestCiGrid:
 
     def test_2_figures(self):
-        g = CiGrid('WV 1 6')
-        assert g.sref == 'WV16'
+        sref = Sref(gridref='WV 1 6', srid=SrefSystem.CI_GRID)
+        g = CiGrid(sref)
+        assert g.gridref == 'WV16'
 
     def test_4_figures(self):
-        g = CiGrid('WV 12 67')
-        assert g.sref == 'WV1267'
+        sref = Sref(gridref='WV 12 67', srid=SrefSystem.CI_GRID)
+        g = CiGrid(sref)
+        assert g.gridref == 'WV1267'
 
     def test_6_figures(self):
-        g = CiGrid('WV 123 678')
-        assert g.sref == 'WV123678'
+        sref = Sref(gridref='WV 123 678', srid=SrefSystem.CI_GRID)
+        g = CiGrid(sref)
+        assert g.gridref == 'WV123678'
 
     def test_8_figures(self):
-        g = CiGrid('WV 1234 6789')
-        assert g.sref == 'WV12346789'
+        sref = Sref(gridref='WV 1234 6789', srid=SrefSystem.CI_GRID)
+        g = CiGrid(sref)
+        assert g.gridref == 'WV12346789'
 
     def test_10_figures(self):
-        g = CiGrid('WV 12345 67890')
-        assert g.sref == 'WV1234567890'
+        sref = Sref(gridref='WV 12345 67890', srid=SrefSystem.CI_GRID)
+        g = CiGrid(sref)
+        assert g.gridref == 'WV1234567890'
 
     def test_dinty(self):
-        g = CiGrid('WV 16A')
-        assert g.sref == 'WV16A'
+        sref = Sref(gridref='WV 16A', srid=SrefSystem.CI_GRID)
+        g = CiGrid(sref)
+        assert g.gridref == 'WV16A'
 
     def test_value_error(self):
+        sref = Sref(gridref='WV 123', srid=SrefSystem.CI_GRID)
         with pytest.raises(ValueError):
-            CiGrid('WV 123')
+            CiGrid(sref)

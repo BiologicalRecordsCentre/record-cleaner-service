@@ -51,6 +51,9 @@ class IeGrid(SrefBase):
         )):
             raise ValueError("Invalid grid reference for Ireland.")
 
+        # Update the gridref with the clean value.
+        value.gridref = gridref
+
     @classmethod
     def validate_coord(cls, value: Sref):
         """Ensure coordinates are valid."""
@@ -72,7 +75,7 @@ class IeGrid(SrefBase):
 
         hundred_km_e = easting // 100000
         hundred_km_n = northing // 100000
-        index = 65 + ((4 - (hundred_km_n % 5)) * 5) + (easting % 5)
+        index = 65 + ((4 - (hundred_km_n % 5)) * 5) + (hundred_km_e % 5)
         # Shift index along if letter is greater than I, since I is skipped
         if index >= 73:
             index += 1

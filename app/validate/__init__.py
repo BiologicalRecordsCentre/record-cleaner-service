@@ -1,7 +1,7 @@
 from typing import Optional
 
 from fastapi import APIRouter
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 import app.auth as auth
 import app.species.cache as cache
@@ -12,11 +12,10 @@ from app.utilities.vague_dates import VagueDate
 
 
 router = APIRouter()
-vc_checker = VcChecker()
 
 
 class Validate(BaseModel):
-    id: int
+    id: int = Field(ge=1)
     date: str
     sref: Sref
     vc: Optional[str | int] = None
@@ -27,7 +26,7 @@ class ValidateName(Validate):
 
 
 class ValidateTvk(Validate):
-    tvk: str
+    tvk: str = Field(min_length=1)
 
 
 class Validated(Validate):
@@ -70,11 +69,11 @@ async def validate_by_tvk(
 
             # 4. Check sref in vice county.
             if record.vc is not None:
-                code = vc_checker.prepare_code(record.vc)
+                code = VcChecker.prepare_code(record.vc)
                 # Return code if name was supplied.
                 result_data['vc'] = code
-                gridref = vc_checker.prepare_sref(sref.gridref)
-                vc_checker.check(gridref, code)
+                gridref = VcChecker.prepare_sref(sref.gridref)
+                VcChecker.check(gridref, code)
 
             results.append(Validated(**result_data))
 

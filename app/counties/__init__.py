@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, status
 
 import app.auth as auth
+from app.utilities.vice_counties.vc_checker import VcChecker
 
 
 router = APIRouter()
@@ -12,9 +13,12 @@ router = APIRouter()
     summary="Get county with given code.")
 async def read_county_by_code(
         auth: auth.Auth,
-        code: str):
+        code: str | int):
 
-    return {"code": code}
+    return {
+        "code": code,
+        "county": VcChecker.prepare_code(code)
+    }
 
 
 @router.get(
@@ -25,4 +29,7 @@ async def read_county_by_name(
         auth: auth.Auth,
         name: str):
 
-    return {"name": name}
+    return {
+        "code": VcChecker.prepare_code(name),
+        "county": name
+    }

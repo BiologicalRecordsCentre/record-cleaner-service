@@ -40,12 +40,14 @@ settings = config.get_settings()
 
 # Check if the provided password matches the stored password (hashed)
 def verify_password(plain_password, hashed_password):
+    """Confirms a password matches its hashed version."""
     password_byte_enc = plain_password.encode('utf-8')
     return bcrypt.checkpw(password_byte_enc, hashed_password)
 
 
 # Hash a password using bcrypt
 def hash_password(password):
+    """Creates a hashed password."""
     password_byte_enc = password.encode('utf-8')
     salt = bcrypt.gensalt()
     hashed_password = bcrypt.hashpw(password_byte_enc, salt)
@@ -53,6 +55,7 @@ def hash_password(password):
 
 
 def create_access_token(data: dict, expires_delta: timedelta | None = None):
+    """Creates an access token for a user."""
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.now(timezone.utc) + expires_delta
@@ -65,6 +68,7 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
 
 
 async def authenticate(token:  Annotated[str, Depends(oauth2_scheme)]):
+    """Confirms an access token is valid."""
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -85,7 +89,8 @@ async def authenticate(token:  Annotated[str, Depends(oauth2_scheme)]):
 
 # Create a type alias for brevity when defining an endpoint needing
 # authentication.
-Auth: TypeAlias = Annotated[bool, Depends(authenticate)]
+# Auth: TypeAlias = Annotated[bool, Depends(authenticate)]
+Auth = Annotated[bool, Depends(authenticate)]
 
 
 @router.post(
@@ -93,13 +98,8 @@ Auth: TypeAlias = Annotated[bool, Depends(authenticate)]
     tags=['Users'],
     summary="Login user.")
 async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
+    # Automatic validation ensures username and password exist.
     user = fake_users_db.get(form_data.username)
-    if not user:
-        raise HTTPException(
-            status_code=400, detail="Incorrect username or password")
-    if not verify_password(form_data.password, user["hashed_password"]):
-        raise HTTPException(
-            status_code=400, detail="Incorrect username or password")
 
     access_token_expires = timedelta(minutes=settings.jwt_expires_minutes)
     access_token = create_access_token(

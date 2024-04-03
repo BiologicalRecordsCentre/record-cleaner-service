@@ -7,37 +7,50 @@ import pandas as pd
 
 class VcChecker:
 
-    vc_names = None
-    vc_squares = None
+    # Private class variables.
+    __vc_names = None
+    __vc_squares = None
 
-    def __init__(self):
+    @classmethod
+    def load_data(cls):
         basedir = os.path.abspath(os.path.dirname(__file__))
-        # Load the list of vice county names and codes.
-        self.vc_names = pd.read_csv(
-            f'{basedir}/vc_names.csv',
-            sep=',',
-            names=['name', 'code'],
-            converters={'name': lambda x: x.lower()}
-        )
-        # Load the list that relates grid squares to vice counties.
-        self.vc_squares = pd.read_csv(
-            f'{basedir}/vc_squares.csv',
-            sep=',',
-            header=0,
-            names=['gridref', 'vc_dominant', 'vc_count', 'vc_list']
-        )
 
+        # Load the list of vice county names and codes.
+        if cls.__vc_names is None:
+            cls.__vc_names = pd.read_csv(
+                f'{basedir}/vc_names.csv',
+                sep=',',
+                names=['name', 'code'],
+                converters={'name': lambda x: x.lower()}
+            )
+
+        # Load the list that relates grid squares to vice counties.
+        if cls.__vc_squares is None:
+            cls.__vc_squares = pd.read_csv(
+                f'{basedir}/vc_squares.csv',
+                sep=',',
+                header=0,
+                names=['gridref', 'vc_dominant', 'vc_count', 'vc_list']
+            )
+
+    @classmethod
     @lru_cache
-    def prepare_code(self, value: str | int) -> str:
+    def prepare_code(cls, value: str | int) -> str:
         """Takes a supplied VC value and returns a code."""
 
+        # British codes may be passes as int or str.
+        try:
+            value = int(value)
+        except ValueError:
+            pass
+
         # British VC codes are in the range 1 to 112.
-        if value is int:
+        if isinstance(value, int):
             if value > 0 and value < 113:
                 # A valid British VC code was supplied
-                return value
+                return str(value)
             else:
-                raise ValueError('Unrecognised VC value.')
+                raise ValueError('Unrecognised vice county value.')
 
         # Irish VC codes are in the range H1 to H40.
         match_ie = re.match(r'^[H|h] *(?P<num>\d\d?)$', value)
@@ -47,20 +60,21 @@ class VcChecker:
                 # A valid Irish VC code was supplied
                 return 'H' + match_ie['num']
             else:
-                raise ValueError('Unrecognised VC value.')
+                raise ValueError('Unrecognised vice county value.')
 
         # Search the VC names for a match if value was not a code.
         seek = value.lower()
-        df = self.vc_names
-        # Locate in the dataframe of vc_names, the code where the name matches
+        df = cls.__vc_names
+        # Locate in the dataframe of __vc_names, the code where the name matches
         # the entered value.
         series = df.loc[df['name'] == seek, 'code']
         if series.size == 1:
             return series.iloc[0]
         else:
-            raise ValueError('Unrecognised VC value.')
+            raise ValueError('Unrecognised vice county value.')
 
-    def prepare_sref(self, value: str) -> str:
+    @classmethod
+    def prepare_sref(cls, value: str) -> str:
         """Takes a supplied sref and returns a 10km, 2km, or 1km square."""
 
         # Remove the 100km square indicator. Maybe 1 or 2 characters.
@@ -84,8 +98,9 @@ class VcChecker:
             case 10:
                 return prefix + suffix[0:2] + suffix[5:7]
 
+    @classmethod
     @lru_cache
-    def check(self, gridref: str, code: str) -> str:
+    def check(cls, gridref: str, code: str) -> str:
         """Checks whether the supplied gridref could be in the given VC.
 
         The gridref should define a 10km, 2km, or 1km square as output by
@@ -100,7 +115,7 @@ class VcChecker:
             raise ValueError("Validattion of spatial references against Irish "
                              "VCs is not yet supported.")
 
-        df = self.vc_squares
+        df = cls.__vc_squares
         series = df.loc[df['gridref'] == gridref, 'vc_list']
         if series.size == 1:
             # The gridref is in the list so we can check it.
@@ -108,4 +123,4 @@ class VcChecker:
             # for example, and actually okay.
             vc_list = series.iloc[0].split('#')
             if code not in vc_list:
-                raise ValueError("Sref not in VC.")
+                raise ValueError("Sref not in vice county.")

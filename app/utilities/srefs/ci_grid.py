@@ -53,6 +53,9 @@ class CiGrid(SrefBase):
         )):
             raise ValueError("Invalid grid reference for Channel Islands.")
 
+        # Update the gridref with the clean value.
+        value.gridref = gridref
+
     @classmethod
     def validate_coord(cls, value: Sref):
         """Ensure coordinates are valid."""

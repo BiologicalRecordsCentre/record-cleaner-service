@@ -26,9 +26,9 @@ class GbGrid(SrefBase):
                 value.accuracy is not None):
             cls.validate_coord(value)
         else:
-            raise ValueError("""Invalid spatial reference. Either a gridref or
-                             easting, northing and accuracy must be
-                             provided.""")
+            raise ValueError("Invalid spatial reference. Either a gridref or "
+                             "easting, northing and accuracy must be "
+                             "provided.")
 
     @classmethod
     def validate_gridref(cls, value: Sref):
@@ -56,6 +56,7 @@ class GbGrid(SrefBase):
         )):
             raise ValueError("Invalid grid reference for Great Britain.")
 
+        # Update the gridref with the clean value.
         value.gridref = gridref
 
     @classmethod
@@ -63,11 +64,11 @@ class GbGrid(SrefBase):
         """Ensure coordinates are valid."""
 
         if value.easting < 0 or value.easting > 700000:
-            raise ValueError("""Invalid spatial reference. Easting must be
-                             between 0 and 700000""")
+            raise ValueError("Invalid spatial reference. Easting must be "
+                             "between 0 and 700000")
         if value.northing < 0 or value.northing > 1300000:
-            raise ValueError("""Invalid spatial reference. Northing must be
-                             between 0 and 1300000""")
+            raise ValueError("Invalid spatial reference. Northing must be "
+                             "between 0 and 1300000")
 
     def calculate_gridref(self):
         """Calculate grid reference from easting and northing."""

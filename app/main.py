@@ -2,6 +2,7 @@ from fastapi import FastAPI
 
 import app.routes as routes
 from app.database import create_db_and_tables
+from app.utilities.vice_counties.vc_checker import VcChecker
 
 # Instantiate the app.
 app = FastAPI(
@@ -51,6 +52,9 @@ app = FastAPI(
 
 # Create the database tables.
 create_db_and_tables()
+
+# Load the vice county checker fiiles.
+VcChecker.load_data()
 
 # Attach all the routes we serve.
 app.include_router(routes.router)

@@ -15,9 +15,12 @@ class SrefFactory:
             case SrefSystem.CI_GRID:
                 return CiGrid(sref)
             case SrefSystem.GB_NI_CI_GRID:
+                if sref.gridref is None:
+                    raise ValueError("Invalid spatial reference. A gridref "
+                                     "must be provided.")
                 if sref.gridref[:2] == "WA" or sref.gridref[:2] == "WV":
                     return CiGrid(sref)
-                elif self.gridref[1:2].is_numeric():
+                elif sref.gridref[1:2].isnumeric():
                     return IeGrid(sref)
                 else:
                     return GbGrid(sref)

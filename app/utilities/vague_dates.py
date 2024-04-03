@@ -21,12 +21,6 @@ class VagueDate:
         end: datetime
         type: str
 
-    _value = Value({
-        'start': None,
-        'end': None,
-        'type': None
-    })
-
     """
     List of supported date types.
     """
@@ -175,9 +169,9 @@ class VagueDate:
         self.value = value
 
     def __repr__(self):
-        start = self._value['start']
-        end = self._value['end']
-        match self._value['type']:
+        start = self.__value['start']
+        end = self.__value['end']
+        match self.__value['type']:
             case 'D':
                 return start.strftime('%d/%m/%Y')
             case 'DD':
@@ -195,7 +189,7 @@ class VagueDate:
 
     @property
     def value(self):
-        return self._value
+        return self.__value
 
     @value.setter
     def value(self, string):
@@ -254,7 +248,7 @@ class VagueDate:
         if end_precision == DatePrecision.WHOLE_DAY:
             if single_date:
                 # Type is D.
-                self._value = {
+                self.__value = {
                     'start': end_date,
                     'end': end_date,
                     'type': 'D',
@@ -277,7 +271,7 @@ class VagueDate:
                     start_date = start_date.replace(year=end_date.year,
                                                     month=end_date.month)
                 if start_date < end_date:
-                    self._value = {
+                    self.__value = {
                         'start': start_date,
                         'end': end_date,
                         'type': 'DD'
@@ -293,7 +287,7 @@ class VagueDate:
 
             if single_date:
                 # Type is O.
-                self._value = {
+                self.__value = {
                     'start': end_date,
                     'end': end_date.replace(day=last_day),
                     'type': 'O'
@@ -316,7 +310,7 @@ class VagueDate:
                 end_date = end_date.replace(day=last_day)
 
                 if start_date < end_date:
-                    self._value = {
+                    self.__value = {
                         'start': start_date,
                         'end': end_date,
                         'type': 'OO'
@@ -332,7 +326,7 @@ class VagueDate:
 
             if single_date:
                 # Type is Y.
-                self._value = {
+                self.__value = {
                     'start': end_date,
                     'end': end_date.replace(month=12, day=31),
                     'type': 'Y',
@@ -349,7 +343,7 @@ class VagueDate:
                     end_date = end_date.replace(month=12, day=31)
 
                     if start_date < end_date:
-                        self._value = {
+                        self.__value = {
                             'start': start_date,
                             'end': end_date,
                             'type': 'YY',
@@ -359,7 +353,7 @@ class VagueDate:
                                          "be before end date.")
                 else:
                     # Type is -Y.
-                    self._value = {
+                    self.__value = {
                         'start': None,
                         'end': end_date,
                         'type': '-Y',
@@ -368,7 +362,7 @@ class VagueDate:
             raise ValueError('Unreocognised date format.')
 
         # A final check that the date is in the past.
-        if self._value['end'] > datetime.now():
+        if self.__value['end'] > datetime.now():
             raise ValueError('Date is in the future.')
 
     def parse_date(self, string: str, parse_formats: dict):

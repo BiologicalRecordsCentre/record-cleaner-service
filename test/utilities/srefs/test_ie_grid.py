@@ -1,34 +1,42 @@
 import pytest
 
+from app.utilities.srefs import Sref, SrefSystem
 from app.utilities.srefs.ie_grid import IeGrid
 
 
-class TestCiGrid:
+class TestIeGrid:
 
     def test_2_figures(self):
-        g = IeGrid('C 1 6')
-        assert g.sref == 'C16'
+        sref = Sref(gridref='C 1 6', srid=SrefSystem.IE_GRID)
+        g = IeGrid(sref)
+        assert g.gridref == 'C16'
 
     def test_4_figures(self):
-        g = IeGrid('C 12 67')
-        assert g.sref == 'C1267'
+        sref = Sref(gridref='C 12 67', srid=SrefSystem.IE_GRID)
+        g = IeGrid(sref)
+        assert g.gridref == 'C1267'
 
     def test_6_figures(self):
-        g = IeGrid('C 123 678')
-        assert g.sref == 'C123678'
+        sref = Sref(gridref='C 123 678', srid=SrefSystem.IE_GRID)
+        g = IeGrid(sref)
+        assert g.gridref == 'C123678'
 
     def test_8_figures(self):
-        g = IeGrid('C 1234 6789')
-        assert g.sref == 'C12346789'
+        sref = Sref(gridref='C 1234 6789', srid=SrefSystem.IE_GRID)
+        g = IeGrid(sref)
+        assert g.gridref == 'C12346789'
 
     def test_10_figures(self):
-        g = IeGrid('C 12345 67890')
-        assert g.sref == 'C1234567890'
+        sref = Sref(gridref='C 12345 67890', srid=SrefSystem.IE_GRID)
+        g = IeGrid(sref)
+        assert g.gridref == 'C1234567890'
 
     def test_dinty(self):
-        g = IeGrid('C 16A')
-        assert g.sref == 'C16A'
+        sref = Sref(gridref='C 16A', srid=SrefSystem.IE_GRID)
+        g = IeGrid(sref)
+        assert g.gridref == 'C16A'
 
     def test_value_error(self):
+        sref = Sref(gridref='C 123', srid=SrefSystem.IE_GRID)
         with pytest.raises(ValueError):
-            IeGrid('C123')
+            IeGrid(sref)
