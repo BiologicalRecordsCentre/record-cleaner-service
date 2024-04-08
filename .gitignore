@@ -1,4 +1,14 @@
-.vscode
+# Environment files
+.venv
 .env
+
+# Compiled files
+.pytest_cache
 __pycache__/
-database.db
+
+# Data files
+data/
+
+# IDE files
+.vscode
+.idea

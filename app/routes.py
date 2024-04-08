@@ -3,6 +3,7 @@ from pydantic import BaseModel
 
 import app.auth as auth
 import app.main as main
+import app.rules as rules
 import app.species as species
 import app.validate as validate
 import app.users as users
@@ -18,6 +19,7 @@ class Service(BaseModel):
 # Instantiate a router.
 router = APIRouter()
 router.include_router(auth.router)
+router.include_router(rules.router)
 router.include_router(species.router)
 router.include_router(validate.router)
 router.include_router(users.router)

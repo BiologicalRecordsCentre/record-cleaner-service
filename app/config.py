@@ -11,6 +11,10 @@ class Settings(BaseSettings):
     indicia_rest_user: str
     indicia_rest_password: str
     indicia_taxon_list_id: int
+    rules_repo: str
+    rules_branch: str
+    rules_dir: str
+    rules_subdir: str
 
     model_config = SettingsConfigDict(env_file=".env")
 

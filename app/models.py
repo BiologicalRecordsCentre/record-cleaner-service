@@ -15,9 +15,18 @@ class Taxon(SQLModel, table=True):
 
 class Rule(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
+    scheme: str
+    group: str
     tvk: str
+    preferred_tvk: str = Field(index=True)
     name: str
-    id_diff: int
+    difficulty_rule_id: int
+
+
+class DifficultyRule(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    value_code: int
+    text: str
 
 
 class PeriodRule(SQLModel, table=True):
