@@ -4,6 +4,8 @@ import subprocess
 
 import app.config as config
 
+from .id_difficulty import IdDifficulty
+
 settings = config.get_settings()
 
 basedir = os.path.abspath(os.path.dirname(__file__))
@@ -151,18 +153,18 @@ def list_rules():
                     case 'additional.csv':
                         tests.append('Additional Verification')
 
-        result[idx][society][group] = tests
+            result[idx][society][group] = tests
 
     return result
 
 
-def list_rule_folders():
-    """Lists the folders in which rules are stored."""
+def load_database():
+    """Loads the rule files in to the database."""
 
-    folders = []
     society_groups_list = list_society_groups()
     for society_groups in society_groups_list:
         society, groups = society_groups.popitem()
         for group in groups:
             groupdir = os.path.join(rulesdir, society, group)
-            folders.append(groupdir)
+
+            IdDifficulty.load_file(society, group, groupdir)

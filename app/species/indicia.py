@@ -292,22 +292,14 @@ def make_search_request(params: dict) -> dict:
         r = requests.get(url, params=params,
                          auth=IndiciaAuth(settings.indicia_rest_password))
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail={'message': "Indicia API connection error. Unable to "
-                    "look up species information from Indicia.",
-                    'detail': str(e)}
-        )
+        e.add_note("Indicia API connection error. Unable to "
+                   "look up species information from Indicia.")
+        raise
     else:
         if r.status_code == requests.codes.ok:
             return r.json()
         else:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail={
-                    'message': 'Indicia API error',
-                    'detail': r.json()
-                })
+            raise Exception("Indicia API error. " + r.json())
 
 
 def parse_response_full(response: dict) -> IndiciaResponse:

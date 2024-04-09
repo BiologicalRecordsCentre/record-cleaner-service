@@ -20,12 +20,13 @@ class Rule(SQLModel, table=True):
     tvk: str
     preferred_tvk: str = Field(index=True)
     name: str
-    difficulty_rule_id: int
+    difficulty_rule_id: int | None = Field(
+        default=None, foreign_key='difficultyrule.id')
 
 
 class DifficultyRule(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
-    value_code: int
+    code: int
     text: str
 
 
