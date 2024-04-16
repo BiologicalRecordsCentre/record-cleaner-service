@@ -2,16 +2,14 @@ import os
 import shutil
 import subprocess
 
-import app.config as config
+from app.settings import settings
 
 from .id_difficulty import IdDifficulty
 
-settings = config.get_settings()
-
 basedir = os.path.abspath(os.path.dirname(__file__))
 datadir = os.path.join(basedir, 'data')
-gitdir = os.path.join(datadir, settings.rules_dir)
-rulesdir = os.path.join(gitdir, settings.rules_subdir)
+gitdir = os.path.join(datadir, settings.env.rules_dir)
+rulesdir = os.path.join(gitdir, settings.env.rules_subdir)
 
 
 def update():
@@ -38,10 +36,10 @@ def update():
                     'git',
                     'clone',
                     '--no-checkout',
-                    '--branch=' + settings.rules_branch,
+                    '--branch=' + settings.env.rules_branch,
                     '--depth=1',
                     '--filter=tree:0',
-                    settings.rules_repo
+                    settings.env.rules_repo
                 ],
                 cwd=datadir
             )
@@ -52,14 +50,14 @@ def update():
                     'git',
                     'sparse-checkout',
                     'set',
-                    settings.rules_subdir
+                    settings.env.rules_subdir
                 ],
                 cwd=gitdir
             )
 
             # Checkout branch.
             subprocess.check_call(
-                ['git', 'checkout', settings.rules_branch],
+                ['git', 'checkout', settings.env.rules_branch],
                 cwd=gitdir
             )
 
@@ -91,54 +89,54 @@ def update():
         raise Exception(e)
 
 
-def list_society_groups():
+def list_organisation_groups():
     """Lists the rule groups based on the directory structure.
 
     Returns
     [
-        {"society1": [group1, group2, ...]},
-        {"society2": [group1, group2, ...]},
+        {"organisation1": [group1, group2, ...]},
+        {"organisation2": [group1, group2, ...]},
         ...
     ]
     """
 
     result = []
 
-    # Top level folder is the society.
-    societies = []
-    for society in os.scandir(rulesdir):
-        if society.is_dir():
-            societies.append(society.name)
-    societies.sort()
+    # Top level folder is the organisation.
+    organisations = []
+    for organisation in os.scandir(rulesdir):
+        if organisation.is_dir():
+            organisations.append(organisation.name)
+    organisations.sort()
 
-    # Second level folder is a group within the society.
-    for idx, society in enumerate(societies):
-        societydir = os.path.join(rulesdir, society)
+    # Second level folder is a group within the organisation.
+    for idx, organisation in enumerate(organisations):
+        organisationdir = os.path.join(rulesdir, organisation)
 
         groups = []
-        for group in os.scandir(societydir):
+        for group in os.scandir(organisationdir):
             if group.is_dir():
                 groups.append(group.name)
         groups.sort()
 
-        result.append({society: groups})
+        result.append({organisation: groups})
 
     return result
 
 
 def list_rules():
-    """Lists the rules types for society groups."""
+    """Lists the rules types for organisation groups."""
 
     result = []
 
-    society_groups_list = list_society_groups()
+    organisation_groups_list = list_organisation_groups()
 
-    for idx, society_groups in enumerate(society_groups_list):
-        society, groups = society_groups.popitem()
-        result.append({society: {}})
+    for idx, organisation_groups in enumerate(organisation_groups_list):
+        organisation, groups = organisation_groups.popitem()
+        result.append({organisation: {}})
 
         for group in groups:
-            groupdir = os.path.join(rulesdir, society, group)
+            groupdir = os.path.join(rulesdir, organisation, group)
 
             # Rules are in files within the group folder.
             tests = []
@@ -153,7 +151,7 @@ def list_rules():
                     case 'additional.csv':
                         tests.append('Additional Verification')
 
-            result[idx][society][group] = tests
+            result[idx][organisation][group] = tests
 
     return result
 
@@ -161,10 +159,10 @@ def list_rules():
 def load_database():
     """Loads the rule files in to the database."""
 
-    society_groups_list = list_society_groups()
-    for society_groups in society_groups_list:
-        society, groups = society_groups.popitem()
+    organisation_groups_list = list_organisation_groups()
+    for organisation_groups in organisation_groups_list:
+        organisation, groups = organisation_groups.popitem()
         for group in groups:
-            groupdir = os.path.join(rulesdir, society, group)
+            groupdir = os.path.join(rulesdir, organisation, group)
 
-            IdDifficulty.load_file(society, group, groupdir)
+            IdDifficulty.load_file(organisation, group, groupdir)

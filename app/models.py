@@ -3,6 +3,12 @@ from typing import Optional
 from sqlmodel import Field, SQLModel
 
 
+class System(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    key: str = Field(index=True)
+    value: str
+
+
 class Taxon(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     tvk: str = Field(index=True)
@@ -13,10 +19,16 @@ class Taxon(SQLModel, table=True):
     rule_id: Optional[int]
 
 
+class OrgGroup(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    organisation: str
+    group: str
+
+
 class Rule(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
-    scheme: str
-    group: str
+    org_group_id: int | None = Field(
+        default=None, foreign_key='orggroup.id')
     tvk: str
     preferred_tvk: str = Field(index=True)
     name: str
@@ -26,6 +38,8 @@ class Rule(SQLModel, table=True):
 
 class DifficultyRule(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
+    org_group_id: int | None = Field(
+        default=None, foreign_key='orggroup.id')
     code: int
     text: str
 

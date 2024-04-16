@@ -3,6 +3,8 @@ from fastapi.testclient import TestClient
 import app.auth as auth
 from app.main import app
 
+from ..mocks import mock_make_search_request
+
 client = TestClient(app)
 
 # Override authentication to allow unauthenticated requests.
@@ -50,7 +52,13 @@ class TestValidateByTvk:
         )
         assert response.status_code == 422
 
-    def test_syntactically_valid_record(self):
+    def test_syntactically_valid_record(self, mocker):
+        # Mock the Indicia warehouse.
+        mocker.patch(
+            'app.species.indicia.make_search_request',
+            mock_make_search_request
+        )
+
         response = client.post(
             "/validate/records_by_tvk",
             json=[{
@@ -64,39 +72,57 @@ class TestValidateByTvk:
         assert not response.json()[0]['ok']
         assert response.json()[0]['message'] == "TVK not recognised."
 
-    def test_valid_tvk(self):
+    def test_valid_tvk(self, mocker):
+        # Mock the Indicia warehouse.
+        mocker.patch(
+            'app.species.indicia.make_search_request',
+            mock_make_search_request
+        )
+
         response = client.post(
             "/validate/records_by_tvk",
             json=[{
                 "id": 1,
                 "date": "",
                 "sref": {"srid": 0},
-                "tvk": "NHMSYS0000530739"
+                "tvk": "NBNSYS0000008319"
             }]
         )
         assert response.status_code == 200
-        assert response.json()[0]['name'] == "Erithacus rubecula"
+        assert response.json()[0]['name'] == "Adalia bipunctata"
         assert not response.json()[0]['ok']
         assert response.json()[0]['message'] == "Unreocognised date format."
 
-    def test_valid_date(self):
+    def test_valid_date(self, mocker):
+        # Mock the Indicia warehouse.
+        mocker.patch(
+            'app.species.indicia.make_search_request',
+            mock_make_search_request
+        )
+
         response = client.post(
             "/validate/records_by_tvk",
             json=[{
                 "id": 1,
                 "date": "3/4/2024",
                 "sref": {"srid": 0},
-                "tvk": "NHMSYS0000530739"
+                "tvk": "NBNSYS0000008319"
             }]
         )
         assert response.status_code == 200
-        assert response.json()[0]['name'] == "Erithacus rubecula"
+        assert response.json()[0]['name'] == "Adalia bipunctata"
         assert response.json()[0]['date'] == "03/04/2024"
         assert not response.json()[0]['ok']
         assert response.json()[0]['message'] == (
             "Invalid spatial reference. A gridref must be provided.")
 
-    def test_valid_gridref(self):
+    def test_valid_gridref(self, mocker):
+        # Mock the Indicia warehouse.
+        mocker.patch(
+            'app.species.indicia.make_search_request',
+            mock_make_search_request
+        )
+
         response = client.post(
             "/validate/records_by_tvk",
             json=[{
@@ -106,17 +132,23 @@ class TestValidateByTvk:
                     "srid": 0,
                     "gridref": "TL 123 456"
                 },
-                "tvk": "NHMSYS0000530739"
+                "tvk": "NBNSYS0000008319"
             }]
         )
         assert response.status_code == 200
-        assert response.json()[0]['name'] == "Erithacus rubecula"
+        assert response.json()[0]['name'] == "Adalia bipunctata"
         assert response.json()[0]['date'] == "03/04/2024"
         assert response.json()[0]['sref']['gridref'] == "TL123456"
         assert response.json()[0]['ok']
         assert response.json()[0]['message'] is None
 
-    def test_invalid_vc(self):
+    def test_invalid_vc(self, mocker):
+        # Mock the Indicia warehouse.
+        mocker.patch(
+            'app.species.indicia.make_search_request',
+            mock_make_search_request
+        )
+
         response = client.post(
             "/validate/records_by_tvk",
             json=[{
@@ -126,19 +158,25 @@ class TestValidateByTvk:
                     "srid": 0,
                     "gridref": "TL 123 456"
                 },
-                "tvk": "NHMSYS0000530739",
+                "tvk": "NBNSYS0000008319",
                 "vc": 1
             }]
         )
         assert response.status_code == 200
-        assert response.json()[0]['name'] == "Erithacus rubecula"
+        assert response.json()[0]['name'] == "Adalia bipunctata"
         assert response.json()[0]['date'] == "03/04/2024"
         assert response.json()[0]['sref']['gridref'] == "TL123456"
         assert response.json()[0]['vc'] == "1"
         assert not response.json()[0]['ok']
         assert response.json()[0]['message'] == "Sref not in vice county."
 
-    def test_valid_vc(self):
+    def test_valid_vc(self, mocker):
+        # Mock the Indicia warehouse.
+        mocker.patch(
+            'app.species.indicia.make_search_request',
+            mock_make_search_request
+        )
+
         response = client.post(
             "/validate/records_by_tvk",
             json=[{
@@ -148,12 +186,12 @@ class TestValidateByTvk:
                     "srid": 0,
                     "gridref": "TL 123 456"
                 },
-                "tvk": "NHMSYS0000530739",
+                "tvk": "NBNSYS0000008319",
                 "vc": "Bedfordshire"
             }]
         )
         assert response.status_code == 200
-        assert response.json()[0]['name'] == "Erithacus rubecula"
+        assert response.json()[0]['name'] == "Adalia bipunctata"
         assert response.json()[0]['date'] == "03/04/2024"
         assert response.json()[0]['sref']['gridref'] == "TL123456"
         assert response.json()[0]['vc'] == "30"

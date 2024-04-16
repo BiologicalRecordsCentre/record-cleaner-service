@@ -1,11 +1,13 @@
-from typing import Optional
-
 from fastapi import APIRouter, HTTPException, status
-from pydantic import BaseModel
+from sqlmodel import Session, select
+
 
 import app.auth as auth
+from app.database import engine
+from app.models import Rule
 
-from . import rules
+# from . import rules
+import app.rules.rules as rules
 
 router = APIRouter()
 
@@ -28,7 +30,7 @@ async def update_rules(token: auth.Auth):
 
 
 @router.get(
-    "/rules/list",
+    "/rulesets",
     tags=['Rules'],
     summary="List rulesets."
 )
@@ -42,6 +44,43 @@ async def list_rules():
             detail=str(e))
     else:
         return result
+
+
+@router.get(
+    "/rules",
+    tags=['Rules'],
+    summary="List rules.",
+    response_model=list[Rule])
+# async def read_rules(token: auth.Auth):
+async def read_rules():
+    with Session(engine) as session:
+        rules = session.exec(
+            select(Rule).order_by(Rule.organisation, Rule.group, Rule.name)
+        ).all()
+
+    return rules
+
+
+@router.get(
+    "/rules/{tvk}",
+    tags=['Rules'],
+    summary="Get rules by TVK.",
+    response_model=list[Rule])
+async def read_rule(
+        auth: auth.Auth,
+        tvk: str):
+    with Session(engine) as session:
+        rules = session.exec(
+            select(Rule)
+            .where(Rule.preferred_tvk == tvk)
+            .order_by(Rule.organisation, Rule.group, Rule.name)
+        ).all()
+    if len(rules) == 0:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"No rule found for tvk {tvk}.")
+
+    return rules
 
 
 @router.get(

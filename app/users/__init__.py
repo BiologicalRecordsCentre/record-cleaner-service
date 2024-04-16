@@ -4,8 +4,8 @@ from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel
 from sqlmodel import Session, select, delete
 
-from app.database import engine
 import app.auth as auth
+from app.database import engine
 from app.models import User
 
 router = APIRouter()

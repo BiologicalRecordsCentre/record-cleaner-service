@@ -1,7 +1,8 @@
-def mock_make_search_request(tvk):
-    match tvk:
+def mock_make_search_request(params: dict) -> dict:
+
+    match params['external_key']:
         case 'NBNSYS0000008319':
-            return {
+            return {'data': [{
                 'taxa_taxon_list_id': '4489',
                 'searchterm': 'Adalia bipunctata (Linnaeus, 1758)',
                 'original': 'Adalia bipunctata',
@@ -22,9 +23,9 @@ def mock_make_search_request(tvk):
                 'identification_difficulty': '1',
                 'id_diff_verification_rule_id': '1',
                 'taxon_rank': 'Species'
-            }
+            }]}
         case 'NBNSYS0000008320':
-            return {
+            return {'data': [{
                 'taxa_taxon_list_id': '4493',
                 'searchterm': 'Adalia decempunctata (Linnaeus, 1758)',
                 'original': 'Adalia decempunctata',
@@ -45,9 +46,9 @@ def mock_make_search_request(tvk):
                 'identification_difficulty': '1',
                 'id_diff_verification_rule_id': '1',
                 'taxon_rank': 'Species'
-            }
+            }]}
         case 'NBNSYS0000008323':
-            return {
+            return {'data': [{
                 'taxa_taxon_list_id': '76130',
                 'searchterm': 'Coccinella quinquepunctata Linnaeus, 1758',
                 'original': 'Coccinella quinquepunctata',
@@ -66,9 +67,10 @@ def mock_make_search_request(tvk):
                 'parent_id': '76113',
                 'identification_difficulty': '3',
                 'id_diff_verification_rule_id': '1',
-                'taxon_rank': 'Species'}
+                'taxon_rank': 'Species'
+            }]}
         case 'NBNSYS0000008324':
-            return {
+            return {'data': [{
                 'taxa_taxon_list_id': '76131',
                 'searchterm': 'Coccinella septempunctata Linnaeus, 1758',
                 'original': 'Coccinella septempunctata',
@@ -89,9 +91,9 @@ def mock_make_search_request(tvk):
                 'identification_difficulty': '1',
                 'id_diff_verification_rule_id': '1',
                 'taxon_rank': 'Species'
-            }
+            }]}
         case 'NBNSYS0000008325':
-            return {
+            return {'data': [{
                 'taxa_taxon_list_id': '76134',
                 'searchterm': 'Coccinella undecimpunctata Linnaeus, 1758',
                 'original': 'Coccinella undecimpunctata',
@@ -112,4 +114,6 @@ def mock_make_search_request(tvk):
                 'identification_difficulty': '1',
                 'id_diff_verification_rule_id': '1',
                 'taxon_rank': 'Species'
-            }
+            }]}
+        case _:
+            return {'data': []}

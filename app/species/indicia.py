@@ -7,11 +7,10 @@ from typing import Annotated, Optional
 from fastapi import APIRouter, Query, HTTPException, status
 from pydantic import BaseModel
 
-import app.config as config
+from app.settings import settings
 import app.auth as auth
 from app.models import Taxon
 
-settings = config.get_settings()
 router = APIRouter()
 
 

@@ -7,7 +7,7 @@ from jose import JWTError, jwt
 import bcrypt
 from pydantic import BaseModel
 
-import app.config as config
+from app.settings import settings
 
 fake_users_db = {
     "johndoe": {
@@ -34,11 +34,9 @@ router = APIRouter()
 # Set /token as the path to log in.
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
-# Load private settings from .env file.
-settings = config.get_settings()
-
-
 # Check if the provided password matches the stored password (hashed)
+
+
 def verify_password(plain_password, hashed_password):
     """Confirms a password matches its hashed version."""
     password_byte_enc = plain_password.encode('utf-8')
@@ -62,8 +60,8 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
     else:
         expire = datetime.now(timezone.utc) + timedelta(minutes=15)
     to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, settings.jwt_key,
-                             algorithm=settings.jwt_algorithm)
+    encoded_jwt = jwt.encode(to_encode, settings.env.jwt_key,
+                             algorithm=settings.env.jwt_algorithm)
     return encoded_jwt
 
 
@@ -75,8 +73,8 @@ async def authenticate(token:  Annotated[str, Depends(oauth2_scheme)]):
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
-        payload = jwt.decode(token, settings.jwt_key,
-                             algorithms=[settings.jwt_algorithm])
+        payload = jwt.decode(token, settings.env.jwt_key,
+                             algorithms=[settings.env.jwt_algorithm])
         username: str = payload.get("sub")
         if username is None:
             raise credentials_exception
@@ -101,7 +99,7 @@ async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
     # Automatic validation ensures username and password exist.
     user = fake_users_db.get(form_data.username)
 
-    access_token_expires = timedelta(minutes=settings.jwt_expires_minutes)
+    access_token_expires = timedelta(minutes=settings.env.jwt_expires_minutes)
     access_token = create_access_token(
         data={"sub": user["username"]}, expires_delta=access_token_expires
     )

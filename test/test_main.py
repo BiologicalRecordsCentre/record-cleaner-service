@@ -1,7 +1,6 @@
-import app.main as main
+from app.main import settings
 
 
 class TestSettings:
-    def test_get_settings(self):
-        settings = main.get_settings()
+    def test_settings(self):
         assert settings.indicia_url == "http://localhost:8080"
