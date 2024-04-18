@@ -5,7 +5,6 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 import bcrypt
-from pydantic import BaseModel
 
 from app.settings import settings
 
@@ -87,8 +86,7 @@ async def authenticate(token:  Annotated[str, Depends(oauth2_scheme)]):
 
 # Create a type alias for brevity when defining an endpoint needing
 # authentication.
-# Auth: TypeAlias = Annotated[bool, Depends(authenticate)]
-Auth = Annotated[bool, Depends(authenticate)]
+Auth: TypeAlias = Annotated[bool, Depends(authenticate)]
 
 
 @router.post(

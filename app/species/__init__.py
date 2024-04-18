@@ -5,7 +5,7 @@ import app.species.cache as cache
 # Indicia is the current source of taxon data but one day, maybe, there will
 # be a UKSI API. For this reason, it is abstracted into its own module.
 import app.species.indicia as driver
-from app.models import Taxon
+from app.sqlmodels import Taxon
 
 router = APIRouter()
 router.include_router(driver.router)

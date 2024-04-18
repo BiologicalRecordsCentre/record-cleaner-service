@@ -3,7 +3,7 @@ from sqlmodel import Session, func, select, delete
 
 from app.database import engine
 import app.auth as auth
-from app.models import Rule
+from app.sqlmodels import Rule
 
 router = APIRouter()
 

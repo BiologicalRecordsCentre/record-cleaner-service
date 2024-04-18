@@ -1,15 +1,18 @@
+import app.rules.rules as rules
+from .difficulty import router as difficulty_router
+from .org_group import router as org_group_router
 from fastapi import APIRouter, HTTPException, status
 from sqlmodel import Session, select
 
 
 import app.auth as auth
 from app.database import engine
-from app.models import Rule
+# from app.sqlmodels import Rule
 
-# from . import rules
-import app.rules.rules as rules
 
 router = APIRouter()
+router.include_router(difficulty_router)
+router.include_router(org_group_router)
 
 
 @router.get(
@@ -46,41 +49,41 @@ async def list_rules():
         return result
 
 
-@router.get(
-    "/rules",
-    tags=['Rules'],
-    summary="List rules.",
-    response_model=list[Rule])
-# async def read_rules(token: auth.Auth):
-async def read_rules():
-    with Session(engine) as session:
-        rules = session.exec(
-            select(Rule).order_by(Rule.organisation, Rule.group, Rule.name)
-        ).all()
+# @router.get(
+#     "/rules",
+#     tags=['Rules'],
+#     summary="List rules.",
+#     response_model=list[Rule])
+# # async def read_rules(token: auth.Auth):
+# async def read_rules():
+#     with Session(engine) as session:
+#         rules = session.exec(
+#             select(Rule).order_by(Rule.organisation, Rule.group, Rule.name)
+#         ).all()
 
-    return rules
+#     return rules
 
 
-@router.get(
-    "/rules/{tvk}",
-    tags=['Rules'],
-    summary="Get rules by TVK.",
-    response_model=list[Rule])
-async def read_rule(
-        auth: auth.Auth,
-        tvk: str):
-    with Session(engine) as session:
-        rules = session.exec(
-            select(Rule)
-            .where(Rule.preferred_tvk == tvk)
-            .order_by(Rule.organisation, Rule.group, Rule.name)
-        ).all()
-    if len(rules) == 0:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"No rule found for tvk {tvk}.")
+# @router.get(
+#     "/rules/{tvk}",
+#     tags=['Rules'],
+#     summary="Get rules by TVK.",
+#     response_model=list[Rule])
+# async def read_rule(
+#         auth: auth.Auth,
+#         tvk: str):
+#     with Session(engine) as session:
+#         rules = session.exec(
+#             select(Rule)
+#             .where(Rule.preferred_tvk == tvk)
+#             .order_by(Rule.organisation, Rule.group, Rule.name)
+#         ).all()
+#     if len(rules) == 0:
+#         raise HTTPException(
+#             status_code=status.HTTP_404_NOT_FOUND,
+#             detail=f"No rule found for tvk {tvk}.")
 
-    return rules
+#     return rules
 
 
 @router.get(

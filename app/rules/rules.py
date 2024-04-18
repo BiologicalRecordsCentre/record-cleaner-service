@@ -1,10 +1,19 @@
+import datetime
 import os
 import shutil
 import subprocess
 
-from app.settings import settings
+from sqlmodel import Session, select
 
-from .id_difficulty import IdDifficulty
+from app.database import engine
+from app.settings import settings
+from app.sqlmodels import OrgGroup
+
+
+from .difficulty.difficulty_code_repo import DifficultyCodeRepo
+from .difficulty.difficulty_rule_repo import DifficultyRuleRepo
+from .org_group.org_group_repo import OrgGroupRepo
+# from .id_difficulty import IdDifficulty
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 datadir = os.path.join(basedir, 'data')
@@ -164,5 +173,17 @@ def load_database():
         organisation, groups = organisation_groups.popitem()
         for group in groups:
             groupdir = os.path.join(rulesdir, organisation, group)
+            org_group = OrgGroupRepo.get_or_create(organisation, group)
+            rules_commit = settings.db.rules_commmit
+            loading_time = datetime.datetime.now().isoformat()
 
-            IdDifficulty.load_file(organisation, group, groupdir)
+            DifficultyCodeRepo.load_file(groupdir, org_group.id, rules_commit)
+            org_group.difficulty_code_update = loading_time
+
+            DifficultyRuleRepo.load_file(groupdir, org_group.id, rules_commit)
+            org_group.difficulty_rule_update = loading_time
+
+            # Save update times to OrgGroup record.
+            with Session(engine) as session:
+                session.add(org_group)
+                session.commit()

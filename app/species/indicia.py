@@ -9,7 +9,7 @@ from pydantic import BaseModel
 
 from app.settings import settings
 import app.auth as auth
-from app.models import Taxon
+from app.sqlmodels import Taxon
 
 router = APIRouter()
 

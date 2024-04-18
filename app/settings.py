@@ -5,7 +5,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlmodel import Session, select
 
 from app.database import engine
-from app.models import System
+from app.sqlmodels import System
 
 
 class EnvSettings(BaseSettings):
@@ -28,7 +28,15 @@ class DbSetting:
     """A descriptor for database settings."""
 
     def __init__(self, default):
+        # A default value to use if the setting is not yet in the database.
         self.default = default
+        # A function to convert from database storage back to python type.
+        if type(default) is bool:
+            self.convert = lambda x: bool(int(x))
+        elif type(default) is int:
+            self.convert = lambda x: int(x)
+        else:
+            self.convert = lambda x: str(x)
 
     def __set_name__(self, owner, name):
         self.name = name
@@ -45,7 +53,8 @@ class DbSetting:
                 if response is None:
                     value = self.default
                 else:
-                    value = response.value
+                    value = self.convert(response.value)
+
             setattr(obj, self.obj_name, value)
         return value
 

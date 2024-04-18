@@ -3,7 +3,7 @@ from sqlmodel import Session, func, select, delete
 
 from app.database import engine
 import app.auth as auth
-from app.models import Taxon
+from app.sqlmodels import Taxon
 import app.species.indicia as driver
 
 router = APIRouter()

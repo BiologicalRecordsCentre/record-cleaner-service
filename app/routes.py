@@ -44,8 +44,9 @@ async def read_service():
         version=app.app.version,
         summary=app.app.summary,
         docs_url=app.app.docs_url,
-        maintenance_mode=bool(int(settings.db.maintenance_mode)),
-        maintenance_message=str(settings.db.maintenance_message))
+        maintenance_mode=settings.db.maintenance_mode,
+        maintenance_message=settings.db.maintenance_message
+    )
 
 
 @router.post(

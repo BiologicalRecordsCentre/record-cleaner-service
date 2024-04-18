@@ -61,8 +61,11 @@ async def maintenance_middleware(request: Request, call_next):
     """Middleware to handle maintenance mode."""
     if (
         settings.db.maintenance_mode and
-        request['path'] != "/maintenance" and
-        request['path'] != "/"
+        request['path'] != '/' and
+        request['path'] != '/token' and
+        request['path'] != '/maintenance' and
+        request['path'] != '/docs' and
+        request['path'] != '/openapi.json'
     ):
         data = {"message": settings.db.maintenance_message}
         return JSONResponse(

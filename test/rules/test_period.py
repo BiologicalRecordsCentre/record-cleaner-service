@@ -1,4 +1,4 @@
-import app.rules.period as period
+import app.rules.period.period as period
 
 
 class TestInPeriod:

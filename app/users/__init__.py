@@ -6,7 +6,7 @@ from sqlmodel import Session, select, delete
 
 import app.auth as auth
 from app.database import engine
-from app.models import User
+from app.sqlmodels import User
 
 router = APIRouter()
 

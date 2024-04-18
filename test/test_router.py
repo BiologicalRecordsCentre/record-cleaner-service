@@ -34,10 +34,11 @@ def test_maintenance():
     response = client.post(
         "/maintenance",
         json={'mode': False, 'message': 'Service on'}
+    )
     assert response.status_code == status.HTTP_200_OK
     assert response.json() == {'mode': False, 'message': 'Service on'}
     # Confirm routes enabled.
-    response=client.post(
+    response = client.post(
         "/token",
         json={'username': 'test', 'password': 'test'}
     )
