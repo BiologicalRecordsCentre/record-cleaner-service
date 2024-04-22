@@ -2,14 +2,14 @@ import os
 
 from sqlmodel import Session
 
-from app.rules.difficulty.difficulty_rule_repo import DifficultyRuleRepo
-from app.sqlmodels import OrgGroup, Taxon, DifficultyCode
+from app.rules.tenkm.tenkm_rule_repo import TenkmRuleRepo
+from app.sqlmodels import OrgGroup, Taxon
 
 
-class TestDifficultyCodeRepo:
+class TestTenkmRuleRepo:
     """Tests of the repo class."""
 
-    def test_difficulty_rule_repo(self, session: Session):
+    def test_tenkm_rule_repo(self, session: Session):
         # Create org_groups.
         org_group1 = OrgGroup(organisation='organisation1', group='group1')
         org_group2 = OrgGroup(organisation='organisation2', group='group2')
@@ -46,70 +46,61 @@ class TestDifficultyCodeRepo:
         session.refresh(taxon2)
         session.refresh(taxon3)
 
-        # Create difficulty codes.
-        difficulty_code1 = DifficultyCode(
-            code=1,
-            text='Easy',
-            org_group_id=org_group1.id
-        )
-        difficulty_code2 = DifficultyCode(
-            code=2,
-            text='Hard',
-            org_group_id=org_group2.id
-        )
-        session.add(difficulty_code1)
-        session.add(difficulty_code2)
-        session.commit()
-        session.refresh(difficulty_code1)
-        session.refresh(difficulty_code2)
-
         # Locate the directory of test data.
         thisdir = os.path.abspath(os.path.dirname(__file__))
         dir = os.path.join(thisdir, 'testdata')
 
         # Load a file.
-        repo = DifficultyRuleRepo(session)
+        repo = TenkmRuleRepo(session)
         errors = repo.load_file(
-            dir, org_group1.id, 'abc123', 'id_difficulty_3.csv')
+            dir, org_group1.id, 'abc123', 'tenkm_3.csv')
         assert (errors == [])
 
         # Check the results by org_group.
         result = repo.list_by_org_group(org_group1.id)
-        assert (result == [
-            {'tvk': taxon1.tvk, 'taxon': taxon1.name, 'difficulty': 1},
-            {'tvk': taxon2.tvk, 'taxon': taxon2.name, 'difficulty': 1},
-            {'tvk': taxon3.tvk, 'taxon': taxon3.name, 'difficulty': 1}
-        ])
+        assert result[0]['tvk'] == taxon1.tvk
+        assert result[0]['taxon'] == taxon1.name
+        assert result[0]['km100'] == 'NH'
+        assert result[0]['km10'] == '01'
+        assert result[0]['coord_system'] == 'OSGB'
+        assert result[1]['tvk'] == taxon2.tvk
+        assert result[1]['taxon'] == taxon2.name
+        assert result[1]['km100'] == 'J'
+        assert result[1]['km10'] == '11 12'
+        assert result[1]['coord_system'] == 'OSNI'
+        assert result[2]['tvk'] == taxon3.tvk
+        assert result[2]['taxon'] == taxon3.name
+        assert result[2]['km100'] == 'WV'
+        assert result[2]['km10'] == '64 65 66'
+        assert result[2]['coord_system'] == 'CI'
 
         # Load a shorter file.
         errors = repo.load_file(
-            dir, org_group1.id, 'xyz321', 'id_difficulty_1.csv')
+            dir, org_group1.id, 'xyz321', 'tenkm_1.csv')
         assert (errors == [])
 
         # Check the results by org_group.
         result = repo.list_by_org_group(org_group1.id)
-        assert (result == [
-            {'tvk': taxon1.tvk, 'taxon': taxon1.name, 'difficulty': 1}
-        ])
+        assert result[0]['tvk'] == taxon1.tvk
+        assert result[0]['taxon'] == taxon1.name
+        assert result[0]['km100'] == 'SP'
+        assert result[0]['km10'] == '99'
+        assert result[0]['coord_system'] == 'OSGB'
 
-        # Load a difficulty rule of the same taxon to another org_group.
+        # Load a period rule of the same taxon to another org_group.
         errors = repo.load_file(
-            dir, org_group2.id, 'pqr987', 'id_difficulty_1_2.csv')
+            dir, org_group2.id, 'pqr987', 'tenkm_1_2.csv')
         assert (errors == [])
 
         # Check the results by tvk.
         result = repo.list_by_tvk(taxon1.tvk)
-        assert (result == [
-            {
-                'organisation': org_group1.organisation,
-                'group': org_group1.group,
-                'difficulty': difficulty_code1.code,
-                'text': difficulty_code1.text
-            },
-            {
-                'organisation': org_group2.organisation,
-                'group': org_group2.group,
-                'difficulty': difficulty_code2.code,
-                'text': difficulty_code2.text
-            }
-        ])
+        assert result[0]['organisation'] == org_group1.organisation
+        assert result[0]['group'] == org_group1.group
+        assert result[0]['km100'] == 'SP'
+        assert result[0]['km10'] == '99'
+        assert result[0]['coord_system'] == 'OSGB'
+        assert result[1]['organisation'] == org_group2.organisation
+        assert result[1]['group'] == org_group2.group
+        assert result[1]['km100'] == 'SP'
+        assert result[1]['km10'] == '98'
+        assert result[1]['coord_system'] == 'OSGB'

@@ -1,18 +1,24 @@
 import app.rules.rules as rules
+from .additional import router as additional_router
 from .difficulty import router as difficulty_router
 from .org_group import router as org_group_router
+from .period import router as period_router
+from .tenkm import router as tenkm_router
 from fastapi import APIRouter, HTTPException, status
-from sqlmodel import Session, select
+from sqlmodel import Session
 
 
-import app.auth as auth
-from app.database import engine
+from app.auth import Auth
+
 # from app.sqlmodels import Rule
 
 
 router = APIRouter()
+router.include_router(additional_router)
 router.include_router(difficulty_router)
 router.include_router(org_group_router)
+router.include_router(period_router)
+router.include_router(tenkm_router)
 
 
 @router.get(
@@ -20,7 +26,7 @@ router.include_router(org_group_router)
     tags=['Rules'],
     summary="Updates rules."
 )
-async def update_rules(token: auth.Auth):
+async def update_rules(token: Auth):
 
     try:
         commit = rules.update()
@@ -84,20 +90,3 @@ async def list_rules():
 #             detail=f"No rule found for tvk {tvk}.")
 
 #     return rules
-
-
-@router.get(
-    "/rules/id-difficulty/{tvk}",
-    tags=['Rules'],
-    summary="Get id difficulty by TVK."
-)
-# async def list_rules(token: auth.Auth):
-async def get_id_difficulty(tvk: str):
-    try:
-        result = ''
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=str(e))
-    else:
-        return result

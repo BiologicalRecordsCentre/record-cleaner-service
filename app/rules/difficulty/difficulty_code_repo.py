@@ -85,7 +85,7 @@ class DifficultyCodeRepo:
         # Save the difficulty codes in the database.
         for row in codes.to_dict('records'):
             difficulty_code = self.get_or_create(org_group_id, row['code'])
-            difficulty_code.text = row['text']
+            difficulty_code.text = row['text'].strip()
             difficulty_code.commit = rules_commit
             self.session.add(difficulty_code)
             self.session.commit()

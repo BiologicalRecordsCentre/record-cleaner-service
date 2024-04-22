@@ -4,7 +4,6 @@ from sqlmodel import Session, select
 
 import app.species.cache as cache
 
-from app.database import engine
 from app.sqlmodels import DifficultyCode, DifficultyRule, Taxon, OrgGroup
 
 from .difficulty_code_repo import DifficultyCodeRepo
@@ -12,15 +11,15 @@ from .difficulty_code_repo import DifficultyCodeRepo
 
 class DifficultyRuleRepo:
 
-    def __init__(self, session):
+    def __init__(self, session: Session):
         self.session = session
 
     def list_by_org_group(self, org_group_id: int):
         results = self.session.exec(
             select(DifficultyRule, Taxon, DifficultyCode)
+            .join(Taxon)
+            .join(DifficultyCode)
             .where(DifficultyRule.org_group_id == org_group_id)
-            .where(DifficultyRule.taxon_id == Taxon.id)
-            .where(DifficultyRule.difficulty_code_id == DifficultyCode.id)
             .order_by(Taxon.tvk)
         ).all()
 
@@ -37,10 +36,10 @@ class DifficultyRuleRepo:
     def list_by_tvk(self, tvk: str):
         results = self.session.exec(
             select(DifficultyRule, Taxon, DifficultyCode, OrgGroup)
+            .join(Taxon)
+            .join(DifficultyCode)
+            .join(OrgGroup)
             .where(Taxon.tvk == tvk)
-            .where(DifficultyRule.taxon_id == Taxon.id)
-            .where(DifficultyRule.difficulty_code_id == DifficultyCode.id)
-            .where(DifficultyRule.org_group_id == OrgGroup.id)
             .order_by(OrgGroup.organisation, OrgGroup.group)
         ).all()
 
@@ -116,13 +115,17 @@ class DifficultyRuleRepo:
         for row in difficulties.to_dict('records'):
             # Lookup preferred tvk.
             try:
-                taxon = cache.get_taxon_by_tvk(row['tvk'])
+                taxon = cache.get_taxon_by_tvk(
+                    row['tvk'].strip(), self.session
+                )
             except ValueError:
                 errors.append(f"Could not find taxon for {row['tvk']}.")
                 continue
 
             if taxon.tvk != taxon.preferred_tvk:
-                taxon = cache.get_taxon_by_tvk(taxon.preferred_tvk)
+                taxon = cache.get_taxon_by_tvk(
+                    taxon.preferred_tvk, self.session
+                )
 
             # Check code is in limits
             if row['code'] not in code_lookup.keys():

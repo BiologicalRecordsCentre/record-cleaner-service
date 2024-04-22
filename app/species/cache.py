@@ -1,8 +1,9 @@
 from fastapi import APIRouter, HTTPException, status
 from sqlmodel import Session, func, select, delete
 
-from app.database import engine
-import app.auth as auth
+from app.auth import Auth
+from app.database import DB
+
 from app.sqlmodels import Taxon
 import app.species.indicia as driver
 
@@ -14,11 +15,13 @@ router = APIRouter()
     tags=['Species Cache'],
     summary="Get number of records in species cache.",
     response_model=int)
-async def read_cache_size(auth: auth.Auth):
-    with Session(engine) as session:
-        count = session.exec(
-            select(func.count(Taxon.id))
-        ).first()
+async def read_cache_size(
+    auth: Auth,
+    session: DB
+):
+    count = session.exec(
+        select(func.count(Taxon.id))
+    ).first()
     return {"count": count}
 
 
@@ -28,10 +31,10 @@ async def read_cache_size(auth: auth.Auth):
     summary="Get item from species cache.",
     response_model=Taxon)
 async def read_cache_item(
-        auth: auth.Auth,
+        auth: Auth,
+        session: DB,
         id: int):
-    with Session(engine) as session:
-        taxon = session.get(Taxon, id)
+    taxon = session.get(Taxon, id)
     if not taxon:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -45,12 +48,14 @@ async def read_cache_item(
     tags=['Species Cache'],
     summary="Empty the species cache.",
     response_model=bool)
-async def cache_clear(auth: auth.Auth):
-    with Session(engine) as session:
-        session.exec(
-            delete(Taxon)
-        )
-        session.commit()
+async def cache_clear(
+    auth: Auth,
+    session: DB
+):
+    session.exec(
+        delete(Taxon)
+    )
+    session.commit()
     return {"ok": True}
 
 
@@ -60,13 +65,13 @@ async def cache_clear(auth: auth.Auth):
     summary="Delete item from species cache.",
     response_model=bool)
 async def delete_cache_item(
-        auth: auth.Auth,
+        auth: Auth,
+        session: DB,
         id: int):
-    with Session(engine) as session:
-        session.exec(
-            delete(Taxon).where(Taxon.id == id)
-        )
-        session.commit()
+    session.exec(
+        delete(Taxon).where(Taxon.id == id)
+    )
+    session.commit()
     return {"ok": True}
 
 
@@ -76,26 +81,26 @@ async def delete_cache_item(
     summary="Get taxon with given TVK from cache.",
     response_model=Taxon)
 async def read_taxon_by_tvk(
-        auth: auth.Auth,
+        auth: Auth,
+        session: DB,
         tvk: str):
     return get_taxon_by_tvk(tvk)
 
 
-def get_taxon_by_tvk(tvk: str) -> Taxon:
+def get_taxon_by_tvk(tvk: str, session: Session) -> Taxon:
     """Look up taxon with given TVK."""
 
     # First check our local database
-    with Session(engine) as session:
-        taxon = session.exec(
-            select(Taxon).where(Taxon.tvk == tvk)
-        ).first()
+    taxon = session.exec(
+        select(Taxon).where(Taxon.tvk == tvk)
+    ).first()
     if not taxon:
         # If not found, add from the remote database.
-        taxon = add_taxon_by_tvk(tvk)
+        taxon = add_taxon_by_tvk(tvk, session)
     return taxon
 
 
-def add_taxon_by_tvk(tvk: str) -> Taxon:
+def add_taxon_by_tvk(tvk: str, session: Session) -> Taxon:
     """Look up taxon and add to cache."""
     params = {
         'external_key': tvk,
@@ -109,8 +114,7 @@ def add_taxon_by_tvk(tvk: str) -> Taxon:
         raise ValueError("TVK not recognised.")
     else:
         taxon = taxa[0]
-        with Session(engine) as session:
-            session.add(taxon)
-            session.commit()
-            session.refresh(taxon)
+        session.add(taxon)
+        session.commit()
+        session.refresh(taxon)
         return taxon

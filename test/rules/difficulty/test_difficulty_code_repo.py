@@ -7,6 +7,7 @@ from app.sqlmodels import OrgGroup
 
 
 class TestDifficultyCodeRepo:
+    """Tests of the repo class."""
 
     def test_difficulty_code_repo(self, session: Session):
         # Create an org_group.
