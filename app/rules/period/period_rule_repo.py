@@ -1,17 +1,17 @@
 from datetime import date
 import pandas as pd
 
-from sqlmodel import Session, select
+from sqlmodel import select
 
 import app.species.cache as cache
 
 from app.sqlmodels import PeriodRule, Taxon, OrgGroup
 
+from ..rule_repo_base import RuleRepoBase
 
-class PeriodRuleRepo:
 
-    def __init__(self, session):
-        self.session = session
+class PeriodRuleRepo(RuleRepoBase):
+    default_file = 'period.csv'
 
     def list_by_org_group(self, org_group_id: int):
         results = self.session.exec(
@@ -85,13 +85,15 @@ class PeriodRuleRepo:
             dir: str,
             org_group_id: int,
             rules_commit: str,
-            file: str = 'period.csv'
+            file: str | None = None
     ):
         """Read the period file, interpret, and save to database."""
 
         # Accumulate a list of errors.
         errors = []
 
+        if file is None:
+            file = self.default_file
         # Read the period file into a dataframe.
         periods = pd.read_csv(
             f'{dir}/{file}'

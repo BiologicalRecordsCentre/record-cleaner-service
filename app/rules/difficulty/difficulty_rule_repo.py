@@ -1,18 +1,17 @@
 import pandas as pd
 
-from sqlmodel import Session, select
+from sqlmodel import select
 
 import app.species.cache as cache
 
 from app.sqlmodels import DifficultyCode, DifficultyRule, Taxon, OrgGroup
 
+from ..rule_repo_base import RuleRepoBase
 from .difficulty_code_repo import DifficultyCodeRepo
 
 
-class DifficultyRuleRepo:
-
-    def __init__(self, session: Session):
-        self.session = session
+class DifficultyRuleRepo(RuleRepoBase):
+    default_file = 'id_difficulty.csv'
 
     def list_by_org_group(self, org_group_id: int):
         results = self.session.exec(
@@ -91,7 +90,7 @@ class DifficultyRuleRepo:
             dir: str,
             org_group_id: int,
             rules_commit: str,
-            file: str = 'id_difficulty.csv'
+            file: str | None = None
     ):
         """Read the id difficulty file, interpret, and save to database."""
 
@@ -107,6 +106,8 @@ class DifficultyRuleRepo:
             )
             return errors
 
+        if file is None:
+            file = self.default_file
         # Read the id difficulty file into a dataframe.
         difficulties = pd.read_csv(
             f'{dir}/{file}'

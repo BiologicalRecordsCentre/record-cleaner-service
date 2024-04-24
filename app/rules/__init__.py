@@ -1,22 +1,21 @@
-import app.rules.rules as rules
+from .rule_repo import RuleRepo
+
 from .additional import router as additional_router
 from .difficulty import router as difficulty_router
 from .org_group import router as org_group_router
 from .period import router as period_router
 from .tenkm import router as tenkm_router
-from fastapi import APIRouter, HTTPException, status
-from sqlmodel import Session
 
+from fastapi import APIRouter, HTTPException, status
 
 from app.auth import Auth
-
-# from app.sqlmodels import Rule
+from app.database import DB
 
 
 router = APIRouter()
+router.include_router(org_group_router)
 router.include_router(additional_router)
 router.include_router(difficulty_router)
-router.include_router(org_group_router)
 router.include_router(period_router)
 router.include_router(tenkm_router)
 
@@ -26,16 +25,17 @@ router.include_router(tenkm_router)
     tags=['Rules'],
     summary="Updates rules."
 )
-async def update_rules(token: Auth):
+async def update_rules(token: Auth, session: DB):
 
     try:
-        commit = rules.update()
+        repo = RuleRepo(session)
+        response = repo.update()
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(e))
     else:
-        return {"ok": True, "commit": commit}
+        return response
 
 
 @router.get(
@@ -46,7 +46,7 @@ async def update_rules(token: Auth):
 # async def list_rules(token: auth.Auth):
 async def list_rules():
     try:
-        result = rules.list_rules()
+        result = rule_repo.list_rules()
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

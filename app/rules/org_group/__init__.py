@@ -2,7 +2,8 @@
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel
 
-import app.auth as auth
+from app.auth import Auth
+from app.database import DB
 
 from .org_group_repo import OrgGroupRepo, OrgGroup
 
@@ -20,20 +21,23 @@ class OrgGroupResponse(BaseModel):
     "/rules/org-groups",
     tags=['Rules'],
     summary="List of organisations and groups.",
-    response_model=list[OrgGroupResponse])
-# async def read_rules(token: auth.Auth):
-async def list():
-    return OrgGroupRepo.list()
+    response_model=list[OrgGroupResponse]
+)
+async def list(token: Auth, session: DB):
+    repo = OrgGroupRepo(session)
+    return repo.list()
 
 
 @router.get(
     "/rules/org-groups/{id}",
     tags=['Rules'],
     summary="Details of organisation group.",
-    response_model=OrgGroup)
+    response_model=OrgGroup
+)
 # async def read_rules(token: auth.Auth):
-async def list(id: int):
-    org_group = OrgGroupRepo.list(id)
+async def list(token: Auth, session: DB, id: int):
+    repo = OrgGroupRepo(session)
+    org_group = repo.list(id)
     if org_group is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

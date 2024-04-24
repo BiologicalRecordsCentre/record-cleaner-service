@@ -59,7 +59,7 @@ class IndiciaAuth(requests.auth.AuthBase):
         key = self.password.encode('utf-8')
         msg = (r.url).encode('utf-8')
         hash = hmac.new(key, msg, 'sha1').hexdigest()
-        auth = f'USER:{settings.indicia_rest_user}:HMAC:{hash}'
+        auth = f'USER:{settings.env.indicia_rest_user}:HMAC:{hash}'
         r.headers['Authorization'] = auth
         return r
 
@@ -284,12 +284,12 @@ async def search_taxa(
 
 def make_search_request(params: dict) -> dict:
     """Send a request to the Indicia taxa/searchAPI."""
-    url = settings.indicia_url + 'taxa/search'
-    params['taxon_list_id'] = settings.indicia_taxon_list_id
+    url = settings.env.indicia_url + 'taxa/search'
+    params['taxon_list_id'] = settings.env.indicia_taxon_list_id
 
     try:
         r = requests.get(url, params=params,
-                         auth=IndiciaAuth(settings.indicia_rest_password))
+                         auth=IndiciaAuth(settings.env.indicia_rest_password))
     except Exception as e:
         e.add_note("Indicia API connection error. Unable to "
                    "look up species information from Indicia.")

@@ -4,10 +4,11 @@ from sqlmodel import select
 
 from app.sqlmodels import DifficultyCode
 
+from ..rule_repo_base import RuleRepoBase
 
-class DifficultyCodeRepo:
-    def __init__(self, session):
-        self.session = session
+
+class DifficultyCodeRepo(RuleRepoBase):
+    default_file = 'difficulty_code.csv'
 
     def list(self, org_group_id: int):
         results = self.session.exec(
@@ -70,13 +71,15 @@ class DifficultyCodeRepo:
             self, dir: str,
             org_group_id: int,
             rules_commit: str,
-            file: str = 'difficulty_codes.csv'
+            file: str | None = None
     ):
         """Read a difficulty_codes file and save to database."""
 
         # Accumulate a list of errors.
         errors = []
 
+        if file is None:
+            file = self.default_file
         # Read the difficulty codes file into a dataframe.
         codes = pd.read_csv(
             f'{dir}/{file}'

@@ -1,39 +1,83 @@
+import os
+
 from sqlmodel import Session, select
 
-
-from app.database import engine
 from app.sqlmodels import OrgGroup
 
 
 class OrgGroupRepo:
 
-    @classmethod
-    def list(cls, id: int = None):
-        with Session(engine) as session:
-            if id is None:
-                results = session.exec(select(OrgGroup)).all()
-            else:
-                results = session.get(OrgGroup, id)
-            return results
+    def __init__(self, session: Session):
+        self.session = session
 
-    @classmethod
-    def get_or_create(cls, organisation: str, group: str):
-
-        with Session(engine) as session:
-            org_group = session.exec(
+    def list(self, id: int = None):
+        if id is None:
+            results = self.session.exec(
                 select(OrgGroup)
-                .where(OrgGroup.organisation == organisation)
-                .where(OrgGroup.group == group)
-            ).one_or_none()
+                .order_by(OrgGroup.organisation, OrgGroup.group)
+            ).all()
+            return results
+            org_groups = []
+            for org_group in results:
+                org_groups.append({
+                    'id': org_group.id,
+                    'organisation': org_group.organisation,
+                    'group': org_group.group
+                })
+            return org_groups
+        else:
+            result = self.session.get(OrgGroup, id)
+            return result
 
-            if org_group is None:
-                # Create if new.
-                org_group = OrgGroup(
-                    organisation=organisation,
-                    group=group
-                )
-                session.add(org_group)
-                session.commit()
-                session.refresh(org_group)
+    def get_or_create(self, organisation: str, group: str):
+        """Get existing record or create a new one."""
+
+        org_group = self.session.exec(
+            select(OrgGroup)
+            .where(OrgGroup.organisation == organisation)
+            .where(OrgGroup.group == group)
+        ).one_or_none()
+
+        if org_group is None:
+            # Create if new.
+            org_group = OrgGroup(
+                organisation=organisation,
+                group=group
+            )
 
         return org_group
+
+    def purge(self, rules_commit):
+        """Delete records for org_group not from current commit."""
+        org_groups = self.session.exec(
+            select(OrgGroup)
+            .where(OrgGroup.commit != rules_commit)
+        )
+        for row in org_groups:
+            # Testing indicates that deletion cascades.
+            self.session.delete(row)
+        self.session.commit()
+
+    def load_dir_structure(self, dir: str, rules_commit: str):
+        """Scan the directory structure and save to database."""
+
+        # Top level folder is the organisation.
+        organisations = []
+        for organisation in os.scandir(dir):
+            if organisation.is_dir():
+                organisations.append(organisation.name)
+
+        # Second level folder is a group within the organisation.
+        for organisation in organisations:
+            organisationdir = os.path.join(dir, organisation)
+
+            for group in os.scandir(organisationdir):
+                if group.is_dir():
+                    # Save the organisation groups in the database.
+                    org_group = self.get_or_create(organisation, group.name)
+                    org_group.commit = rules_commit
+                    self.session.add(org_group)
+                    self.session.commit()
+
+        # Delete orphan OrgGroups.
+        self.purge(rules_commit)

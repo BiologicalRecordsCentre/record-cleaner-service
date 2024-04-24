@@ -75,11 +75,16 @@ class TestDifficultyCodeRepo:
 
         # Check the results by org_group.
         result = repo.list_by_org_group(org_group1.id)
-        assert (result == [
-            {'tvk': taxon1.tvk, 'taxon': taxon1.name, 'difficulty': 1},
-            {'tvk': taxon2.tvk, 'taxon': taxon2.name, 'difficulty': 1},
-            {'tvk': taxon3.tvk, 'taxon': taxon3.name, 'difficulty': 1}
-        ])
+        assert len(result) == 3
+        assert result[0]['tvk'] == taxon1.tvk
+        assert result[0]['taxon'] == taxon1.name
+        assert result[0]['difficulty'] == 1
+        assert result[1]['tvk'] == taxon2.tvk
+        assert result[1]['taxon'] == taxon2.name
+        assert result[1]['difficulty'] == 1
+        assert result[2]['tvk'] == taxon3.tvk
+        assert result[2]['taxon'] == taxon3.name
+        assert result[2]['difficulty'] == 1
 
         # Load a shorter file.
         errors = repo.load_file(
@@ -88,9 +93,10 @@ class TestDifficultyCodeRepo:
 
         # Check the results by org_group.
         result = repo.list_by_org_group(org_group1.id)
-        assert (result == [
-            {'tvk': taxon1.tvk, 'taxon': taxon1.name, 'difficulty': 1}
-        ])
+        assert len(result) == 1
+        assert result[0]['tvk'] == taxon1.tvk
+        assert result[0]['taxon'] == taxon1.name
+        assert result[0]['difficulty'] == 1
 
         # Load a difficulty rule of the same taxon to another org_group.
         errors = repo.load_file(
@@ -99,17 +105,23 @@ class TestDifficultyCodeRepo:
 
         # Check the results by tvk.
         result = repo.list_by_tvk(taxon1.tvk)
-        assert (result == [
-            {
-                'organisation': org_group1.organisation,
-                'group': org_group1.group,
-                'difficulty': difficulty_code1.code,
-                'text': difficulty_code1.text
-            },
-            {
-                'organisation': org_group2.organisation,
-                'group': org_group2.group,
-                'difficulty': difficulty_code2.code,
-                'text': difficulty_code2.text
-            }
-        ])
+        assert len(result) == 2
+        assert result[0]['organisation'] == org_group1.organisation
+        assert result[0]['group'] == org_group1.group
+        assert result[0]['difficulty'] == difficulty_code1.code
+        assert result[0]['text'] == difficulty_code1.text
+        assert result[1]['organisation'] == org_group2.organisation
+        assert result[1]['group'] == org_group2.group
+        assert result[1]['difficulty'] == difficulty_code2.code
+        assert result[1]['text'] == difficulty_code2.text
+
+        # Delete org_group1.
+        session.delete(org_group1)
+        session.commit()
+
+        # Check the deletion cascades.
+        result = repo.list_by_tvk(taxon1.tvk)
+        assert len(result) == 1
+        assert result[0]['organisation'] == org_group2.organisation
+        assert result[0]['group'] == org_group2.group
+        assert result[0]['difficulty'] == difficulty_code2.code

@@ -4,7 +4,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
-from app.rules import rules
+from app.rules import rule_repo
 from app.rules.difficulty.difficulty_rule_repo import DifficultyRuleRepo
 import app.species.cache as cache
 
@@ -19,17 +19,17 @@ class TestRules:
     def set_rulesdir(self):
         # Override path to rulesdir.
         basedir = os.path.abspath(os.path.dirname(__file__))
-        rules.rulesdir = os.path.join(basedir, 'testdata')
+        rule_repo.rulesdir = os.path.join(basedir, 'testdata')
 
     def test_list_organisation_rules(self):
-        organisation_groups_list = rules.list_organisation_groups()
+        organisation_groups_list = rule_repo.list_organisation_groups()
         assert organisation_groups_list == [
             {'organisation1': ['group1', 'group2']},
             {'organisation2': ['group1']}
         ]
 
     def test_list_rules(self):
-        rules_list = rules.list_rules()
+        rules_list = rule_repo.list_rules()
         assert rules_list == [
             {
                 'organisation1': {
@@ -55,7 +55,7 @@ class TestRules:
             'app.species.indicia.make_search_request',
             mock_make_search_request
         )
-        rules.load_database()
+        rule_repo.load_database()
 
         # assert IdDifficulty('NBNSYS0000008319').text == 'Easy'
         # assert IdDifficulty('NBNSYS0000008320').text == 'Moderate'

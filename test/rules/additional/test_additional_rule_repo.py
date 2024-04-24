@@ -114,3 +114,14 @@ class TestAdditionalCodeRepo:
         assert result[1]['group'] == org_group2.group
         assert result[1]['code'] == additional_code2.code
         assert result[1]['text'] == additional_code2.text
+
+        # Delete org_group1.
+        session.delete(org_group1)
+        session.commit()
+
+        # Check the deletion cascades.
+        result = repo.list_by_tvk(taxon1.tvk)
+        assert len(result) == 1
+        assert result[0]['organisation'] == org_group2.organisation
+        assert result[0]['group'] == org_group2.group
+        assert result[0]['code'] == additional_code2.code

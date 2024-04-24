@@ -1,5 +1,8 @@
+import datetime
 import os
+from pathlib import Path
 
+import pytest
 from sqlmodel import Session
 
 from app.rules.period.period_rule_repo import PeriodRuleRepo
@@ -9,7 +12,13 @@ from app.sqlmodels import OrgGroup, Taxon
 class TestPeriodRuleRepo:
     """Tests of the repo class."""
 
-    def test_period_rule_repo(self, session: Session):
+    @pytest.fixture(name='testdatadir', autouse=True)
+    def testdata_fixture(self):
+        # Locate the directory of test data.
+        thisdir = os.path.abspath(os.path.dirname(__file__))
+        return os.path.join(thisdir, 'testdata')
+
+    def test_load_file(self, session: Session, testdatadir: str):
         # Create org_groups.
         org_group1 = OrgGroup(organisation='organisation1', group='group1')
         org_group2 = OrgGroup(organisation='organisation2', group='group2')
@@ -38,14 +47,11 @@ class TestPeriodRuleRepo:
         session.refresh(taxon1)
         session.refresh(taxon2)
 
-        # Locate the directory of test data.
-        thisdir = os.path.abspath(os.path.dirname(__file__))
-        dir = os.path.join(thisdir, 'testdata')
-
         # Load a file.
         repo = PeriodRuleRepo(session)
         errors = repo.load_file(
-            dir, org_group1.id, 'abc123', 'period_2.csv')
+            testdatadir, org_group1.id, 'abc123', 'period_2.csv'
+        )
         assert (errors == [])
 
         # Check the results by org_group.
@@ -86,3 +92,11 @@ class TestPeriodRuleRepo:
         assert result[1]['group'] == org_group2.group
         assert result[1]['start_date'] == '1965-11-01'
         assert result[1]['end_date'] == '2000-11-11'
+
+    def test_file_updated(self, session: Session, testdatadir: str):
+        repo = PeriodRuleRepo(session)
+        time_before = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        Path(f'{testdatadir}/period_1.csv').touch()
+        time_modified = repo.file_updated(testdatadir, 'period_1.csv')
+
+        assert time_modified >= time_before

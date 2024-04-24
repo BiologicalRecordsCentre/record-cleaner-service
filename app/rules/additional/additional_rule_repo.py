@@ -1,18 +1,17 @@
 import pandas as pd
 
-from sqlmodel import Session, select
+from sqlmodel import select
 
 import app.species.cache as cache
 
 from app.sqlmodels import AdditionalCode, AdditionalRule, Taxon, OrgGroup
 
+from ..rule_repo_base import RuleRepoBase
 from .additional_code_repo import AdditionalCodeRepo
 
 
-class AdditionalRuleRepo:
-
-    def __init__(self, session: Session):
-        self.session = session
+class AdditionalRuleRepo(RuleRepoBase):
+    default_file = 'additional.csv'
 
     def list_by_org_group(self, org_group_id: int):
         results = self.session.exec(
@@ -91,7 +90,7 @@ class AdditionalRuleRepo:
             dir: str,
             org_group_id: int,
             rules_commit: str,
-            file: str = 'additional.csv'
+            file: str | None = None
     ):
         """Read the additional file, interpret, and save to database."""
 
@@ -107,6 +106,8 @@ class AdditionalRuleRepo:
             )
             return errors
 
+        if file is None:
+            file = self.default_file
         # Read the additional file into a dataframe.
         additionals = pd.read_csv(
             f'{dir}/{file}'

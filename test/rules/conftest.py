@@ -42,10 +42,3 @@ def client_fixture(session: Session) -> Generator[TestClient, None, None]:
 
     # Clean up.
     app.dependency_overrides.clear()
-
-
-# @pytest.fixture(autouse=True)
-# def set_rulesdir(self):
-#     # Override path to rulesdir.
-#     basedir = os.path.abspath(os.path.dirname(__file__))
-#     rules.rulesdir = os.path.join(basedir, 'testdata')

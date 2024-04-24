@@ -4,10 +4,11 @@ from sqlmodel import select
 
 from app.sqlmodels import AdditionalCode
 
+from ..rule_repo_base import RuleRepoBase
 
-class AdditionalCodeRepo:
-    def __init__(self, session):
-        self.session = session
+
+class AdditionalCodeRepo(RuleRepoBase):
+    default_file = 'additional_codes.csv'
 
     def list(self, org_group_id: int):
         results = self.session.exec(
@@ -70,13 +71,15 @@ class AdditionalCodeRepo:
             self, dir: str,
             org_group_id: int,
             rules_commit: str,
-            file: str = 'additional_codes.csv'
+            file: str | None = None
     ):
         """Read a additional_codes file and save to database."""
 
         # Accumulate a list of errors.
         errors = []
 
+        if file is None:
+            file = self.default_file
         # Read the additional codes file into a dataframe.
         codes = pd.read_csv(
             f'{dir}/{file}'

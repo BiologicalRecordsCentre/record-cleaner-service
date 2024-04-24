@@ -79,6 +79,7 @@ class DbSettings:
     maintenance_mode = DbSetting(False)
     maintenance_message = DbSetting('Normal operation.')
     rules_commmit = DbSetting('')
+    rules_updating = DbSetting(False)
 
 
 class Settings():
