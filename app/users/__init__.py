@@ -1,124 +1,104 @@
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Depends
 from pydantic import BaseModel
-from sqlmodel import Session, select, delete
+from sqlmodel import select, delete
 
-import app.auth as auth
-from app.database import engine
+from app.auth import hash_password, get_current_admin_user
+from app.database import DB
 from app.sqlmodels import User
 
-router = APIRouter()
+router = APIRouter(
+    prefix="/users",
+    tags=["Users"],
+    dependencies=[Depends(get_current_admin_user)]
+)
 
 
 class UserGet(BaseModel):
-    id: int
     name: str
+    email: str
+    is_admin: bool
+    is_disabled: bool
 
 
 class UserPost(BaseModel):
     name: str
+    email: str
     password: str
+    is_admin: bool
+    is_disabled: bool
 
 
 class UserPatch(BaseModel):
-    name: Optional[str] = None
+    email: Optional[str] = None
     password: Optional[str] = None
+    is_admin: Optional[bool] = None
+    is_disabled: Optional[bool] = None
 
 
-@router.get(
-    "/users",
-    tags=['Users'],
-    summary="List users.",
-    response_model=list[UserGet])
-async def read_users(
-        token: auth.Auth):
-    with Session(engine) as session:
-        users = session.exec(
-            select(User).order_by(User.id)
-        ).all()
+@router.get('/', summary="List users.", response_model=list[UserGet])
+async def read_users(session: DB):
+    """Get all users."""
+    users = session.exec(
+        select(User).order_by(User.name)
+    ).all()
 
     return users
 
 
-@router.get(
-    "/user/{id}",
-    tags=['Users'],
-    summary="Get user.",
-    response_model=UserGet)
-async def read_user(
-        auth: auth.Auth,
-        id: int):
-    with Session(engine) as session:
-        user = session.get(User, id)
+@router.get('/{username}', summary="Get user.", response_model=UserGet)
+async def read_user(session: DB, username: str):
+    """Get a single user."""
+    user = session.get(User, username)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"No user found with ID {id}.")
+            detail=f"No user found with name {username}.")
 
     return user
 
 
-@router.post(
-    "/user",
-    tags=['Users'],
-    summary="Create user.",
-    response_model=UserGet)
-async def create_user(
-        token: auth.Auth,
-        user: UserPost):
-
-    hash = auth.hash_password(user.password)
+@router.post('/', summary="Create user.", response_model=UserGet)
+async def create_user(session: DB, user_in: UserPost):
+    """Create a new user."""
+    hash = hash_password(user_in.password)
     extra_data = {"hash": hash}
-
-    with Session(engine) as session:
-        db_user = User.model_validate(user, update=extra_data)
-        session.add(db_user)
-        session.commit()
-        session.refresh(db_user)
+    db_user = User.model_validate(user_in, update=extra_data)
+    session.add(db_user)
+    session.commit()
+    session.refresh(db_user)
     return db_user
 
 
-@router.patch(
-    "/user/{id}",
-    tags=['Users'],
-    summary="Update user.",
-    response_model=UserGet)
-async def update_user(
-        auth: auth.Auth,
-        id: int,
-        user: UserPatch):
-    with Session(engine) as session:
-        db_user = session.get(User, id)
-        if not db_user:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"No user found with ID {id}.")
+@router.patch("/{username}",  summary="Update user.", response_model=UserGet)
+async def update_user(session: DB, username: str, user_in: UserPatch):
+    """Update user with the given name."""
+    db_user = session.get(User, username)
+    if not db_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"No user found with name {username}.")
 
-        input_data = user.model_dump(exclude_unset=True)
-        extra_data = {}
-        if 'password' in input_data:
-            hash = auth.hash_password(input_data['password'])
-            extra_data = {"hash": hash}
+    user_in_data = user_in.model_dump(exclude_unset=True)
+    extra_data = {}
+    if user_in.password:
+        hash = hash_password(user_in.password)
+        extra_data = {"hash": hash}
 
-        db_user.sqlmodel_update(input_data, update=extra_data)
-        session.add(db_user)
-        session.commit()
-        session.refresh(db_user)
+    db_user.sqlmodel_update(user_in_data, update=extra_data)
+    session.add(db_user)
+    session.commit()
+    session.refresh(db_user)
 
     return db_user
 
 
-@router.delete(
-    "/user/{id}",
-    tags=['Users'],
-    summary="Delete user.")
-async def delete_user(
-        auth: auth.Auth,
-        id: int):
-    with Session(engine) as session:
-        session.exec(
-            delete(User).where(User.id == id)
-        )
-        session.commit()
+@router.delete("/{username}", summary="Delete user.")
+async def delete_user(session: DB, username: str):
+    """Delete user with the given name."""
+    session.exec(
+        delete(User).where(User.name == username)
+    )
+    session.commit()
     return {"ok": True}

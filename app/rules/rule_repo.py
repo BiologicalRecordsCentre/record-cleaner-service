@@ -3,9 +3,8 @@ import os
 import shutil
 import subprocess
 
-from sqlmodel import Session, select
-
 from app.settings import settings
+from app.sqlmodels import OrgGroup
 
 
 from .additional.additional_code_repo import AdditionalCodeRepo
@@ -26,12 +25,16 @@ class RuleRepo:
     def __init__(self, session):
         self.session = session
 
-    def update(self):
+    def update(self, full: bool = False):
         """Installs and updates our copy of the rules."""
 
         # Check semaphore to ensure only one update is happening at a time.
         if settings.db.rules_updating:
-            raise Exception('Rules are already being updated.')
+            return {
+                "ok": False,
+                "data": 'Rule update already in progress.',
+                'commit': settings.db.rules_commit
+            }
 
         # Set semaphore.
         settings.db.rules_updating = True
@@ -44,7 +47,7 @@ class RuleRepo:
 
         try:
             self.rules_commit = self.git_update()
-            results = self.db_update()
+            results = self.db_update(full)
             results['commit'] = self.rules_commit
         except Exception:
             raise
@@ -123,7 +126,7 @@ class RuleRepo:
                 text=True
             ).strip()
             # Save it to settings and return it.
-            settings.db.rules_commmit = commit
+            settings.db.rules_commit = commit
             return commit
 
         except subprocess.CalledProcessError as e:
@@ -133,18 +136,18 @@ class RuleRepo:
             e.add_note('Unknown error trying to update rules.')
             raise Exception(e)
 
-    def db_update(self):
+    def db_update(self, full: bool = False):
         """Loads the rule files in to the database."""
 
         ok = True
         data = []
         rule_types = [
-            'Additional code',
-            'Additional rule',
-            'Difficulty code',
-            'Difficulty rule',
-            'Period rule',
-            'Tenkm rule'
+            (AdditionalCodeRepo, 'additional_code_update'),
+            (AdditionalRuleRepo, 'additional_rule_update'),
+            (DifficultyCodeRepo, 'difficulty_code_update'),
+            (DifficultyRuleRepo, 'difficulty_rule_update'),
+            (PeriodRuleRepo, 'period_rule_update'),
+            (TenkmRuleRepo, 'tenkm_rule_update')
         ]
 
         # Load the rule directory structure.
@@ -158,7 +161,7 @@ class RuleRepo:
 
             for rule_type in rule_types:
                 # Trying to load every rule type.
-                errors = self.rule_file_update(rule_type, org_group)
+                errors = self.rule_file_update(rule_type, org_group, full)
                 group_errors.extend(errors)
 
             if len(errors) > 0:
@@ -174,27 +177,29 @@ class RuleRepo:
             "data": data
         }
 
-    def rule_file_update(self, rule_type, org_group):
+    def rule_file_update(
+        self,
+        rule_type: tuple,
+        org_group: OrgGroup,
+        full: bool = False
+    ):
         """Update rules of given type for given organisation group."""
 
-        # Capitalise words, remove spaces, and append 'Repo'.
-        repo_class_name = rule_type.title().replace(' ', '') + 'Repo'
-        repo_class = globals()[repo_class_name]
-        # Lower case words, substitute '_' for space, and append '_update'.
-        update_field_name = rule_type.lower().replace(' ', '_') + '_update'
-
+        repo_class, update_field_name = rule_type
         organisation = org_group.organisation
         group = org_group.group
         groupdir = os.path.join(self.rulesdir, organisation, group)
         # Create an instance of the repository class.
         repo = repo_class(self.session)
-        # Only update if there is a file and it has changed.
-        file_updated = repo.file_updated(groupdir)
-        if file_updated is None:
-            return []
-        rules_updated = getattr(org_group, update_field_name)
-        if rules_updated and rules_updated >= file_updated:
-            return []
+        # Update if full = True or if the file has changed.
+        if not full:
+            file_updated = repo.file_updated(groupdir)
+            if file_updated is None:
+                # No file exists of this type for this organisation group.
+                return []
+            rules_updated = getattr(org_group, update_field_name)
+            if rules_updated and rules_updated >= file_updated:
+                return []
 
         try:
             # Load the file in to the database.

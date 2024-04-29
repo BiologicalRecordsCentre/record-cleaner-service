@@ -1,12 +1,15 @@
 from datetime import datetime, timedelta, timezone
 from typing import Annotated, TypeAlias
 
+import bcrypt
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
-import bcrypt
+from sqlmodel import Session, select
 
+from app.database import DB
 from app.settings import settings
+from app.sqlmodels import User
 
 fake_users_db = {
     "johndoe": {
@@ -33,17 +36,28 @@ router = APIRouter()
 # Set /token as the path to log in.
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
-# Check if the provided password matches the stored password (hashed)
+authentication_exception = HTTPException(
+    status_code=status.HTTP_401_UNAUTHORIZED,
+    detail="Could not validate credentials.",
+    headers={"WWW-Authenticate": "Bearer"}
+)
+authorization_exception = HTTPException(
+    status_code=status.HTTP_403_FORBIDDEN,
+    detail="You do not have enough permissions for this action.",
+    headers={"WWW-Authenticate": "Bearer"}
+)
 
 
-def verify_password(plain_password, hashed_password):
+def verify_password(plain_password: str, hashed_password: str | bytes):
     """Confirms a password matches its hashed version."""
-    password_byte_enc = plain_password.encode('utf-8')
-    return bcrypt.checkpw(password_byte_enc, hashed_password)
+    plain_password = plain_password.encode('utf-8')
+    if type(hashed_password) is str:
+        hashed_password = hashed_password.encode('utf-8')
+    return bcrypt.checkpw(plain_password, hashed_password)
 
 
 # Hash a password using bcrypt
-def hash_password(password):
+def hash_password(password: str):
     """Creates a hashed password."""
     password_byte_enc = password.encode('utf-8')
     salt = bcrypt.gensalt()
@@ -64,41 +78,72 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
     return encoded_jwt
 
 
-async def authenticate(token:  Annotated[str, Depends(oauth2_scheme)]):
+def authenticate_user(session: Session, username: str, password: str):
+    """Confirms a username and password match."""
+    user = session.exec(
+        select(User)
+        .where(User.name == username)
+    ).one_or_none()
+    if not user:
+        return False
+    if not verify_password(password, user.hash):
+        return False
+    return user
+
+
+async def get_current_user(
+    token:  Annotated[str, Depends(oauth2_scheme)],
+    session: DB
+):
     """Confirms an access token is valid."""
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
     try:
         payload = jwt.decode(token, settings.env.jwt_key,
                              algorithms=[settings.env.jwt_algorithm])
         username: str = payload.get("sub")
         if username is None:
-            raise credentials_exception
+            raise authentication_exception
     except JWTError:
-        raise credentials_exception
-    user = fake_users_db.get(username)
-    if user is None:
-        raise credentials_exception
-    return True
+        raise authentication_exception
+
+    user = session.exec(
+        select(User)
+        .where(User.name == username)
+    ).one_or_none()
+
+    if user is None or user.is_disabled:
+        raise authentication_exception
+    return user
+
+
+async def get_current_admin_user(
+    user:  Annotated[User, Depends(get_current_user)]
+):
+    """Confirms an access token is valid for an admin."""
+    if not user.is_admin:
+        raise authorization_exception
+    return user
 
 # Create a type alias for brevity when defining an endpoint needing
 # authentication.
-Auth: TypeAlias = Annotated[bool, Depends(authenticate)]
+Auth: TypeAlias = Annotated[User, Depends(get_current_user)]
+Admin: TypeAlias = Annotated[User, Depends(get_current_admin_user)]
 
 
 @router.post(
     "/token",
     tags=['Users'],
     summary="Login user.")
-async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
+async def login(
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+    session: DB
+):
     # Automatic validation ensures username and password exist.
-    user = fake_users_db.get(form_data.username)
+    user = authenticate_user(session, form_data.username, form_data.password)
+    if not user:
+        raise authentication_exception
 
     access_token_expires = timedelta(minutes=settings.env.jwt_expires_minutes)
     access_token = create_access_token(
-        data={"sub": user["username"]}, expires_delta=access_token_expires
+        data={"sub": user.name}, expires_delta=access_token_expires
     )
     return {"access_token": access_token, "token_type": "bearer"}

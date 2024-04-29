@@ -88,7 +88,7 @@ class AdditionalCodeRepo(RuleRepoBase):
         # Save the additional codes in the database.
         for row in codes.to_dict('records'):
             additional_code = self.get_or_create(org_group_id, row['code'])
-            additional_code.text = row['text'].strip()
+            additional_code.text = str(row['text']).strip()
             additional_code.commit = rules_commit
             self.session.add(additional_code)
             self.session.commit()

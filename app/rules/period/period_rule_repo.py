@@ -103,7 +103,7 @@ class PeriodRuleRepo(RuleRepoBase):
             # Lookup preferred tvk.
             try:
                 taxon = cache.get_taxon_by_tvk(
-                    row['tvk'].strip(), self.session)
+                    str(row['tvk']).strip(), self.session)
             except ValueError:
                 errors.append(f"Could not find taxon for {row['tvk']}.")
                 continue
@@ -113,14 +113,49 @@ class PeriodRuleRepo(RuleRepoBase):
                     taxon.preferred_tvk, self.session
                 )
 
+            # Validate the data supplied.
+            y = row['start_year']
+            m = row['start_month']
+            d = row['start_day']
+            if pd.isna(y) and pd.isna(m) and pd.isna(d):
+                start_date = None
+            elif pd.isna(y) or pd.isna(m) or pd.isna(d):
+                errors.append(
+                    f"Incomplete start date {y}-{m}-{d} for {row['tvk']}."
+                )
+                continue
+            else:
+                try:
+                    start_date = date(y, m, d)
+                except ValueError as e:
+                    errors.append(
+                        f"Invalid start date {y}-{m}-{d} for {row['tvk']}. {e}"
+                    )
+                    continue
+
+            y = row['end_year']
+            m = row['end_month']
+            d = row['end_day']
+            if pd.isna(y) and pd.isna(m) and pd.isna(d):
+                end_date = None
+            elif pd.isna(y) or pd.isna(m) or pd.isna(d):
+                errors.append(
+                    f"Incomplete end date {y}-{m}-{d} for {row['tvk']}."
+                )
+                continue
+            else:
+                try:
+                    end_date = date(y, m, d)
+                except ValueError as e:
+                    errors.append(
+                        f"Invalid end date {y}-{m}-{d} for {row['tvk']}. {e}"
+                    )
+                    continue
+
             # Save the period rule in the database.
             period_rule = self.get_or_create(org_group_id, taxon.id)
-            period_rule.start_date = date(
-                row['start_year'], row['start_month'], row['start_day']
-            )
-            period_rule.end_date = date(
-                row['end_year'], row['end_month'], row['end_day']
-            )
+            period_rule.start_date = start_date
+            period_rule.end_date = end_date
             period_rule.commit = rules_commit
             self.session.add(period_rule)
             self.session.commit()

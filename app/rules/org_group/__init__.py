@@ -1,8 +1,8 @@
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Depends
 from pydantic import BaseModel
 
-from app.auth import Auth
+from app.auth import Auth, get_current_user
 from app.database import DB
 
 from .org_group_repo import OrgGroupRepo, OrgGroup
@@ -21,9 +21,10 @@ class OrgGroupResponse(BaseModel):
     "/rules/org-groups",
     tags=['Rules'],
     summary="List of organisations and groups.",
-    response_model=list[OrgGroupResponse]
+    response_model=list[OrgGroupResponse],
+    dependencies=[Depends(get_current_user)],
 )
-async def list(token: Auth, session: DB):
+async def list(session: DB):
     repo = OrgGroupRepo(session)
     return repo.list()
 

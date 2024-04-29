@@ -6,7 +6,8 @@ from .org_group import router as org_group_router
 from .period import router as period_router
 from .tenkm import router as tenkm_router
 
-from fastapi import APIRouter, HTTPException, status
+from typing import Annotated
+from fastapi import APIRouter, HTTPException, status, Query
 
 from app.auth import Auth
 from app.database import DB
@@ -25,11 +26,19 @@ router.include_router(tenkm_router)
     tags=['Rules'],
     summary="Updates rules."
 )
-async def update_rules(token: Auth, session: DB):
+async def update_rules(
+    token: Auth,
+    session: DB,
+    full: Annotated[
+        bool,
+        Query(description="Set true to force update from all files. By "
+              "default, only changed files are used.")
+    ] = False,
+):
 
     try:
         repo = RuleRepo(session)
-        response = repo.update()
+        response = repo.update(full)
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -38,21 +47,21 @@ async def update_rules(token: Auth, session: DB):
         return response
 
 
-@router.get(
-    "/rulesets",
-    tags=['Rules'],
-    summary="List rulesets."
-)
+# @router.get(
+#     "/rulesets",
+#     tags=['Rules'],
+#     summary="List rulesets."
+# )
 # async def list_rules(token: auth.Auth):
-async def list_rules():
-    try:
-        result = rule_repo.list_rules()
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=str(e))
-    else:
-        return result
+# async def list_rules():
+#     try:
+#         result = rule_repo.list_rules()
+#     except Exception as e:
+#         raise HTTPException(
+#             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+#             detail=str(e))
+#     else:
+#         return result
 
 
 # @router.get(

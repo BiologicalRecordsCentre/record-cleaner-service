@@ -8,7 +8,7 @@ from ..rule_repo_base import RuleRepoBase
 
 
 class DifficultyCodeRepo(RuleRepoBase):
-    default_file = 'difficulty_code.csv'
+    default_file = 'difficulty_codes.csv'
 
     def list(self, org_group_id: int):
         results = self.session.exec(

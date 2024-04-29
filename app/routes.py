@@ -1,6 +1,9 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
 
+from app.auth import Auth
+from app.database import DB
+
 import app.auth as auth
 import app.main as app
 import app.rules as rules
@@ -17,6 +20,7 @@ class Service(BaseModel):
     docs_url: str
     maintenance_mode: bool
     maintenance_message: str
+    rules_commit: str
 
 
 class Maintenance(BaseModel):
@@ -45,7 +49,40 @@ async def read_service():
         summary=app.app.summary,
         docs_url=app.app.docs_url,
         maintenance_mode=settings.db.maintenance_mode,
-        maintenance_message=settings.db.maintenance_message
+        maintenance_message=settings.db.maintenance_message,
+        rules_commit=settings.db.rules_commit
+    )
+
+
+@router.post(
+    "/maintenance",
+    summary="Set maintenance information.",
+    tags=['Service'],
+    response_model=Maintenance
+)
+async def set_maintenance(
+    token: Auth,
+    maintenance: Maintenance
+):
+    settings.db.maintenance_mode = maintenance.mode
+    settings.db.maintenance_message = maintenance.message
+    return maintenance
+
+
+@router.get(
+    "/settings",
+    tags=['Service'],
+    summary="List settings.",
+    response_model=Service)
+async def read_service(token: auth.Auth):
+    return Service(
+        title=app.app.title,
+        version=app.app.version,
+        summary=app.app.summary,
+        docs_url=app.app.docs_url,
+        maintenance_mode=settings.db.maintenance_mode,
+        maintenance_message=settings.db.maintenance_message,
+        rules_commit=settings.db.rules_commit
     )
 
 

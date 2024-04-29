@@ -20,6 +20,8 @@ class EnvSettings(BaseSettings):
     rules_branch: str
     rules_dir: str
     rules_subdir: str
+    initial_user_name: str
+    initial_user_pass: str
 
     model_config = SettingsConfigDict(env_file=".env")
 
@@ -78,7 +80,7 @@ class DbSetting:
 class DbSettings:
     maintenance_mode = DbSetting(False)
     maintenance_message = DbSetting('Normal operation.')
-    rules_commmit = DbSetting('')
+    rules_commit = DbSetting('')
     rules_updating = DbSetting(False)
 
 

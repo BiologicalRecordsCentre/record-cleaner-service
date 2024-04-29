@@ -5,7 +5,7 @@ from typing import TypeAlias, Annotated
 from fastapi import Depends
 from sqlmodel import create_engine, SQLModel, Session
 
-import app.sqlmodels
+import app.sqlmodels as sqlmodels
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 sqlite_file_name = f"{basedir}/data/database.sqlite"
@@ -17,10 +17,9 @@ engine = create_engine(sqlite_url, echo=True)
 # Create tables if they don't exist.
 SQLModel.metadata.create_all(engine)
 
-# Create a function for injecting a session as a dependency.
-
 
 def get_db_session() -> Generator[Session, None, None]:
+    """A function for injecting a session as a dependency."""
     with Session(engine) as session:
         yield session
 
