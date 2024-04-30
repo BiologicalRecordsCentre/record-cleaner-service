@@ -1,9 +1,8 @@
 from fastapi.testclient import TestClient
+from sqlmodel import Session
 
-from app.main import app
 import app.auth as auth
-
-client = TestClient(app)
+from app.settings import settings
 
 
 class TestAuth:
@@ -11,32 +10,34 @@ class TestAuth:
         hashed_password = auth.hash_password("password")
         assert auth.verify_password("password", hashed_password)
 
-    def test_token_no_user_or_password(self):
+    def test_token_no_user_or_password(self, client: TestClient):
         response = client.post(
             "/token"
         )
         assert response.status_code == 422
 
-    def test_token_no_password(self):
+    def test_token_no_password(self, client: TestClient):
         response = client.post(
             "/token",
             data={"username": "johndoe"}
         )
         assert response.status_code == 422
 
-    def test_token_no_user(self):
+    def test_token_no_user(self, client: TestClient):
         response = client.post(
             "/token",
             data={"password": "secret"}
         )
         assert response.status_code == 422
 
-    def test_token(self):
+    def test_token(self, client: TestClient, session: Session):
         response = client.post(
-            "/token",
-            data={"username": "johndoe", "password": "secret"}
+            '/token',
+            data={
+                'username': settings.env.initial_user_name,
+                'password': settings.env.initial_user_pass
+            }
         )
         assert response.status_code == 200
         json = response.json()
         assert json['token_type'] == 'bearer'
-        assert auth.authenticate(json['access_token'])

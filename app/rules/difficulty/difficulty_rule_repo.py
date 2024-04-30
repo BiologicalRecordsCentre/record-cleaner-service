@@ -97,29 +97,26 @@ class DifficultyRuleRepo(RuleRepoBase):
         # Accumulate a list of errors.
         errors = []
 
-        # Get the difficulty codes for this org_group
-        code_repo = DifficultyCodeRepo(self.session)
-        code_lookup = code_repo.get_code_lookup(org_group_id)
-        if len(code_lookup) == 0:
-            errors.append(
-                f"No difficulty codes for org_group_id {org_group_id}"
-            )
-            return errors
-
         if file is None:
             file = self.default_file
         # Read the id difficulty file into a dataframe.
         difficulties = pd.read_csv(
-            f'{dir}/{file}'
+            f'{dir}/{file}',
+            usecols=['tvk', 'code'],
+            dtype={'tvk': str, 'code': int}
         )
+
+        # Get the difficulty codes for this org_group
+        code_repo = DifficultyCodeRepo(self.session)
+        code_lookup = code_repo.get_code_lookup(org_group_id)
+        if len(code_lookup) == 0:
+            errors.append("No difficulty codes exist.")
+            return errors
 
         for row in difficulties.to_dict('records'):
             # Lookup preferred tvk.
-            try:
-                taxon = cache.get_taxon_by_tvk(
-                    row['tvk'].strip(), self.session
-                )
-            except ValueError:
+            taxon = cache.get_taxon_by_tvk(row['tvk'].strip(), self.session)
+            if taxon is None:
                 errors.append(f"Could not find taxon for {row['tvk']}.")
                 continue
 
@@ -130,19 +127,17 @@ class DifficultyRuleRepo(RuleRepoBase):
 
             # Check code is in limits
             if row['code'] not in code_lookup.keys():
-                errors.append(
-                    f"Unknown code {row['code']} for {row['tvk']} "
-                    f"of org_group_id {org_group_id}."
-                )
+                errors.append(f"Unknown code {row['code']} for {row['tvk']}.")
                 continue
 
-            # Save the difficulty rule in the database.
+            # Add the rule to the session.
             difficulty_rule = self.get_or_create(org_group_id, taxon.id)
             difficulty_rule.difficulty_code_id = code_lookup[row['code']]
             difficulty_rule.commit = rules_commit
             self.session.add(difficulty_rule)
-            self.session.commit()
 
+        # Save all the changes.
+        self.session.commit()
         # Delete orphan DifficultyRules.
         self.purge(org_group_id, rules_commit)
 

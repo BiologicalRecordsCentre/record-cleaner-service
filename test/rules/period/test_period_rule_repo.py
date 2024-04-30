@@ -67,7 +67,7 @@ class TestPeriodRuleRepo:
 
         # Load a shorter file.
         errors = repo.load_file(
-            dir, org_group1.id, 'xyz321', 'period_1.csv')
+            testdatadir, org_group1.id, 'xyz321', 'period_1.csv')
         assert (errors == [])
 
         # Check the results by org_group.
@@ -79,7 +79,7 @@ class TestPeriodRuleRepo:
 
         # Load a period rule of the same taxon to another org_group.
         errors = repo.load_file(
-            dir, org_group2.id, 'pqr987', 'period_1_2.csv')
+            testdatadir, org_group2.id, 'pqr987', 'period_1_2.csv')
         assert (errors == [])
 
         # Check the results by tvk.

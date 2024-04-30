@@ -17,14 +17,6 @@ class OrgGroupRepo:
                 .order_by(OrgGroup.organisation, OrgGroup.group)
             ).all()
             return results
-            org_groups = []
-            for org_group in results:
-                org_groups.append({
-                    'id': org_group.id,
-                    'organisation': org_group.organisation,
-                    'group': org_group.group
-                })
-            return org_groups
         else:
             result = self.session.get(OrgGroup, id)
             return result

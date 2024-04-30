@@ -30,12 +30,12 @@ class TestOrgGroupRepo:
         # Check the results.
         result = repo.list()
         assert len(result) == 3
-        assert result[0]['organisation'] == 'org1'
-        assert result[0]['group'] == 'group1'
-        assert result[1]['organisation'] == 'org1'
-        assert result[1]['group'] == 'group2'
-        assert result[2]['organisation'] == 'org2'
-        assert result[2]['group'] == 'group1'
+        assert result[0].organisation == 'org1'
+        assert result[0].group == 'group1'
+        assert result[1].organisation == 'org1'
+        assert result[1].group == 'group2'
+        assert result[2].organisation == 'org2'
+        assert result[2].group == 'group1'
 
         # Delete a directory.
         os.rmdir(os.path.join(dir, 'org1/group1'))
@@ -47,7 +47,7 @@ class TestOrgGroupRepo:
         # Check the results.
         result = repo.list()
         assert len(result) == 2
-        assert result[0]['organisation'] == 'org1'
-        assert result[0]['group'] == 'group2'
-        assert result[1]['organisation'] == 'org2'
-        assert result[1]['group'] == 'group1'
+        assert result[0].organisation == 'org1'
+        assert result[0].group == 'group2'
+        assert result[1].organisation == 'org2'
+        assert result[1].group == 'group1'

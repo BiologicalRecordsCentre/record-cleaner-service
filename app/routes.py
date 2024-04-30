@@ -1,7 +1,6 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
-from app.auth import Auth
 from app.database import DB
 
 import app.auth as auth
@@ -9,8 +8,9 @@ import app.main as app
 import app.rules as rules
 from app.settings import settings
 import app.species as species
-import app.validate as validate
-import app.users as users
+from app.user.user_routes import router as users_router
+from app.validate.validate_routes import router as validate_router
+from app.verify.verify_routes import router as verify_router
 
 
 class Service(BaseModel):
@@ -33,8 +33,9 @@ router = APIRouter()
 router.include_router(auth.router)
 router.include_router(rules.router)
 router.include_router(species.router)
-router.include_router(validate.router)
-router.include_router(users.router)  # prefix="/users", tags=["Users"]
+router.include_router(users_router)
+router.include_router(validate_router)
+router.include_router(verify_router)
 
 
 @router.get(
@@ -58,12 +59,10 @@ async def read_service():
     "/maintenance",
     summary="Set maintenance information.",
     tags=['Service'],
-    response_model=Maintenance
+    response_model=Maintenance,
+    dependencies=[Depends(auth.get_current_admin_user)]
 )
-async def set_maintenance(
-    token: Auth,
-    maintenance: Maintenance
-):
+async def set_maintenance(maintenance: Maintenance):
     settings.db.maintenance_mode = maintenance.mode
     settings.db.maintenance_message = maintenance.message
     return maintenance
@@ -73,8 +72,10 @@ async def set_maintenance(
     "/settings",
     tags=['Service'],
     summary="List settings.",
-    response_model=Service)
-async def read_service(token: auth.Auth):
+    response_model=Service,
+    dependencies=[Depends(auth.get_current_admin_user)]
+)
+async def read_settings():
     return Service(
         title=app.app.title,
         version=app.app.version,
@@ -86,16 +87,12 @@ async def read_service(token: auth.Auth):
     )
 
 
-@router.post(
-    "/maintenance",
-    summary="Set maintenance information.",
+@router.patch(
+    "/settings",
+    summary="Alter settings.",
     tags=['Service'],
-    response_model=Maintenance
+    response_model=Service,
+    dependencies=[Depends(auth.get_current_admin_user)]
 )
-async def set_maintenance(
-    token: auth.Auth,
-    maintenance: Maintenance
-):
-    settings.db.maintenance_mode = maintenance.mode
-    settings.db.maintenance_message = maintenance.message
-    return maintenance
+async def patch_settings(settings: dict):
+    pass

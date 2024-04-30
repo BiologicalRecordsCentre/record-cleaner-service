@@ -4,9 +4,11 @@ from fastapi import APIRouter, HTTPException, status, Depends
 from pydantic import BaseModel
 from sqlmodel import select, delete
 
-from app.auth import hash_password, get_current_admin_user
+from app.auth import hash_password, get_current_admin_user, Auth
 from app.database import DB
 from app.sqlmodels import User
+
+from .user_repo import UserRepo
 
 router = APIRouter(
     prefix="/users",
@@ -59,16 +61,16 @@ async def read_user(session: DB, username: str):
     return user
 
 
+@router.get('/me', summary="Get logged in user.", response_model=UserGet)
+async def login(user: Auth):
+    return user
+
+
 @router.post('/', summary="Create user.", response_model=UserGet)
 async def create_user(session: DB, user_in: UserPost):
     """Create a new user."""
-    hash = hash_password(user_in.password)
-    extra_data = {"hash": hash}
-    db_user = User.model_validate(user_in, update=extra_data)
-    session.add(db_user)
-    session.commit()
-    session.refresh(db_user)
-    return db_user
+    repo = UserRepo(session)
+    return repo.create_user(user_in)
 
 
 @router.patch("/{username}",  summary="Update user.", response_model=UserGet)

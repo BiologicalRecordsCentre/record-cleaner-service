@@ -2,18 +2,14 @@ from fastapi.testclient import TestClient
 
 import app.auth as auth
 from app.main import app
+from app.sqlmodels import User
 
 from ..mocks import mock_make_search_request
-
-client = TestClient(app)
-
-# Override authentication to allow unauthenticated requests.
-app.dependency_overrides[auth.authenticate] = lambda: True
 
 
 class TestValidateByTvk:
 
-    def test_no_records(self):
+    def test_no_records(self, client: TestClient):
         response = client.post(
             "/validate/records_by_tvk",
             json=[]
@@ -21,14 +17,14 @@ class TestValidateByTvk:
         assert response.status_code == 200
         assert response.json() == []
 
-    def test_empty_record(self):
+    def test_empty_record(self, client: TestClient):
         response = client.post(
             "/validate/records_by_tvk",
             json=[{}]
         )
         assert response.status_code == 422
 
-    def test_null_record(self):
+    def test_null_record(self, client: TestClient):
         response = client.post(
             "/validate/records_by_tvk",
             json=[{
@@ -40,7 +36,7 @@ class TestValidateByTvk:
         )
         assert response.status_code == 422
 
-    def test_invlaid_srid(self):
+    def test_invlaid_srid(self, client: TestClient):
         response = client.post(
             "/validate/records_by_tvk",
             json=[{
@@ -52,7 +48,7 @@ class TestValidateByTvk:
         )
         assert response.status_code == 422
 
-    def test_syntactically_valid_record(self, mocker):
+    def test_syntactically_valid_record(self, client: TestClient, mocker):
         # Mock the Indicia warehouse.
         mocker.patch(
             'app.species.indicia.make_search_request',
@@ -72,7 +68,7 @@ class TestValidateByTvk:
         assert not response.json()[0]['ok']
         assert response.json()[0]['message'] == "TVK not recognised."
 
-    def test_valid_tvk(self, mocker):
+    def test_valid_tvk(self, client: TestClient, mocker):
         # Mock the Indicia warehouse.
         mocker.patch(
             'app.species.indicia.make_search_request',
@@ -93,7 +89,7 @@ class TestValidateByTvk:
         assert not response.json()[0]['ok']
         assert response.json()[0]['message'] == "Unreocognised date format."
 
-    def test_valid_date(self, mocker):
+    def test_valid_date(self, client: TestClient, mocker):
         # Mock the Indicia warehouse.
         mocker.patch(
             'app.species.indicia.make_search_request',
@@ -116,7 +112,7 @@ class TestValidateByTvk:
         assert response.json()[0]['message'] == (
             "Invalid spatial reference. A gridref must be provided.")
 
-    def test_valid_gridref(self, mocker):
+    def test_valid_gridref(self, client: TestClient, mocker):
         # Mock the Indicia warehouse.
         mocker.patch(
             'app.species.indicia.make_search_request',
@@ -142,7 +138,7 @@ class TestValidateByTvk:
         assert response.json()[0]['ok']
         assert response.json()[0]['message'] is None
 
-    def test_invalid_vc(self, mocker):
+    def test_invalid_vc(self, client: TestClient, mocker):
         # Mock the Indicia warehouse.
         mocker.patch(
             'app.species.indicia.make_search_request',
@@ -170,7 +166,7 @@ class TestValidateByTvk:
         assert not response.json()[0]['ok']
         assert response.json()[0]['message'] == "Sref not in vice county."
 
-    def test_valid_vc(self, mocker):
+    def test_valid_vc(self, client: TestClient, mocker):
         # Mock the Indicia warehouse.
         mocker.patch(
             'app.species.indicia.make_search_request',

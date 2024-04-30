@@ -94,17 +94,34 @@ class PeriodRuleRepo(RuleRepoBase):
 
         if file is None:
             file = self.default_file
-        # Read the period file into a dataframe.
+        # Read the period file into a dataframe. Int64 is a nullable integer
+        # allowing start or end to be omitted.
         periods = pd.read_csv(
-            f'{dir}/{file}'
+            f'{dir}/{file}',
+            usecols=[
+                'tvk',
+                'start_year',
+                'start_month',
+                'start_day',
+                'end_year',
+                'end_month',
+                'end_day'
+            ],
+            dtype={
+                'tvk': str,
+                'start_year': 'Int64',
+                'start_month': 'Int64',
+                'start_day': 'Int64',
+                'end_year': 'Int64',
+                'end_month': 'Int64',
+                'end_day': 'Int64'
+            }
         )
 
         for row in periods.to_dict('records'):
             # Lookup preferred tvk.
-            try:
-                taxon = cache.get_taxon_by_tvk(
-                    str(row['tvk']).strip(), self.session)
-            except ValueError:
+            taxon = cache.get_taxon_by_tvk(row['tvk'].strip(), self.session)
+            if taxon is None:
                 errors.append(f"Could not find taxon for {row['tvk']}.")
                 continue
 
@@ -152,14 +169,15 @@ class PeriodRuleRepo(RuleRepoBase):
                     )
                     continue
 
-            # Save the period rule in the database.
+            # Add the rule to the session.
             period_rule = self.get_or_create(org_group_id, taxon.id)
             period_rule.start_date = start_date
             period_rule.end_date = end_date
             period_rule.commit = rules_commit
             self.session.add(period_rule)
-            self.session.commit()
 
+        # Save all the changes.
+        self.session.commit()
         # Delete orphan PeriodRules.
         self.purge(org_group_id, rules_commit)
 

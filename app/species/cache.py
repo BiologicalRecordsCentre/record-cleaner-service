@@ -1,3 +1,5 @@
+from functools import lru_cache
+
 from fastapi import APIRouter, HTTPException, status
 from sqlmodel import Session, func, select, delete
 
@@ -87,6 +89,7 @@ async def read_taxon_by_tvk(
     return get_taxon_by_tvk(tvk)
 
 
+@lru_cache(maxsize=1024)
 def get_taxon_by_tvk(tvk: str, session: Session) -> Taxon:
     """Look up taxon with given TVK."""
 
@@ -111,7 +114,7 @@ def add_taxon_by_tvk(tvk: str, session: Session) -> Taxon:
     taxa = driver.parse_response_taxa(response)
 
     if len(taxa) == 0:
-        raise ValueError("TVK not recognised.")
+        return None
     else:
         taxon = taxa[0]
         session.add(taxon)

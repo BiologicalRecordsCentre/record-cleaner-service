@@ -82,17 +82,18 @@ class DifficultyCodeRepo(RuleRepoBase):
             file = self.default_file
         # Read the difficulty codes file into a dataframe.
         codes = pd.read_csv(
-            f'{dir}/{file}'
+            f'{dir}/{file}', dtype={'code': int, 'text': str}
         )
 
-        # Save the difficulty codes in the database.
+        # Add the rule to the session.
         for row in codes.to_dict('records'):
             difficulty_code = self.get_or_create(org_group_id, row['code'])
             difficulty_code.text = row['text'].strip()
             difficulty_code.commit = rules_commit
             self.session.add(difficulty_code)
-            self.session.commit()
 
+        # Save all the changes.
+        self.session.commit()
         # Delete orphan DifficultyCodes.
         self.purge(org_group_id, rules_commit)
 

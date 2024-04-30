@@ -21,6 +21,38 @@ class RuleRepo:
     datadir = os.path.join(basedir, 'data')
     gitdir = os.path.join(datadir, settings.env.rules_dir)
     rulesdir = os.path.join(gitdir, settings.env.rules_subdir)
+    rule_types = [
+        {
+            'name': 'Additional code',
+            'class': AdditionalCodeRepo,
+            'field': 'additional_code_update'
+        },
+        {
+            'name': 'Additional rule',
+            'class': AdditionalRuleRepo,
+            'field': 'additional_rule_update'
+        },
+        {
+            'name': 'Difficulty code',
+            'class': DifficultyCodeRepo,
+            'field': 'difficulty_code_update'
+        },
+        {
+            'name': 'Difficulty rule',
+            'class': DifficultyRuleRepo,
+            'field': 'difficulty_rule_update'
+        },
+        {
+            'name': 'Period rule',
+            'class': PeriodRuleRepo,
+            'field': 'period_rule_update'
+        },
+        {
+            'name': 'Tenkm rule',
+            'class': TenkmRuleRepo,
+            'field': 'tenkm_rule_update'
+        }
+    ]
 
     def __init__(self, session):
         self.session = session
@@ -141,14 +173,6 @@ class RuleRepo:
 
         ok = True
         data = []
-        rule_types = [
-            (AdditionalCodeRepo, 'additional_code_update'),
-            (AdditionalRuleRepo, 'additional_rule_update'),
-            (DifficultyCodeRepo, 'difficulty_code_update'),
-            (DifficultyRuleRepo, 'difficulty_rule_update'),
-            (PeriodRuleRepo, 'period_rule_update'),
-            (TenkmRuleRepo, 'tenkm_rule_update')
-        ]
 
         # Load the rule directory structure.
         org_group_repo = OrgGroupRepo(self.session)
@@ -162,9 +186,11 @@ class RuleRepo:
             for rule_type in rule_types:
                 # Trying to load every rule type.
                 errors = self.rule_file_update(rule_type, org_group, full)
-                group_errors.extend(errors)
+                if len(errors) > 0:
+                    rule_name = self.rule_type['name']
+                    group_errors.append({rule_name: errors})
 
-            if len(errors) > 0:
+            if len(group_errors) > 0:
                 ok = False
             data.append({
                 "organisation": org_group.organisation,
@@ -185,7 +211,8 @@ class RuleRepo:
     ):
         """Update rules of given type for given organisation group."""
 
-        repo_class, update_field_name = rule_type
+        repo_class = self.rule_type['class']
+        update_field_name = self.rule_type['field']
         organisation = org_group.organisation
         group = org_group.group
         groupdir = os.path.join(self.rulesdir, organisation, group)
@@ -199,6 +226,7 @@ class RuleRepo:
                 return []
             rules_updated = getattr(org_group, update_field_name)
             if rules_updated and rules_updated >= file_updated:
+                # File has not been updated since last run.
                 return []
 
         try:
@@ -210,74 +238,81 @@ class RuleRepo:
             setattr(org_group, update_field_name, self.loading_time)
             self.session.add(org_group)
             self.session.commit()
+        except FileNotFoundError:
+            # It is not an error for a rule file to not exist.
+            return []
         except Exception as e:
             errors = [str(e)]
 
         return errors
 
+    def list_organisation_groups(self):
+        """Lists the rule groups based on the directory structure.
 
-def list_organisation_groups():
-    """Lists the rule groups based on the directory structure.
+        Returns
+        [
+            {"organisation1": [group1, group2, ...]},
+            {"organisation2": [group1, group2, ...]},
+            ...
+        ]
+        """
 
-    Returns
-    [
-        {"organisation1": [group1, group2, ...]},
-        {"organisation2": [group1, group2, ...]},
-        ...
-    ]
-    """
+        result = []
 
-    result = []
+        # Top level folder is the organisation.
+        organisations = []
+        for organisation in os.scandir(self.rulesdir):
+            if organisation.is_dir():
+                organisations.append(organisation.name)
+        organisations.sort()
 
-    # Top level folder is the organisation.
-    organisations = []
-    for organisation in os.scandir(rulesdir):
-        if organisation.is_dir():
-            organisations.append(organisation.name)
-    organisations.sort()
+        # Second level folder is a group within the organisation.
+        for idx, organisation in enumerate(organisations):
+            organisationdir = os.path.join(self.rulesdir, organisation)
 
-    # Second level folder is a group within the organisation.
-    for idx, organisation in enumerate(organisations):
-        organisationdir = os.path.join(rulesdir, organisation)
+            groups = []
+            for group in os.scandir(organisationdir):
+                if group.is_dir():
+                    groups.append(group.name)
+            groups.sort()
 
-        groups = []
-        for group in os.scandir(organisationdir):
-            if group.is_dir():
-                groups.append(group.name)
-        groups.sort()
+            result.append({organisation: groups})
 
-        result.append({organisation: groups})
+        return result
 
-    return result
+    def list_rules(self):
+        """Lists the rules types for organisation groups."""
 
+        result = []
 
-def list_rules():
-    """Lists the rules types for organisation groups."""
+        organisation_groups_list = self.list_organisation_groups()
 
-    result = []
+        for idx, organisation_groups in enumerate(organisation_groups_list):
+            organisation, groups = organisation_groups.popitem()
+            result.append({organisation: {}})
 
-    organisation_groups_list = list_organisation_groups()
+            for group in groups:
+                groupdir = os.path.join(self.rulesdir, organisation, group)
 
-    for idx, organisation_groups in enumerate(organisation_groups_list):
-        organisation, groups = organisation_groups.popitem()
-        result.append({organisation: {}})
+                # Rules are in files within the group folder.
+                tests = []
+                for file in os.scandir(groupdir):
+                    match file.name:
+                        case 'period.csv':
+                            tests.append('Recording Period')
+                        case 'periodwithinyear.csv':
+                            tests.append('Seasonal Period')
+                        case 'tenkm.csv':
+                            tests.append('Species Range')
+                        case 'additional.csv':
+                            tests.append('Additional Verification')
 
-        for group in groups:
-            groupdir = os.path.join(rulesdir, organisation, group)
+                result[idx][organisation][group] = tests
 
-            # Rules are in files within the group folder.
-            tests = []
-            for file in os.scandir(groupdir):
-                match file.name:
-                    case 'period.csv':
-                        tests.append('Recording Period')
-                    case 'periodwithinyear.csv':
-                        tests.append('Seasonal Period')
-                    case 'tenkm.csv':
-                        tests.append('Species Range')
-                    case 'additional.csv':
-                        tests.append('Additional Verification')
+        return result
 
-            result[idx][organisation][group] = tests
-
-    return result
+    def run_rules(self, org_groups: list[OrgGroup], record: dict):
+        """Run the rules from the org_groups against the record."""
+        for org_group in org_groups:
+            for rule_type in self.rule_types:
+                pass

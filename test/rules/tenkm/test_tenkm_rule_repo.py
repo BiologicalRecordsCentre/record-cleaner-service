@@ -50,14 +50,15 @@ class TestTenkmRuleRepo:
         thisdir = os.path.abspath(os.path.dirname(__file__))
         dir = os.path.join(thisdir, 'testdata')
 
-        # Load a file.
+        # Load a file. 3 taxa in 3 coord systems.
         repo = TenkmRuleRepo(session)
         errors = repo.load_file(
-            dir, org_group1.id, 'abc123', 'tenkm_3.csv')
+            dir, org_group1.id, 'abc123', 'tenkm_3_species.csv')
         assert (errors == [])
 
         # Check the results by org_group.
         result = repo.list_by_org_group(org_group1.id)
+        assert len(result) == 3
         assert result[0]['tvk'] == taxon1.tvk
         assert result[0]['taxon'] == taxon1.name
         assert result[0]['km100'] == 'NH'
@@ -74,22 +75,28 @@ class TestTenkmRuleRepo:
         assert result[2]['km10'] == '64 65 66'
         assert result[2]['coord_system'] == 'CI'
 
-        # Load a shorter file.
+        # Load a shorter file. 1 taxon in 2 km100.
         errors = repo.load_file(
-            dir, org_group1.id, 'xyz321', 'tenkm_1.csv')
+            dir, org_group1.id, 'xyz321', 'tenkm_1_species.csv')
         assert (errors == [])
 
         # Check the results by org_group.
         result = repo.list_by_org_group(org_group1.id)
+        assert len(result) == 2
         assert result[0]['tvk'] == taxon1.tvk
         assert result[0]['taxon'] == taxon1.name
         assert result[0]['km100'] == 'SP'
         assert result[0]['km10'] == '99'
         assert result[0]['coord_system'] == 'OSGB'
+        assert result[1]['tvk'] == taxon1.tvk
+        assert result[1]['taxon'] == taxon1.name
+        assert result[1]['km100'] == 'TL'
+        assert result[1]['km10'] == '00'
+        assert result[1]['coord_system'] == 'OSGB'
 
-        # Load a period rule of the same taxon to another org_group.
+        # Load the shorter file to another org_group.
         errors = repo.load_file(
-            dir, org_group2.id, 'pqr987', 'tenkm_1_2.csv')
+            dir, org_group2.id, 'pqr987', 'tenkm_1_species.csv')
         assert (errors == [])
 
         # Check the results by tvk.
@@ -99,8 +106,18 @@ class TestTenkmRuleRepo:
         assert result[0]['km100'] == 'SP'
         assert result[0]['km10'] == '99'
         assert result[0]['coord_system'] == 'OSGB'
-        assert result[1]['organisation'] == org_group2.organisation
-        assert result[1]['group'] == org_group2.group
-        assert result[1]['km100'] == 'SP'
-        assert result[1]['km10'] == '98'
+        assert result[1]['organisation'] == org_group1.organisation
+        assert result[1]['group'] == org_group1.group
+        assert result[1]['km100'] == 'TL'
+        assert result[1]['km10'] == '00'
         assert result[1]['coord_system'] == 'OSGB'
+        assert result[2]['organisation'] == org_group2.organisation
+        assert result[2]['group'] == org_group2.group
+        assert result[2]['km100'] == 'SP'
+        assert result[2]['km10'] == '99'
+        assert result[2]['coord_system'] == 'OSGB'
+        assert result[3]['organisation'] == org_group2.organisation
+        assert result[3]['group'] == org_group2.group
+        assert result[3]['km100'] == 'TL'
+        assert result[3]['km10'] == '00'
+        assert result[3]['coord_system'] == 'OSGB'

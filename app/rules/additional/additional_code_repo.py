@@ -82,17 +82,18 @@ class AdditionalCodeRepo(RuleRepoBase):
             file = self.default_file
         # Read the additional codes file into a dataframe.
         codes = pd.read_csv(
-            f'{dir}/{file}'
+            f'{dir}/{file}', dtype={'code': int, 'text': str}
         )
 
-        # Save the additional codes in the database.
+        # Add the rule to the session.
         for row in codes.to_dict('records'):
             additional_code = self.get_or_create(org_group_id, row['code'])
-            additional_code.text = str(row['text']).strip()
+            additional_code.text = row['text'].strip()
             additional_code.commit = rules_commit
             self.session.add(additional_code)
-            self.session.commit()
 
+        # Save all the changes.
+        self.session.commit()
         # Delete orphan AdditionalCodes.
         self.purge(org_group_id, rules_commit)
 

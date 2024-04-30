@@ -11,23 +11,6 @@ from app.database import DB
 from app.settings import settings
 from app.sqlmodels import User
 
-fake_users_db = {
-    "johndoe": {
-        "username": "johndoe",
-        "full_name": "John Doe",
-        "email": "johndoe@example.com",
-        "hashed_password": b'$2b$12$g6po0M6AwpbtaWpNSntpteI3HRKUWS.JgKFAyOadvk2PSJ3GYUuYq',
-        "disabled": False,
-    },
-    "alice": {
-        "username": "alice",
-        "full_name": "Alice Wonderson",
-        "email": "alice@example.com",
-        "hashed_password": "fakehashedsecret2",
-        "disabled": True,
-    },
-}
-
 
 # Instantiate a router.
 router = APIRouter()
@@ -91,7 +74,7 @@ def authenticate_user(session: Session, username: str, password: str):
     return user
 
 
-async def get_current_user(
+def get_current_user(
     token:  Annotated[str, Depends(oauth2_scheme)],
     session: DB
 ):
@@ -115,13 +98,14 @@ async def get_current_user(
     return user
 
 
-async def get_current_admin_user(
+def get_current_admin_user(
     user:  Annotated[User, Depends(get_current_user)]
 ):
     """Confirms an access token is valid for an admin."""
     if not user.is_admin:
         raise authorization_exception
     return user
+
 
 # Create a type alias for brevity when defining an endpoint needing
 # authentication.
