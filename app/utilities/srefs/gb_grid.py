@@ -12,7 +12,7 @@ class GbGrid(SrefBase):
 
     def __init__(self, sref: Sref):
         sref.country = SrefCountry.GB
-        self.value = sref
+        super().__init__(sref)
 
     @classmethod
     def validate(cls, value: Sref):

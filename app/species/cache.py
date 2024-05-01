@@ -86,11 +86,11 @@ async def read_taxon_by_tvk(
         auth: Auth,
         session: DB,
         tvk: str):
-    return get_taxon_by_tvk(tvk)
+    return get_taxon_by_tvk(session, tvk)
 
 
 @lru_cache(maxsize=1024)
-def get_taxon_by_tvk(tvk: str, session: Session) -> Taxon:
+def get_taxon_by_tvk(session: Session, tvk: str) -> Taxon:
     """Look up taxon with given TVK."""
 
     # First check our local database
@@ -99,11 +99,11 @@ def get_taxon_by_tvk(tvk: str, session: Session) -> Taxon:
     ).first()
     if not taxon:
         # If not found, add from the remote database.
-        taxon = add_taxon_by_tvk(tvk, session)
+        taxon = add_taxon_by_tvk(session, tvk)
     return taxon
 
 
-def add_taxon_by_tvk(tvk: str, session: Session) -> Taxon:
+def add_taxon_by_tvk(session: Session, tvk: str) -> Taxon:
     """Look up taxon and add to cache."""
     params = {
         'external_key': tvk,

@@ -5,6 +5,7 @@ from sqlmodel import select
 import app.species.cache as cache
 
 from app.sqlmodels import AdditionalCode, AdditionalRule, Taxon, OrgGroup
+from app.verify.verify_models import Verified
 
 from ..rule_repo_base import RuleRepoBase
 from .additional_code_repo import AdditionalCodeRepo
@@ -115,14 +116,14 @@ class AdditionalRuleRepo(RuleRepoBase):
 
         for row in additionals.to_dict('records'):
             # Lookup preferred tvk.
-            taxon = cache.get_taxon_by_tvk(row['tvk'].strip(), self.session)
+            taxon = cache.get_taxon_by_tvk(self.session, row['tvk'].strip())
             if taxon is None:
                 errors.append(f"Could not find taxon for {row['tvk']}.")
                 continue
 
             if taxon.tvk != taxon.preferred_tvk:
                 taxon = cache.get_taxon_by_tvk(
-                    taxon.preferred_tvk, self.session
+                    self.session, taxon.preferred_tvk
                 )
 
             # Check code is in limits
@@ -142,3 +143,17 @@ class AdditionalRuleRepo(RuleRepoBase):
         self.purge(org_group_id, rules_commit)
 
         return errors
+
+    def run(self, org_group_id: int, record: Verified):
+        """Run the rules for the org_group against the record."""
+        result = self.session.exec(
+            select(AdditionalRule, AdditionalCode)
+            .join(Taxon)
+            .join(AdditionalCode)
+            .where(AdditionalRule.org_group_id == org_group_id)
+            .where(Taxon.preferred_tvk == record.tvk)
+        ).one_or_none()
+
+        if result is not None:
+            additional_code = result[1]
+            return {'additional': additional_code.text}

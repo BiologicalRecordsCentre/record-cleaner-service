@@ -2,9 +2,11 @@ import datetime
 import os
 import shutil
 import subprocess
+from typing import Optional, List
 
 from app.settings import settings
 from app.sqlmodels import OrgGroup
+from app.verify.verify_models import OrgGroupRules, Verified
 
 
 from .additional.additional_code_repo import AdditionalCodeRepo
@@ -14,6 +16,7 @@ from .difficulty.difficulty_rule_repo import DifficultyRuleRepo
 from .org_group.org_group_repo import OrgGroupRepo
 from .period.period_rule_repo import PeriodRuleRepo
 from .tenkm.tenkm_rule_repo import TenkmRuleRepo
+from .rule_repo_base import RuleRepoBase
 
 
 class RuleRepo:
@@ -21,7 +24,7 @@ class RuleRepo:
     datadir = os.path.join(basedir, 'data')
     gitdir = os.path.join(datadir, settings.env.rules_dir)
     rulesdir = os.path.join(gitdir, settings.env.rules_subdir)
-    rule_types = [
+    rule_file_types = [
         {
             'name': 'Additional code',
             'class': AdditionalCodeRepo,
@@ -53,6 +56,12 @@ class RuleRepo:
             'field': 'tenkm_rule_update'
         }
     ]
+    rule_types = {
+        'additional': AdditionalRuleRepo,
+        'difficulty': DifficultyRuleRepo,
+        'period': PeriodRuleRepo,
+        'tenkm': TenkmRuleRepo
+    }
 
     def __init__(self, session):
         self.session = session
@@ -183,8 +192,8 @@ class RuleRepo:
         for org_group in org_groups:
             group_errors = []
 
-            for rule_type in rule_types:
-                # Trying to load every rule type.
+            for rule_type in self.rule_file_types:
+                # Trying to load every rule file type.
                 errors = self.rule_file_update(rule_type, org_group, full)
                 if len(errors) > 0:
                     rule_name = self.rule_type['name']
@@ -311,8 +320,67 @@ class RuleRepo:
 
         return result
 
-    def run_rules(self, org_groups: list[OrgGroup], record: dict):
-        """Run the rules from the org_groups against the record."""
-        for org_group in org_groups:
-            for rule_type in self.rule_types:
-                pass
+    def run_rules(
+        self,
+        org_groups_rules_list: List[OrgGroupRules] | None,
+        record: Verified
+    ):
+        """Run all the specified rules against the record."""
+        repo = OrgGroupRepo(self.session)
+        if org_groups_rules_list is None:
+            # Use rules from all org_groups.
+            org_groups = repo.list()
+            for org_group in org_groups:
+                self.run_rules_for_org_group(org_group, None, record)
+        else:
+            # Only use rules from listed org_groups.
+            for org_group_rules in org_groups_rules_list:
+                organisation = org_group_rules.organisation
+                group = org_group_rules.group
+                rules = org_group_rules.rules
+                org_group = repo.get(organisation, group)
+                self.run_rules_for_org_group(org_group, rules, record)
+
+    def run_rules_for_org_group(
+        self,
+        org_group: OrgGroup,
+        rules: Optional[List[str]],
+        record: Verified
+    ):
+        """Run the rules against the record from a single org_group."""
+        results = []
+        if rules is None:
+            # Try all the rules
+            for rule_repo_class in self.rule_types:
+                result = self.run_rule(org_group, rule_repo_class, record)
+                if result is not None:
+                    results.append(result)
+        else:
+            # Only use rules listed.
+            for rule in rules:
+                if rule not in self.rule_types.keys():
+                    # Not a valid rule type.
+                    continue
+                rule_repo_class = self.rule_types[rule]
+                result = self.run_rule(org_group, rule_repo_class, record)
+                if result is not None:
+                    results.append(result)
+
+        # Bundle results for org-group.
+        if len(results) > 0:
+            record.ok = False
+            record.message.append({
+                'organisation': org_group.organisation,
+                'group': org_group.group,
+                'rules': results
+            })
+
+    def run_rule(
+        self,
+        org_group: OrgGroup,
+        rule_repo_class: type[RuleRepoBase],
+        record: Verified
+    ):
+        """Run a single rule from a single org_group against the record."""
+        repo = rule_repo_class(self.session)
+        return repo.run(org_group.id, record)

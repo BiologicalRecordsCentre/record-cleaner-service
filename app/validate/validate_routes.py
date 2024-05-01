@@ -54,7 +54,7 @@ async def validate_by_tvk(session: DB, records: list[ValidateTvk]):
 
         try:
             # 1. Confirm TVK is valid.
-            taxon = cache.get_taxon_by_tvk(record.tvk, session)
+            taxon = cache.get_taxon_by_tvk(session, record.tvk)
             if taxon is None:
                 raise ValueError("TVK not recognised.")
             # Return name associated with TVK.

@@ -7,6 +7,7 @@ from . import Sref, SrefSystem
 
 class SrefFactory:
     def __new__(self, sref: Sref):
+
         match sref.srid:
             case SrefSystem.GB_GRID:
                 return GbGrid(sref)

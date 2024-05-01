@@ -4,14 +4,17 @@ from . import Sref, SrefCountry, SrefAccuracy
 class SrefBase:
     """Base class for spatial reference classes."""
 
-    @property
-    def value(self) -> Sref:
-        return self.__value
+    def __init__(self, sref: Sref):
+        self.__value = sref
 
-    @value.setter
-    def value(self, value: Sref):
-        self.validate(value)
-        self.__value = value
+    # @property
+    # def value(self) -> Sref:
+    #     return self.__value
+
+    # @value.setter
+    # def value(self, value: Sref):
+    #     self.validate(value)
+    #     self.__value = value
 
     @property
     def gridref(self) -> str:
@@ -67,3 +70,32 @@ class SrefBase:
         else:
             raise ValueError("""Invalid spatial reference. Could not assign
                              location to a country.""")
+
+    @classmethod
+    def calculate_accuracy(cls, eastnorth: str):
+        """Determines the accuracy of a grid reference."""
+        match len(eastnorth):
+            case 2:
+                return SrefAccuracy.KM10
+            case 3:
+                return SrefAccuracy.KM2
+            case 4:
+                return SrefAccuracy.KM1
+            case 6:
+                return SrefAccuracy.M100
+            case 8:
+                return SrefAccuracy.M10
+            case 10:
+                return SrefAccuracy.M1
+
+    def props(self):
+        return {
+            'srid': self._srid,
+            'gridref': self.gridref,
+            'longitude': self.longitude,
+            'latitude': self.latitude,
+            'easting': self.easting,
+            'northing': self.northing,
+            'accuracy': self.accuracy,
+            'country': self.country
+        }

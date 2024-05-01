@@ -11,6 +11,7 @@ class OrgGroupRepo:
         self.session = session
 
     def list(self, id: int = None):
+        """List all records or a single record by id."""
         if id is None:
             results = self.session.exec(
                 select(OrgGroup)
@@ -21,14 +22,18 @@ class OrgGroupRepo:
             result = self.session.get(OrgGroup, id)
             return result
 
-    def get_or_create(self, organisation: str, group: str):
-        """Get existing record or create a new one."""
-
-        org_group = self.session.exec(
+    def get(self, organisation: str, group: str):
+        """Get record by organisation and group."""
+        return self.session.exec(
             select(OrgGroup)
             .where(OrgGroup.organisation == organisation)
             .where(OrgGroup.group == group)
         ).one_or_none()
+
+    def get_or_create(self, organisation: str, group: str):
+        """Get existing record or create a new one."""
+
+        org_group = self.get(organisation, group)
 
         if org_group is None:
             # Create if new.
