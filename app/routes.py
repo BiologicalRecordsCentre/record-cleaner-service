@@ -5,10 +5,10 @@ from app.database import DB
 
 import app.auth as auth
 import app.main as app
-import app.rules as rules
+from app.rule.rule_routes import router as rule_router
 from app.settings import settings
 import app.species as species
-from app.user.user_routes import router as users_router
+from app.user.user_routes import router as user_router
 from app.validate.validate_routes import router as validate_router
 from app.verify.verify_routes import router as verify_router
 
@@ -31,9 +31,9 @@ class Maintenance(BaseModel):
 # Instantiate a router.
 router = APIRouter()
 router.include_router(auth.router)
-router.include_router(rules.router)
+router.include_router(rule_router)
 router.include_router(species.router)
-router.include_router(users_router)
+router.include_router(user_router)
 router.include_router(validate_router)
 router.include_router(verify_router)
 

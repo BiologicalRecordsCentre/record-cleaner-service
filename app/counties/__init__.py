@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, status
 
 import app.auth as auth
-from app.utilities.vice_counties.vc_checker import VcChecker
+from app.utility.vice_county.vc_checker import VcChecker
 
 
 router = APIRouter()

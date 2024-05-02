@@ -3,10 +3,10 @@ from fastapi import APIRouter, Depends
 
 from app.auth import get_current_user
 from app.database import DB
-from app.rules.rule_repo import RuleRepo
+from app.rule.rule_repo import RuleRepo
 import app.species.cache as cache
-from app.utilities.srefs.sref_factory import SrefFactory
-from app.utilities.vague_dates import VagueDate
+from app.utility.sref.sref_factory import SrefFactory
+from app.utility.vague_date import VagueDate
 
 from .verify_models import VerifyPackTvk, VerifyPackName, Verified, VerifiedPack
 
@@ -40,8 +40,8 @@ async def verify_by_tvk(session: DB, data: VerifyPackTvk):
             result.date = str(vague_date)
 
             # 3. Obtain gridref.
-            sref = SrefFactory(record.sref)
-            result.sref = sref.props()
+            functional_sref = SrefFactory(record.sref)
+            result.sref = functional_sref.value
 
             # 4. Check against rules.
             repo = RuleRepo(session)

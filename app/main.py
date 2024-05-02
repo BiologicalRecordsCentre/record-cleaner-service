@@ -6,7 +6,7 @@ from sqlmodel import Session
 from app.database import engine
 import app.routes as routes
 from app.settings import settings
-from app.utilities.vice_counties.vc_checker import VcChecker
+from app.utility.vice_county.vc_checker import VcChecker
 from app.user.user_repo import UserRepo
 
 # Instantiate the app.

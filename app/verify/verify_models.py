@@ -1,7 +1,7 @@
 from typing import Optional, List
 from pydantic import BaseModel, Field
 
-from app.utilities.srefs import Sref
+from app.utility.sref import Sref
 
 
 class Verify(BaseModel):

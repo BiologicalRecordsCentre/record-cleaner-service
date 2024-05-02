@@ -8,7 +8,7 @@ from collections.abc import Generator
 from sqlmodel import create_engine, SQLModel, Session
 from sqlmodel.pool import StaticPool
 
-import app.rules.rule_repo as repo
+import app.rule.rule_repo as repo
 
 
 # @pytest.fixture(name="session")
