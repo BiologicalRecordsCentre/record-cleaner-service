@@ -60,12 +60,12 @@ async def validate_by_tvk(session: DB, records: list[ValidateTvk]):
             repo = DifficultyRuleRepo(session)
             result.id_difficulty = repo.run(record)
 
-            results.append(Validated(**result))
+            results.append(result)
 
         except ValueError as e:
-            result['ok'] = False
-            result['message'] = str(e)
-            results.append(Validated(**result))
+            result.ok = False
+            result.message = str(e)
+            results.append(result)
             continue
 
     return results

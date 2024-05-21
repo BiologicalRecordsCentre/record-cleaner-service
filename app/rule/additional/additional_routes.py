@@ -1,9 +1,9 @@
-
 from fastapi import APIRouter, HTTPException, status
 
 from app.database import DB
 
-from .additional_models import AdditionalCodeResponse, AdditionalRuleResponse, AdditionalRuleResponseTvk
+from .additional_models import (AdditionalCodeResponse, AdditionalRuleResponse,
+                                AdditionalRuleResponseTvk)
 from .additional_code_repo import AdditionalCodeRepo
 from .additional_rule_repo import AdditionalRuleRepo
 

@@ -1,5 +1,8 @@
 from functools import lru_cache
+from typing import TypeAlias, Annotated
 
+
+from fastapi import Depends
 from pydantic import BaseModel
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlmodel import Session, select
@@ -24,6 +27,12 @@ class EnvSettings(BaseSettings):
     initial_user_pass: str
 
     model_config = SettingsConfigDict(env_file=".env")
+
+
+@lru_cache
+def get_env_settings():
+    # A cached function keeping settings in memory.
+    return EnvSettings()
 
 
 class DbSetting:
@@ -83,12 +92,32 @@ class DbSettings:
     rules_commit = DbSetting('')
     rules_updating = DbSetting(False)
 
+    def list(self):
+        """List all database settings."""
+        result = {}
+        # Loop through vars of DbSettings Class to find descriptors
+        for name, var in vars(DbSettings).items():
+            if isinstance(var, DbSetting):
+                result[name] = getattr(self, name)
+
+        return result
+
 
 class Settings():
     def __init__(self):
-        self.env = EnvSettings()
+        self.env = get_env_settings()
         self.db = DbSettings()
 
 
 # Import this and use wherever we need it.
 settings = Settings()
+
+
+def get_settings() -> Settings:
+    """A function for injecting settings as a dependency."""
+    return settings
+
+
+# Create a type alias for brevity when defining an endpoint needing
+# a database session.
+Config: TypeAlias = Annotated[Settings, Depends(get_settings)]

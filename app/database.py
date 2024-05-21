@@ -5,6 +5,7 @@ from typing import TypeAlias, Annotated
 from fastapi import Depends
 from sqlmodel import create_engine, SQLModel, Session
 
+# Importing all the sqlmodels ensures the tables are created in the database
 import app.sqlmodels as sqlmodels
 
 basedir = os.path.abspath(os.path.dirname(__file__))

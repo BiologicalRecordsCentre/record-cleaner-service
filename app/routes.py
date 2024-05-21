@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
 from app.database import DB
+from app.settings import Config
 
 import app.auth as auth
 import app.main as app
@@ -26,6 +27,11 @@ class Service(BaseModel):
 class Maintenance(BaseModel):
     mode: bool
     message: str
+
+
+class SettingResponse(BaseModel):
+    name: str
+    value: str | int | bool
 
 
 # Instantiate a router.
@@ -72,27 +78,22 @@ async def set_maintenance(maintenance: Maintenance):
     "/settings",
     tags=['Service'],
     summary="List settings.",
-    response_model=Service,
-    dependencies=[Depends(auth.get_current_admin_user)]
+    response_model=dict,
+    #    dependencies=[Depends(auth.get_current_admin_user)]
 )
-async def read_settings():
-    return Service(
-        title=app.app.title,
-        version=app.app.version,
-        summary=app.app.summary,
-        docs_url=app.app.docs_url,
-        maintenance_mode=settings.db.maintenance_mode,
-        maintenance_message=settings.db.maintenance_message,
-        rules_commit=settings.db.rules_commit
-    )
+async def read_settings(settings: Config):
+    return settings.db.list()
 
 
 @router.patch(
     "/settings",
     summary="Alter settings.",
     tags=['Service'],
-    response_model=Service,
-    dependencies=[Depends(auth.get_current_admin_user)]
+    response_model=dict,
+    #    dependencies=[Depends(auth.get_current_admin_user)]
 )
-async def patch_settings(settings: dict):
-    pass
+async def patch_settings(settings: Config, new_settings: dict):
+    for name, value in new_settings.items():
+        setattr(settings.db, name, value)
+
+    return settings.db.list()

@@ -55,14 +55,13 @@ class AdditionalRuleRepo(RuleRepoBase):
         return rules
 
     def get_or_create(
-        self, org_group_id: int, taxon_id: int, stage: str = 'mature'
+        self, org_group_id: int, taxon_id: int
     ):
         """Get existing record or create a new one."""
         additional_rule = self.session.exec(
             select(AdditionalRule)
             .where(AdditionalRule.org_group_id == org_group_id)
             .where(AdditionalRule.taxon_id == taxon_id)
-            .where(AdditionalRule.stage == stage)
         ).one_or_none()
 
         if additional_rule is None:
@@ -70,7 +69,6 @@ class AdditionalRuleRepo(RuleRepoBase):
             additional_rule = AdditionalRule(
                 org_group_id=org_group_id,
                 taxon_id=taxon_id,
-                stage=stage
             )
 
         return additional_rule

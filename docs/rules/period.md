@@ -1,0 +1,1 @@
+Fail if vague date wholely outside period

@@ -14,7 +14,7 @@ class SrefBase:
             self._value.gridref = self.calculate_gridref()
         if self._value.country is None:
             self.calculate_country()
-        if self._value_accuracy is None:
+        if self._value.accuracy is None:
             self.calculate_accuracy()
         if self._value.km100 is None:
             self.calculate_km100()
@@ -40,7 +40,7 @@ class SrefBase:
 
     @property
     def accuracy(self) -> SrefAccuracy:
-        if self._value_accuracy is None:
+        if self._value.accuracy is None:
             self.calculate_accuracy()
         return self._value.accuracy
 

@@ -26,11 +26,6 @@ class TestAdditionalCodeRepo:
         result = repo.list(org_group.id)
 
         # Check the results.
-        assert (result == [
-            {'code': 1, 'text': 'Rare'},
-            {'code': 3, 'text': 'Very rare'},
-            {'code': 5, 'text': 'Unknown'}
-        ])
         assert len(result) == 3
         assert result[0]['code'] == 1
         assert result[0]['text'] == 'Rare'

@@ -15,6 +15,7 @@ from .difficulty.difficulty_code_repo import DifficultyCodeRepo
 from .difficulty.difficulty_rule_repo import DifficultyRuleRepo
 from .org_group.org_group_repo import OrgGroupRepo
 from .period.period_rule_repo import PeriodRuleRepo
+from .stage_synonym.stage_repo import StageSynonymRepo
 from .tenkm.tenkm_rule_repo import TenkmRuleRepo
 from .rule_repo_base import RuleRepoBase
 
@@ -25,6 +26,19 @@ class RuleRepo:
     gitdir = os.path.join(datadir, settings.env.rules_dir)
     rulesdir = os.path.join(gitdir, settings.env.rules_subdir)
     rule_file_types = [
+        # A list of attributes for the file types we need to process with
+        # each element having the following form:
+        # {
+        #     'name': A human readable name for error reporting.
+        #     'class': The name of the repository class for the file type.
+        #     'field': The name of the field in the OrgGroup table holding
+        #         the timestamp of the last time the file was updated.
+        # }
+        {
+            'name': 'Stage synonym',
+            'class': StageSynonymRepo,
+            'field': 'stage_synonym_update'
+        },
         {
             'name': 'Additional code',
             'class': AdditionalCodeRepo,

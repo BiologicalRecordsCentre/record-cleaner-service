@@ -6,6 +6,7 @@ from app.database import DB
 from .rule_repo import RuleRepo
 
 from .additional.additional_routes import router as additional_router
+from .stage_synonym.stage_synonym_routes import router as stage_synonym_router
 from .difficulty.difficulty_routes import router as difficulty_router
 from .org_group.org_group_routes import router as org_group_router
 from .period.period_rule_routes import router as period_router
@@ -17,6 +18,7 @@ router = APIRouter(
     # dependencies=[Depends(get_current_user)]
 )
 router.include_router(org_group_router)
+router.include_router(stage_synonym_router)
 router.include_router(additional_router)
 router.include_router(difficulty_router)
 router.include_router(period_router)
