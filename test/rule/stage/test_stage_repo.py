@@ -2,14 +2,14 @@ import os
 
 from sqlmodel import Session
 
-from app.rule.stage_synonym.stage_repo import StageSynonymRepo
+from app.rule.stage.stage_repo import StageRepo
 from app.sqlmodels import OrgGroup
 
 
-class TestStageSynonymRepo:
+class TestStageRepo:
     """Tests of the repo class."""
 
-    def test_stage_synonym_repo(self, session: Session):
+    def test_stage_repo(self, session: Session):
         # Create an org_group.
         org_group = OrgGroup(organisation='organisation1', group='group1')
         session.add(org_group)
@@ -21,18 +21,18 @@ class TestStageSynonymRepo:
         dir = os.path.join(thisdir, 'testdata')
 
         # Load a file.
-        repo = StageSynonymRepo(session)
+        repo = StageRepo(session)
         repo.load_file(dir, org_group.id, 'abc123', 'stage_synonyms_3.csv')
         result = repo.list(org_group.id)
 
-        # Check the results.
+        # Check the results. (Synonyms are lower-cased and sorted.)
         assert len(result) == 3
         assert result[0]['stage'] == 'mature'
-        assert result[0]['synonyms'] == 'Adult, Grown up, Big boy'
+        assert result[0]['synonyms'] == 'adult,big boy,grown up'
         assert result[1]['stage'] == 'immature'
-        assert result[1]['synonyms'] == 'Child, Kid, Teenager'
-        assert result[1]['stage'] == 'infant'
-        assert result[1]['synonyms'] == 'Baby, Parasite'
+        assert result[1]['synonyms'] == 'child,kid,teenager'
+        assert result[2]['stage'] == 'infant'
+        assert result[2]['synonyms'] == 'baby,toddler'
 
         # Load a shorter file.
         repo.load_file(dir, org_group.id, 'xyz321', 'stage_synonyms_1.csv')
@@ -41,7 +41,7 @@ class TestStageSynonymRepo:
         # Check the results.
         assert len(result) == 1
         assert result[0]['stage'] == 'mature'
-        assert result[0]['synonyms'] == 'Adult, Pensioner, Crumbly'
+        assert result[0]['synonyms'] == 'adult,crumbly,pensioner'
 
         # Load a longer file.
         repo.load_file(dir, org_group.id, 'pqr987', 'stage_synonyms_2.csv')
@@ -50,6 +50,6 @@ class TestStageSynonymRepo:
         # Check the results.
         assert len(result) == 2
         assert result[0]['stage'] == 'mature'
-        assert result[0]['synonyms'] == 'Woman, Female'
+        assert result[0]['synonyms'] == 'female,woman'
         assert result[1]['stage'] == 'immature'
-        assert result[1]['synonyms'] == 'Man, Male'
+        assert result[1]['synonyms'] == 'male,man'

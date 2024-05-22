@@ -6,10 +6,11 @@ from sqlmodel import select
 import app.species.cache as cache
 from app.utility.vague_date import VagueDate
 
-from app.sqlmodels import PhenologyRule, Taxon, OrgGroup, StageSynonym
+from app.sqlmodels import PhenologyRule, Taxon, OrgGroup, Stage, StageSynonym
 from app.verify.verify_models import Verified
 
 from ..rule_repo_base import RuleRepoBase
+from ..stage.stage_repo import StageRepo
 
 
 class PhenologyRuleRepo(RuleRepoBase):
@@ -17,60 +18,64 @@ class PhenologyRuleRepo(RuleRepoBase):
 
     def list_by_org_group(self, org_group_id: int):
         results = self.session.exec(
-            select(PhenologyRule, Taxon)
+            select(PhenologyRule, Taxon, Stage)
             .join(Taxon)
+            .join(Stage)
             .where(PhenologyRule.org_group_id == org_group_id)
             .order_by(Taxon.tvk)
         ).all()
 
         rules = []
-        for phenology_rule, taxon in results:
+        for phenology, taxon, stage in results:
             rules.append({
                 'tvk': taxon.tvk,
                 'taxon': taxon.name,
-                'start_date': phenology_rule.start_day + "/" +
-                phenology_rule.start_month,
-                'end_date': phenology_rule.end_day + "/" +
-                phenology_rule.end_month
+                'start_date': f"{phenology.start_day}/{phenology.start_month}",
+                'end_date': f"{phenology.end_day}/{phenology.end_month}",
+                'stage': stage.stage
             })
 
         return rules
 
     def list_by_tvk(self, tvk: str):
-        results = self.session.exec(
-            select(PhenologyRule, Taxon, OrgGroup)
+        query = (
+            select(PhenologyRule, OrgGroup, Stage)
             .join(Taxon)
             .join(OrgGroup)
+            .join(Stage, Stage.id == PhenologyRule.stage_id)
             .where(Taxon.tvk == tvk)
             .order_by(OrgGroup.organisation, OrgGroup.group)
-        ).all()
+        )
+        results = self.session.exec(query).all()
 
         rules = []
-        for phenology_rule, taxon, org_group in results:
+        for phenology, org_group, stage in results:
             rules.append({
                 'organisation': org_group.organisation,
                 'group': org_group.group,
-                'start_date': phenology_rule.start_day + "/" +
-                phenology_rule.start_month,
-                'end_date': phenology_rule.end_day + "/" +
-                phenology_rule.end_month
+                'start_date': f"{phenology.start_day}/{phenology.start_month}",
+                'end_date': f"{phenology.end_day}/{phenology.end_month}",
+                'stage': stage.stage
             })
 
         return rules
 
-    def get_or_create(self, org_group_id: int, taxon_id: int):
+    def get_or_create(self, org_group_id: int, taxon_id: int, stage_id: int):
         """Get existing record or create a new one."""
+
         phenology_rule = self.session.exec(
             select(PhenologyRule)
             .where(PhenologyRule.org_group_id == org_group_id)
             .where(PhenologyRule.taxon_id == taxon_id)
+            .where(PhenologyRule.stage_id == stage_id)
         ).one_or_none()
 
         if phenology_rule is None:
             # Create new.
             phenology_rule = PhenologyRule(
                 org_group_id=org_group_id,
-                taxon_id=taxon_id
+                taxon_id=taxon_id,
+                stage_id=stage_id
             )
 
         return phenology_rule
@@ -100,27 +105,32 @@ class PhenologyRuleRepo(RuleRepoBase):
 
         if file is None:
             file = self.default_file
-        # Read the file into a dataframe. Int64 is a nullable integer
-        # allowing start or end to be omitted.
-        periods = pd.read_csv(
+        # Read the file into a dataframe.
+        df = pd.read_csv(
             f'{dir}/{file}',
             usecols=[
                 'tvk',
-                'start_month',
                 'start_day',
+                'start_month',
+                'end_day',
                 'end_month',
-                'end_day'
+                'stage'
             ],
             dtype={
                 'tvk': str,
-                'start_month': 'Int64',
-                'start_day': 'Int64',
-                'end_month': 'Int64',
-                'end_day': 'Int64'
+                'start_day': int,
+                'start_month': int,
+                'end_day': int,
+                'end_month': int,
+                'stage': str
             }
         )
 
-        for row in periods.to_dict('records'):
+        # Get the additional codes for this org_group
+        stage_repo = StageRepo(self.session)
+        stage_lookup = stage_repo.get_stage_lookup(org_group_id)
+
+        for row in df.to_dict('records'):
             # Lookup preferred tvk.
             taxon = cache.get_taxon_by_tvk(self.session, row['tvk'].strip())
             if taxon is None:
@@ -132,7 +142,7 @@ class PhenologyRuleRepo(RuleRepoBase):
                     self.session, taxon.preferred_tvk
                 )
 
-            # Validate the data supplied.
+            # Validate start date.
             m = row['start_month']
             d = row['start_day']
             if pd.isna(m) or pd.isna(d):
@@ -142,13 +152,14 @@ class PhenologyRuleRepo(RuleRepoBase):
                 continue
             else:
                 try:
-                    start_date = date(y, m, d)
+                    date(2000, m, d)
                 except ValueError as e:
                     errors.append(
                         f"Invalid start date for {row['tvk']}. {e}"
                     )
                     continue
 
+            # Validate end date.
             m = row['end_month']
             d = row['end_day']
             if pd.isna(m) or pd.isna(d):
@@ -158,17 +169,29 @@ class PhenologyRuleRepo(RuleRepoBase):
                 continue
             else:
                 try:
-                    end_date = date(y, m, d)
+                    date(2000, m, d)
                 except ValueError as e:
                     errors.append(
-                        f"Invalid end date {y}-{m}-{d} for {row['tvk']}. {e}"
+                        f"Invalid end date for {row['tvk']}. {e}"
                     )
                     continue
 
+            # Validate stage.
+            stage = row['stage'].strip().lower()
+            if (
+                stage not in stage_lookup.keys() and
+                stage != '*'
+            ):
+                errors.append(f"Unknown stage '{stage}' for {row['tvk']}.")
+                continue
+
             # Add the rule to the session.
-            phenology_rule = self.get_or_create(org_group_id, taxon.id)
-            phenology_rule.start_date = start_date
-            phenology_rule.end_date = end_date
+            phenology_rule = self.get_or_create(
+                org_group_id, taxon.id, stage_lookup[stage])
+            phenology_rule.start_day = row['start_day']
+            phenology_rule.start_month = row['start_month']
+            phenology_rule.end_day = row['end_day']
+            phenology_rule.end_month = row['end_month']
             phenology_rule.commit = rules_commit
             self.session.add(phenology_rule)
 

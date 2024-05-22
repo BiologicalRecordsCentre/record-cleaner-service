@@ -10,20 +10,20 @@ class StageSynonymRepo:
 
     def get_or_create(self, stage_id: int, synonym: str):
         """Get existing record or create a new one."""
-        synonym = self.session.exec(
+        synonym_record = self.session.exec(
             select(StageSynonym)
             .where(StageSynonym.stage_id == stage_id)
             .where(StageSynonym.synonym == synonym)
         ).one_or_none()
 
-        if synonym is None:
+        if synonym_record is None:
             # Create new.
-            synonym = StageSynonym(
+            synonym_record = StageSynonym(
                 stage_id=stage_id,
                 synonym=synonym
             )
 
-        return synonym
+        return synonym_record
 
     def purge(self, stage_id: int, rules_commit: str = None):
         stmt = select(StageSynonym).where(StageSynonym.stage_id == stage_id)

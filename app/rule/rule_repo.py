@@ -15,9 +15,9 @@ from .difficulty.difficulty_code_repo import DifficultyCodeRepo
 from .difficulty.difficulty_rule_repo import DifficultyRuleRepo
 from .org_group.org_group_repo import OrgGroupRepo
 from .period.period_rule_repo import PeriodRuleRepo
-from .stage_synonym.stage_repo import StageSynonymRepo
+from .phenology.phenology_rule_repo import PhenologyRuleRepo
+from .stage.stage_repo import StageRepo
 from .tenkm.tenkm_rule_repo import TenkmRuleRepo
-from .rule_repo_base import RuleRepoBase
 
 
 class RuleRepo:
@@ -36,7 +36,7 @@ class RuleRepo:
         # }
         {
             'name': 'Stage synonym',
-            'class': StageSynonymRepo,
+            'class': StageRepo,
             'field': 'stage_synonym_update'
         },
         {
@@ -65,6 +65,11 @@ class RuleRepo:
             'field': 'period_rule_update'
         },
         {
+            'name': 'Period in year rule',
+            'class': PhenologyRuleRepo,
+            'field': 'phenology_rule_update'
+        },
+        {
             'name': 'Tenkm rule',
             'class': TenkmRuleRepo,
             'field': 'tenkm_rule_update'
@@ -76,6 +81,7 @@ class RuleRepo:
     verification_rule_types = {
         'additional': AdditionalRuleRepo,
         'period': PeriodRuleRepo,
+        'phenology': PhenologyRuleRepo,
         'tenkm': TenkmRuleRepo
     }
 

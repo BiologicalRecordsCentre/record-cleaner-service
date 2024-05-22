@@ -99,7 +99,7 @@ class AdditionalRuleRepo(RuleRepoBase):
         if file is None:
             file = self.default_file
         # Read the additional file into a dataframe.
-        additionals = pd.read_csv(
+        df = pd.read_csv(
             f'{dir}/{file}',
             usecols=['tvk', 'code'],
             dtype={'tvk': str, 'code': int}
@@ -112,7 +112,7 @@ class AdditionalRuleRepo(RuleRepoBase):
             errors.append("No additional codes exist.")
             return errors
 
-        for row in additionals.to_dict('records'):
+        for row in df.to_dict('records'):
             # Lookup preferred tvk.
             taxon = cache.get_taxon_by_tvk(self.session, row['tvk'].strip())
             if taxon is None:

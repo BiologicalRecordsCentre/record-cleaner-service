@@ -16,35 +16,47 @@ class StageRepo(RuleRepoBase):
         self.stage_synonym_repo = StageSynonymRepo(session)
 
     def list(self, org_group_id: int):
+        """Return a list of stages for the org_group.
+
+        Stages are listed in original sort order.
+        Synonyms are aggregated and listed in alphabetical order.
+        """
         results = self.session.exec(
             select(
                 Stage.stage,
-                func.string_agg(StageSynonym.synonym, ', ').label('synonyms')
+                func.group_concat(StageSynonym.synonym).label('synonyms')
             )
             .join(StageSynonym)
             .where(Stage.org_group_id == org_group_id)
             .group_by(Stage.stage)
-            .order_by(Stage.stage, StageSynonym.synonym)
+            .order_by(Stage.sort_order)
         ).all()
 
-        return results
+        stages = []
+        for stage, synonyms in results:
+            stages.append({
+                'stage': stage,
+                'synonyms': synonyms
+            })
+
+        return stages
 
     def get_or_create(self, org_group_id: int, stage: str):
         """Get existing record or create a new one."""
-        stage = self.session.exec(
+        record = self.session.exec(
             select(Stage)
             .where(Stage.org_group_id == org_group_id)
             .where(Stage.stage == stage)
         ).one_or_none()
 
-        if stage is None:
+        if record is None:
             # Create new.
-            stage = Stage(
+            record = Stage(
                 org_group_id=org_group_id,
                 stage=stage
             )
 
-        return stage
+        return record
 
     def purge(self, org_group_id: int, rules_commit):
         """Delete records for org_group not from current commit."""
@@ -59,16 +71,16 @@ class StageRepo(RuleRepoBase):
             self.session.delete(stage)
         self.session.commit()
 
-    def get_code_lookup(self, org_group_id: int) -> {}:
-        """Return a look up from stage to stage_synonym_id"""
-        stage_synonyms = self.session.exec(
-            select(StageSynonym)
-            .where(StageSynonym.org_group_id == org_group_id)
+    def get_stage_lookup(self, org_group_id: int) -> dict:
+        """Return a look up from stage to stage_id"""
+        records = self.session.exec(
+            select(Stage)
+            .where(Stage.org_group_id == org_group_id)
         )
 
         stage_lookup = {}
-        for stage_synonym in stage_synonyms:
-            stage_lookup[stage_synonym.stage] = stage_synonym.id
+        for record in records:
+            stage_lookup[record.stage] = record.id
 
         return stage_lookup
 
@@ -78,7 +90,11 @@ class StageRepo(RuleRepoBase):
             rules_commit: str,
             file: str | None = None
     ):
-        """Read a stage_synonyms file and save to database."""
+        """Read a stage_synonyms file and save to database.
+
+        The data is split across two tables: Stage and StageSynonym.
+        Each org_group may specify different stages for use in their rules.
+        Each stage may have multiple synonyms."""
 
         # Accumulate a list of errors.
         errors = []
@@ -90,11 +106,13 @@ class StageRepo(RuleRepoBase):
             f'{dir}/{file}', dtype={'stage': str, 'synonyms': str}
         )
 
-        for row in df.to_dict('records'):
+        for index, row in enumerate(df.to_dict('records')):
             # Add or update the stage.
-            stage = self.get_or_create(org_group_id, row['stage'])
-            stage.commit = rules_commit
-            self.session.add(stage)
+            stage = row['stage'].strip().lower()
+            record = self.get_or_create(org_group_id, stage)
+            record.commit = rules_commit
+            record.sort_order = index
+            self.session.add(record)
             self.session.commit()
 
             # Add or update the synonyms.

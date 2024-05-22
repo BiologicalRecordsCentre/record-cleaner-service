@@ -1,6 +1,6 @@
 from typing import Optional
 
-from sqlmodel import Field, SQLModel, UniqueConstraint, ForeignKey
+from sqlmodel import Field, SQLModel, UniqueConstraint
 
 
 class System(SQLModel, table=True):
@@ -31,7 +31,26 @@ class OrgGroup(SQLModel, table=True):
     difficulty_code_update: str | None = None
     difficulty_rule_update: str | None = None
     period_rule_update: str | None = None
+    phenology_rule_update: str | None = None
     tenkm_rule_update: str | None = None
+
+
+class Stage(SQLModel, table=True):
+    __table_args__ = (UniqueConstraint('org_group_id', 'stage'),)
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    org_group_id: int = Field(foreign_key='orggroup.id', index=True)
+    stage: str
+    sort_order: int
+    commit: str | None = None
+
+
+class StageSynonym(SQLModel, table=True):
+    __table_args__ = (UniqueConstraint('stage_id', 'synonym'),)
+
+    stage_id: int = Field(foreign_key='stage.id', primary_key=True)
+    synonym: str = Field(primary_key=True)
+    commit: str | None = None
 
 
 class DifficultyCode(SQLModel, table=True):
@@ -90,34 +109,17 @@ class PeriodRule(SQLModel, table=True):
 
 class PhenologyRule(SQLModel, table=True):
     __table_args__ = (
-        UniqueConstraint('org_group_id', 'taxon_id', 'stage_synonym_id'),
+        UniqueConstraint('org_group_id', 'taxon_id', 'stage_id'),
     )
 
     id: Optional[int] = Field(default=None, primary_key=True)
     org_group_id: int = Field(foreign_key='orggroup.id', index=True)
     taxon_id: int = Field(foreign_key='taxon.id', index=True)
-    stage_synonym_id: int = Field(foreign_key='stage_synonym.id', index=True)
+    stage_id: int = Field(foreign_key='stage.id', index=True)
     start_day:  int
     start_month:  int
     end_day:  int
     end_month:  int
-    commit: str | None = None
-
-
-class Stage(SQLModel, table=True):
-    __table_args__ = (UniqueConstraint('org_group_id', 'stage'),)
-
-    id: Optional[int] = Field(default=None, primary_key=True)
-    org_group_id: int = Field(foreign_key='orggroup.id', index=True)
-    stage: str
-    commit: str | None = None
-
-
-class StageSynonym(SQLModel, table=True):
-    __table_args__ = (UniqueConstraint('stage_id', 'synonym'),)
-
-    stage_id: int = Field(foreign_key='stage.id', index=True)
-    synonym: str = Field(index=True)
     commit: str | None = None
 
 
