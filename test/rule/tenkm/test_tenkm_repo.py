@@ -2,14 +2,17 @@ import os
 
 from sqlmodel import Session
 
-from app.rule.tenkm.tenkm_rule_repo import TenkmRuleRepo
-from app.sqlmodels import OrgGroup, Taxon
+from app.rule.tenkm.tenkm_repo import TenkmRuleRepo
+from app.sqlmodels import OrgGroup, Taxon, TenkmRule
+from app.utility.sref import Sref, SrefSystem
+from app.utility.sref.sref_factory import SrefFactory
+from app.verify.verify_models import Verified
 
 
 class TestTenkmRuleRepo:
     """Tests of the repo class."""
 
-    def test_tenkm_rule_repo(self, session: Session):
+    def test_load_file(self, session: Session):
         # Create org_groups.
         org_group1 = OrgGroup(organisation='organisation1', group='group1')
         org_group2 = OrgGroup(organisation='organisation2', group='group2')
@@ -121,3 +124,111 @@ class TestTenkmRuleRepo:
         assert result[3]['km100'] == 'TL'
         assert result[3]['km10'] == '00'
         assert result[3]['coord_system'] == 'OSGB'
+
+    def test_run(self, session: Session):
+        # Create org_groups.
+        org_group1 = OrgGroup(organisation='organisation1', group='group1')
+        org_group2 = OrgGroup(organisation='organisation2', group='group2')
+        org_group3 = OrgGroup(organisation='organisation3', group='group3')
+        session.add(org_group1)
+        session.add(org_group2)
+        session.add(org_group3)
+        session.commit()
+
+        # Create taxa.
+        taxon1 = Taxon(
+            name='Adalia bipunctata',
+            tvk='NBNSYS0000008319',
+            preferred_name='Adalia bipunctata',
+            preferred_tvk='NBNSYS0000008319'
+        )
+        taxon2 = Taxon(
+            name='Adalia decempunctata',
+            tvk='NBNSYS0000008320',
+            preferred_name='Adalia decempunctata',
+            preferred_tvk='NBNSYS0000008320'
+        )
+        session.add(taxon1)
+        session.add(taxon2)
+        session.commit()
+
+        # Create tenkm rule for org_group1 and taxon1.
+        rule1 = TenkmRule(
+            org_group_id=org_group1.id,
+            taxon_id=taxon1.id,
+            km100='TL',
+            km10='13',
+            coord_system='OSGB'
+        )
+        # Create period rule for org_group2 and taxon1.
+        rule2 = TenkmRule(
+            org_group_id=org_group2.id,
+            taxon_id=taxon1.id,
+            km100='TL',
+            km10='57',
+            coord_system='OSGB'
+        )
+        # Create period rule for org_group2 and taxon1.
+        rule3 = TenkmRule(
+            org_group_id=org_group3.id,
+            taxon_id=taxon1.id,
+            km100='TM',
+            km10='99',
+            coord_system='OSGB'
+        )
+        session.add(rule1)
+        session.add(rule2)
+        session.add(rule3)
+        session.commit()
+
+        # Create record of taxon1 to test.
+        record = Verified(
+            id=1,
+            date='1/6/1975',
+            sref=SrefFactory(
+                Sref(gridref='TL1234', srid=SrefSystem.GB_GRID)
+            ).value,
+            tvk=taxon1.tvk
+        )
+
+        repo = TenkmRuleRepo(session)
+
+        # Test the record against org_group1 rules.
+        failures = repo.run(record, org_group1.id)
+        # It should pass.
+        assert len(failures) == 0
+
+        # Test the record against org_group2 rules.
+        failures = repo.run(record, org_group2.id)
+        # It should fail as wrong km10.
+        assert len(failures) == 1
+        assert failures[0] == (
+            "organisation2:group2:tenkm: Record is outside known area."
+        )
+
+        # Test the record against org_group3 rules.
+        failures = repo.run(record, org_group3.id)
+        # It should fail as wrong km100.
+        assert len(failures) == 1
+        assert failures[0] == (
+            "organisation3:group3:tenkm: Record is outside known area."
+        )
+
+        # Change the record to taxon2 for which there are no rules.
+        record.tvk = taxon2.tvk
+
+        # Test the record against org_group1 rules.
+        failures = repo.run(record, org_group1.id)
+        # It should fail as no rule.
+        assert len(failures) == 1
+        assert failures[0] == (
+            "organisation1:group1:tenkm: There is no rule for this taxon."
+        )
+
+        # Test the record against all rules.
+        failures = repo.run(record)
+        # It should fail as no rule.
+        assert len(failures) == 1
+        assert failures[0] == (
+            "*:*:tenkm: There is no rule for this taxon."
+        )

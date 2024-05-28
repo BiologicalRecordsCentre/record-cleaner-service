@@ -55,7 +55,7 @@ class TestDifficulty:
 
         # Request difficulty rules for org_group.
         response = client.get(
-            f'/rules/difficulty-rules/org_group/{org_group.id}')
+            f'/rules/difficulty/org_group/{org_group.id}')
         assert response.status_code == 200
         result = response.json()
         assert result[0]['tvk'] == 'NBNSYS0000008319'
@@ -63,7 +63,7 @@ class TestDifficulty:
         assert result[0]['difficulty'] == 1
 
         # Request difficulty rules for tvk.
-        response = client.get(f'/rules/difficulty-rules/tvk/{taxon.tvk}')
+        response = client.get(f'/rules/difficulty/tvk/{taxon.tvk}')
         assert response.status_code == 200
         result = response.json()
         assert result[0]['organisation'] == 'organisation1'

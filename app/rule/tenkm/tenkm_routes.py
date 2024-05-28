@@ -3,15 +3,15 @@ from fastapi import APIRouter, HTTPException, status
 
 from app.database import DB
 
-from .tenkm_rule_models import TenkmRuleResponse, TenkmRuleResponseTvk
-from .tenkm_rule_repo import TenkmRuleRepo
+from .tenkm_models import TenkmRuleResponse, TenkmRuleResponseTvk
+from .tenkm_repo import TenkmRuleRepo
 
 
 router = APIRouter()
 
 
 @router.get(
-    "/tenkm-rules/org_group/{org_group_id}",
+    "/tenkm/org_group/{org_group_id}",
     summary="List ten km rules for organisation group.",
     response_model=list[TenkmRuleResponse]
 )
@@ -22,7 +22,7 @@ async def read_rules_by_org_group(session: DB, org_group_id: int):
 
 
 @router.get(
-    "/tenkm-rules/tvk/{tvk}",
+    "/tenkm/tvk/{tvk}",
     summary="List tenkm rules for TVK.",
     response_model=list[TenkmRuleResponseTvk]
 )

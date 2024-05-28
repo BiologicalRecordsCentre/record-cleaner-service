@@ -102,6 +102,7 @@ class PeriodRule(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     org_group_id: int = Field(foreign_key='orggroup.id', index=True)
     taxon_id: int = Field(foreign_key='taxon.id', index=True)
+    # Dates in yyyy-mm-dd format.
     start_date:  str | None = None
     end_date:  str | None = None
     commit: str | None = None

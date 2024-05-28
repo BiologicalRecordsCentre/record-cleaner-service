@@ -57,7 +57,7 @@ class TestAdditional:
 
         # Request additional rules for org_group.
         response = client.get(
-            f'/rules/additional-rules/org_group/{org_group.id}')
+            f'/rules/additional/org_group/{org_group.id}')
         assert response.status_code == 200
         result = response.json()
         assert len(result) == 1
@@ -66,7 +66,7 @@ class TestAdditional:
         assert result[0]['code'] == 1
 
         # Request additional rules for tvk.
-        response = client.get(f'/rules/additional-rules/tvk/{taxon.tvk}')
+        response = client.get(f'/rules/additional/tvk/{taxon.tvk}')
         assert response.status_code == 200
         result = response.json()
         assert len(result) == 1

@@ -14,10 +14,10 @@ from .additional.additional_rule_repo import AdditionalRuleRepo
 from .difficulty.difficulty_code_repo import DifficultyCodeRepo
 from .difficulty.difficulty_rule_repo import DifficultyRuleRepo
 from .org_group.org_group_repo import OrgGroupRepo
-from .period.period_rule_repo import PeriodRuleRepo
-from .phenology.phenology_rule_repo import PhenologyRuleRepo
+from .period.period_repo import PeriodRuleRepo
+from .phenology.phenology_repo import PhenologyRuleRepo
 from .stage.stage_repo import StageRepo
-from .tenkm.tenkm_rule_repo import TenkmRuleRepo
+from .tenkm.tenkm_repo import TenkmRuleRepo
 
 
 class RuleRepo:

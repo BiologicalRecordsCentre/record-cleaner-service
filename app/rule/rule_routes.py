@@ -9,8 +9,9 @@ from .additional.additional_routes import router as additional_router
 from .stage.stage_routes import router as stage_router
 from .difficulty.difficulty_routes import router as difficulty_router
 from .org_group.org_group_routes import router as org_group_router
-from .period.period_rule_routes import router as period_router
-from .tenkm.tenkm_rule_routes import router as tenkm_router
+from .period.period_routes import router as period_router
+from .phenology.phenology_routes import router as phenology_router
+from .tenkm.tenkm_routes import router as tenkm_router
 
 router = APIRouter(
     prefix="/rules",
@@ -22,6 +23,7 @@ router.include_router(stage_router)
 router.include_router(additional_router)
 router.include_router(difficulty_router)
 router.include_router(period_router)
+router.include_router(phenology_router)
 router.include_router(tenkm_router)
 
 

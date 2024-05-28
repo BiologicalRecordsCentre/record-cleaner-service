@@ -3,15 +3,15 @@ from datetime import date
 from fastapi.testclient import TestClient
 from sqlmodel import Session
 
-from app.sqlmodels import OrgGroup, Taxon, PeriodRule
+from app.sqlmodels import OrgGroup, Taxon, TenkmRule
 
 
-class TestPeriodRule:
+class TestTenkmRule:
     """Tests of the public API.
 
     Fixtures for database and authentication come from ../conftest.py"""
 
-    def test_period_rule(self, client: TestClient, session: Session):
+    def test_tenkm_rule(self, client: TestClient, session: Session):
         # Create org_group.
         org_group = OrgGroup(organisation='organisation1', group='group1')
         session.add(org_group)
@@ -30,35 +30,34 @@ class TestPeriodRule:
         session.refresh(taxon)
 
         # Create period rule.
-        period_rule = PeriodRule(
+        tenkm_rule = TenkmRule(
             org_group_id=org_group.id,
             taxon_id=taxon.id,
-            start_date=date(2020, 1, 1),
-            end_date=date(2020, 12, 31)
+            km100='NZ',
+            km10='17',
+            coord_system='OSGB'
         )
-        session.add(period_rule)
+        session.add(tenkm_rule)
         session.commit()
-        session.refresh(period_rule)
+        session.refresh(tenkm_rule)
 
-        # Request period rules for org_group.
+        # Request tenkm rules for org_group.
         response = client.get(
-            f'/rules/period-rules/org_group/{org_group.id}')
+            f'/rules/tenkm/org_group/{org_group.id}')
         assert response.status_code == 200
         result = response.json()
-        assert result == [{
-            'tvk': 'NBNSYS0000008319',
-            'taxon': 'Adalia bipunctata',
-            'start_date': '2020-01-01',
-            'end_date': '2020-12-31'
-        }]
+        assert result[0]['tvk'] == 'NBNSYS0000008319'
+        assert result[0]['taxon'] == 'Adalia bipunctata'
+        assert result[0]['km100'] == 'NZ'
+        assert result[0]['km10'] == '17'
+        assert result[0]['coord_system'] == 'OSGB'
 
-        # Request period rules for tvk.
-        response = client.get(f'/rules/period-rules/tvk/{taxon.tvk}')
+        # Request tenkm rules for tvk.
+        response = client.get(f'/rules/tenkm/tvk/{taxon.tvk}')
         assert response.status_code == 200
         result = response.json()
-        assert result == [{
-            'organisation': 'organisation1',
-            'group': 'group1',
-            'start_date': '2020-01-01',
-            'end_date': '2020-12-31'
-        }]
+        assert result[0]['organisation'] == 'organisation1'
+        assert result[0]['group'] == 'group1'
+        assert result[0]['km100'] == 'NZ'
+        assert result[0]['km10'] == '17'
+        assert result[0]['coord_system'] == 'OSGB'

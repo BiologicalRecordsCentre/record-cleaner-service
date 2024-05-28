@@ -5,12 +5,12 @@ from app.auth import Auth
 from app.database import DB
 
 
-from .period_rule_models import PeriodRuleResponse, PeriodRuleResponseTvk
-from .period_rule_repo import PeriodRuleRepo
+from .period_models import PeriodRuleResponse, PeriodRuleResponseTvk
+from .period_repo import PeriodRuleRepo
 
 
 router = APIRouter(
-    prefix="/period-rules",
+    prefix="/period",
     tags=['Rules'],
     # dependencies=[Depends(get_current_user)]
 

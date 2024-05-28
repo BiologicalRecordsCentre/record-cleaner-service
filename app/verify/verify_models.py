@@ -8,6 +8,7 @@ class Verify(BaseModel):
     id: int = Field(ge=1)
     date: str
     sref: Sref
+    stage: str | None = None
 
 
 class VerifyName(Verify):

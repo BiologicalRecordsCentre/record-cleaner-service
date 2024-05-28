@@ -117,7 +117,7 @@ class StageRepo(RuleRepoBase):
 
             # Add or update the synonyms.
             self.stage_synonym_repo.load(
-                stage.id,
+                record.id,
                 row['synonyms'],
                 rules_commit
             )

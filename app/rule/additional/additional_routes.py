@@ -23,7 +23,7 @@ async def read_codes(session: DB, org_group_id: int):
 
 
 @router.get(
-    "/additional-rules/org_group/{org_group_id}",
+    "/additional/org_group/{org_group_id}",
     summary="List additional rules for organisation group.",
     response_model=list[AdditionalRuleResponse]
 )
@@ -34,7 +34,7 @@ async def read_rules_by_org_group(session: DB, org_group_id: int):
 
 
 @router.get(
-    "/additional-rules/tvk/{tvk}",
+    "/additional/tvk/{tvk}",
     summary="List additional rules for TVK.",
     response_model=list[AdditionalRuleResponseTvk]
 )

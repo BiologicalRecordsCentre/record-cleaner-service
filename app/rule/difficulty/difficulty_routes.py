@@ -24,7 +24,7 @@ async def read_codes(session: DB, org_group_id: int):
 
 
 @router.get(
-    "/difficulty-rules/org_group/{org_group_id}",
+    "/difficulty/org_group/{org_group_id}",
     summary="List difficulty rules for organisation group.",
     response_model=list[DifficultyRuleResponse]
 )
@@ -35,7 +35,7 @@ async def read_rules_by_org_group(session: DB, org_group_id: int):
 
 
 @router.get(
-    "/difficulty-rules/tvk/{tvk}",
+    "/difficulty/tvk/{tvk}",
     summary="List difficulty rules for TVK.",
     response_model=list[DifficultyRuleResponseTvk]
 )
