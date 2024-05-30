@@ -76,7 +76,7 @@ class RuleRepo:
         }
     ]
 
-    # Rules used for verification.
+    # Dictionary of ules used for verification and their repo classes.
     # Difficulty is not a pass/fail and is done at validation.
     verification_rule_types = {
         'additional': AdditionalRuleRepo,
@@ -359,17 +359,22 @@ class RuleRepo:
                 group = org_group_rules.group
                 rules = org_group_rules.rules
                 org_group = repo.get(organisation, group)
+                if org_group is None:
+                    raise ValueError(
+                        "Unrecognised organisation:group, "
+                        f"'{organisation}:{group}'."
+                    )
                 self.run_rules_for_org_group(org_group, rules, record)
 
-        if len(record.message) > 0:
+        if len(record.messages) > 0:
             record.ok = False
-            record.message.sort()
+            record.messages.sort()
 
     def run_rules_for_all(self, record: Verified):
         """Run all the rules against the record from all org_groups."""
-        for rule_repo_class in self.verification_rule_types:
+        for rule_repo_class in self.verification_rule_types.values():
             repo = rule_repo_class(self.session)
-            record.message.extend(repo.run(record))
+            record.messages.extend(repo.run(record))
 
     def run_rules_for_org_group(
         self,
@@ -382,7 +387,7 @@ class RuleRepo:
             # Try all the rules
             for rule_repo_class in self.verification_rule_types.values():
                 repo = rule_repo_class(self.session)
-                record.message.extend(repo.run(record, org_group.id))
+                record.messages.extend(repo.run(record, org_group.id))
         else:
             # Only use rules listed.
             for rule in rules:
@@ -391,4 +396,4 @@ class RuleRepo:
                     continue
                 rule_repo_class = self.verification_rule_types[rule]
                 repo = rule_repo_class(self.session)
-                record.message.extend(repo.run(record, org_group.id))
+                record.messages.extend(repo.run(record, org_group.id))

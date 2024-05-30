@@ -1,7 +1,7 @@
 from datetime import date
 import pandas as pd
 
-from sqlmodel import select
+from sqlmodel import select, or_
 
 import app.species.cache as cache
 from app.utility.vague_date import VagueDate
@@ -246,13 +246,20 @@ class PhenologyRuleRepo(RuleRepoBase):
             )
 
             if record.stage is None:
-                # Use mature rule if no stage is specified.
-                query = query.where(Stage.stage == 'mature')
+                # Use mature or 'everything' rule if no stage is specified.
+                # No need to look at synonmms.
+                query = query.where(or_(
+                    Stage.stage == 'mature',
+                    Stage.stage == '*'))
             else:
+                # Use rule with matching stage synonym or 'everything' rule.
+                # Left join synonyms as 'everything' rule won't have them.
                 query = (
                     query
-                    .join(StageSynonym)
-                    .where(StageSynonym.synonym == record.stage)
+                    .join(StageSynonym, isouter=True)
+                    .where(or_(
+                        StageSynonym.synonym == record.stage,
+                        Stage.stage == '*'))
                 )
 
             phenology_rule = self.session.exec(query).one_or_none()

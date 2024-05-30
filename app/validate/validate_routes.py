@@ -29,26 +29,43 @@ async def validate_by_tvk(session: DB, records: list[ValidateTvk]):
         # Our response begins with the input data.
         result = Validated(**record.model_dump())
 
+        # 1. Confirm TVK is valid.
         try:
-            # 1. Confirm TVK is valid.
             taxon = cache.get_taxon_by_tvk(session, record.tvk)
-            if taxon is None:
-                raise ValueError("TVK not recognised.")
-            # Return name associated with TVK.
-            result.name = taxon.name
+            # Return preferred TVK.
+            if record.tvk != taxon.preferred_tvk:
+                result.tvk = taxon.preferred_tvk
+                result.messages.append(
+                    f"TVK '{record.tvk}' replaced by preferred TVK."
+                )
+            # Return preferred name.
+            result.name = taxon.preferred_name
 
-            # 2. Confirm date is valid.
+            # Get id difficulty.
+            repo = DifficultyRuleRepo(session)
+            result.id_difficulty = repo.run(record)
+
+        except Exception as e:
+            result.ok = False
+            result.messages.append(str(e))
+
+        # 2. Confirm date is valid.
+        try:
             vague_date = VagueDate(record.date)
             # Return date in preferred format.
             result.date = str(vague_date)
+        except Exception as e:
+            result.ok = False
+            result.messages.append(str(e))
 
-            # 3. Confirm sref is valid.
+        # 3. Confirm sref is valid.
+        try:
             sref = SrefFactory(record.sref)
             if record.sref.gridref is not None:
                 # Return cleaned up gridref.
                 result.sref.gridref = sref.gridref
 
-            # 4. Check sref in vice county.
+            # Check sref in vice county.
             if record.vc is not None:
                 code = VcChecker.prepare_code(record.vc)
                 # Return code if name was supplied.
@@ -56,17 +73,11 @@ async def validate_by_tvk(session: DB, records: list[ValidateTvk]):
                 gridref = VcChecker.prepare_sref(sref.gridref)
                 VcChecker.check(gridref, code)
 
-            # 5. Get id difficulty.
-            repo = DifficultyRuleRepo(session)
-            result.id_difficulty = repo.run(record)
-
-            results.append(result)
-
-        except ValueError as e:
+        except Exception as e:
             result.ok = False
-            result.message = str(e)
-            results.append(result)
-            continue
+            result.messages.append(str(e))
+
+        results.append(result)
 
     return results
 

@@ -3,6 +3,9 @@ FROM python:3.12-slim
 
 EXPOSE 8000
 
+# Install Git
+RUN apt-get update && apt-get install -y git
+
 # Keeps Python from generating .pyc files in the container
 ENV PYTHONDONTWRITEBYTECODE=1
 

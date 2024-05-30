@@ -24,4 +24,4 @@ class Validated(Validate):
     tvk: Optional[str] = None
     id_difficulty: Optional[List[str]] = None
     ok: bool = True
-    message: Optional[str] = None
+    messages: Optional[List[str]] = []

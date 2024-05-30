@@ -65,54 +65,13 @@ class TestValidateByTvk:
             }]
         )
         assert response.status_code == 200
-        assert not response.json()[0]['ok']
-        assert response.json()[0]['message'] == "TVK not recognised."
+        validated = response.json()[0]
+        assert not validated['ok']
+        assert validated['messages'][0] == "TVK not recognised."
+        assert validated['messages'][1] == "Unreocognised date format."
+        assert validated['messages'][2] == "Invalid spatial reference. A gridref must be provided."
 
-    def test_valid_tvk(self, client: TestClient, mocker):
-        # Mock the Indicia warehouse.
-        mocker.patch(
-            'app.species.indicia.make_search_request',
-            mock_make_search_request
-        )
-
-        response = client.post(
-            "/validate/records_by_tvk",
-            json=[{
-                "id": 1,
-                "date": "",
-                "sref": {"srid": 0},
-                "tvk": "NBNSYS0000008319"
-            }]
-        )
-        assert response.status_code == 200
-        assert response.json()[0]['name'] == "Adalia bipunctata"
-        assert not response.json()[0]['ok']
-        assert response.json()[0]['message'] == "Unreocognised date format."
-
-    def test_valid_date(self, client: TestClient, mocker):
-        # Mock the Indicia warehouse.
-        mocker.patch(
-            'app.species.indicia.make_search_request',
-            mock_make_search_request
-        )
-
-        response = client.post(
-            "/validate/records_by_tvk",
-            json=[{
-                "id": 1,
-                "date": "3/4/2024",
-                "sref": {"srid": 0},
-                "tvk": "NBNSYS0000008319"
-            }]
-        )
-        assert response.status_code == 200
-        assert response.json()[0]['name'] == "Adalia bipunctata"
-        assert response.json()[0]['date'] == "03/04/2024"
-        assert not response.json()[0]['ok']
-        assert response.json()[0]['message'] == (
-            "Invalid spatial reference. A gridref must be provided.")
-
-    def test_valid_gridref(self, client: TestClient, mocker):
+    def test_valid_record(self, client: TestClient, mocker):
         # Mock the Indicia warehouse.
         mocker.patch(
             'app.species.indicia.make_search_request',
@@ -132,11 +91,12 @@ class TestValidateByTvk:
             }]
         )
         assert response.status_code == 200
-        assert response.json()[0]['name'] == "Adalia bipunctata"
-        assert response.json()[0]['date'] == "03/04/2024"
-        assert response.json()[0]['sref']['gridref'] == "TL123456"
-        assert response.json()[0]['ok']
-        assert response.json()[0]['message'] is None
+        validated = response.json()[0]
+        assert validated['name'] == "Adalia bipunctata"
+        assert validated['date'] == "03/04/2024"
+        assert validated['sref']['gridref'] == "TL123456"
+        assert validated['ok']
+        assert len(validated['messages']) == 0
 
     def test_invalid_vc(self, client: TestClient, mocker):
         # Mock the Indicia warehouse.
@@ -159,12 +119,13 @@ class TestValidateByTvk:
             }]
         )
         assert response.status_code == 200
-        assert response.json()[0]['name'] == "Adalia bipunctata"
-        assert response.json()[0]['date'] == "03/04/2024"
-        assert response.json()[0]['sref']['gridref'] == "TL123456"
-        assert response.json()[0]['vc'] == "1"
-        assert not response.json()[0]['ok']
-        assert response.json()[0]['message'] == "Sref not in vice county."
+        validated = response.json()[0]
+        assert validated['name'] == "Adalia bipunctata"
+        assert validated['date'] == "03/04/2024"
+        assert validated['sref']['gridref'] == "TL123456"
+        assert validated['vc'] == "1"
+        assert not validated['ok']
+        assert validated['messages'][0] == "Sref not in vice county."
 
     def test_valid_vc(self, client: TestClient, mocker):
         # Mock the Indicia warehouse.
@@ -187,8 +148,10 @@ class TestValidateByTvk:
             }]
         )
         assert response.status_code == 200
-        assert response.json()[0]['name'] == "Adalia bipunctata"
-        assert response.json()[0]['date'] == "03/04/2024"
-        assert response.json()[0]['sref']['gridref'] == "TL123456"
-        assert response.json()[0]['vc'] == "30"
-        assert response.json()[0]['ok']
+        validated = response.json()[0]
+        assert validated['name'] == "Adalia bipunctata"
+        assert validated['date'] == "03/04/2024"
+        assert validated['sref']['gridref'] == "TL123456"
+        assert validated['vc'] == "30"
+        assert validated['ok']
+        assert len(validated['messages']) == 0

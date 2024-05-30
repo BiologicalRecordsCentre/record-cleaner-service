@@ -29,7 +29,7 @@ class Verified(Verify):
     name: Optional[str] = None
     tvk: Optional[str] = None
     ok: bool = True
-    message: Optional[list] = []
+    messages: Optional[List[str]] = []
 
 
 class VerifyPackTvk(BaseModel):

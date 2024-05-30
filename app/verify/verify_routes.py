@@ -43,16 +43,20 @@ async def verify_by_tvk(session: DB, data: VerifyPackTvk):
             functional_sref = SrefFactory(record.sref)
             result.sref = functional_sref.value
 
-            # 4. Check against rules.
+            # 4. Format stage
+            if record.stage is not None:
+                record.stage = record.stage.strip().lower()
+
+            # 5. Check against rules.
             repo = RuleRepo(session)
             repo.run_rules(data.org_group_rules_list, result)
 
             # Accumulate results.
             results.append(result)
 
-        except ValueError as e:
+        except (Exception) as e:
             result.ok = False
-            result.message = str(e)
+            result.messages.append(str(e))
             results.append(result)
             continue
 

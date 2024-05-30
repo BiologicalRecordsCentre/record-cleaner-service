@@ -1,6 +1,4 @@
-import datetime
 import os
-from pathlib import Path
 
 import pytest
 from sqlmodel import Session
@@ -125,8 +123,10 @@ class TestPhenologyRuleRepo:
         # Create org_groups.
         org_group1 = OrgGroup(organisation='organisation1', group='group1')
         org_group2 = OrgGroup(organisation='organisation2', group='group2')
+        org_group3 = OrgGroup(organisation='organisation3', group='group3')
         session.add(org_group1)
         session.add(org_group2)
+        session.add(org_group3)
         session.commit()
 
         # Create taxa.
@@ -136,7 +136,14 @@ class TestPhenologyRuleRepo:
             preferred_name='Adalia bipunctata',
             preferred_tvk='NBNSYS0000008319'
         )
+        taxon2 = Taxon(
+            name='Adalia decempunctata',
+            tvk='NBNSYS0000008320',
+            preferred_name='Adalia decempunctata',
+            preferred_tvk='NBNSYS0000008320'
+        )
         session.add(taxon1)
+        session.add(taxon2)
         session.commit()
 
         # Create stages.
@@ -155,9 +162,15 @@ class TestPhenologyRuleRepo:
             stage='mature',
             sort_order=1
         )
+        stage4 = Stage(
+            org_group_id=org_group3.id,
+            stage='*',
+            sort_order=1
+        )
         session.add(stage1)
         session.add(stage2)
         session.add(stage3)
+        session.add(stage4)
         session.commit()
 
         # Create stage-synonyms.
@@ -165,10 +178,15 @@ class TestPhenologyRuleRepo:
             stage_id=stage1.id,
             synonym='adult'
         )
+        synonym2 = StageSynonym(
+            stage_id=stage2.id,
+            synonym='larval'
+        )
         session.add(synonym1)
+        session.add(synonym2)
         session.commit()
 
-        # Create phenology rule for org_group1 and taxon1.
+        # Create phenology rule for org_group1 and mature taxon1.
         rule1 = PhenologyRule(
             org_group_id=org_group1.id,
             taxon_id=taxon1.id,
@@ -178,8 +196,18 @@ class TestPhenologyRuleRepo:
             end_day=6,
             end_month=10
         )
-        # Create phenology rule for org_group2 and taxon1.
+        # Create phenology rule for org_group1 and larval taxon1.
         rule2 = PhenologyRule(
+            org_group_id=org_group1.id,
+            taxon_id=taxon1.id,
+            stage_id=stage2.id,
+            start_day=31,
+            start_month=3,
+            end_day=31,
+            end_month=6
+        )
+        # Create phenology rule for org_group2 and mature taxon1.
+        rule3 = PhenologyRule(
             org_group_id=org_group2.id,
             taxon_id=taxon1.id,
             stage_id=stage3.id,
@@ -188,8 +216,20 @@ class TestPhenologyRuleRepo:
             end_day=12,
             end_month=9
         )
+        # Create phenology rule for org_group3 and taxon1 at any stage.
+        rule4 = PhenologyRule(
+            org_group_id=org_group3.id,
+            taxon_id=taxon1.id,
+            stage_id=stage4.id,
+            start_day=1,
+            start_month=2,
+            end_day=30,
+            end_month=11
+        )
         session.add(rule1)
         session.add(rule2)
+        session.add(rule3)
+        session.add(rule4)
         session.commit()
 
         # Create record of taxon1 to test.
@@ -215,6 +255,47 @@ class TestPhenologyRuleRepo:
         assert failures[0] == (
             "organisation2:group2:phenology: "
             "Could not find rule for stage 'adult'."
+        )
+
+        # Remove the stage.
+        record.stage = None
+        # Test the record against rules for all org_groups.
+        failures = repo.run(record)
+        # It should pass as defaults to mature.
+        assert len(failures) == 0
+
+        # Change to larval stage.
+        record.stage = 'larval'
+        # Test the record against rules for org_group1.
+        failures = repo.run(record, org_group1.id)
+        # It should fail as date out of range.
+        assert len(failures) == 1
+        assert failures[0] == (
+            "organisation1:group1:phenology: "
+            "Record is outside of expected period of 31/3 - 31/6."
+        )
+
+        # Test the record against wildcard rule of org_group3.
+        failures = repo.run(record, org_group3.id)
+        # It should pass.
+        assert len(failures) == 0
+
+        # Change to taxon2 with no rules.
+        record.tvk = taxon2.tvk
+        # Test the record against rules for all org_groups.
+        failures = repo.run(record)
+        # It should fail.
+        assert len(failures) == 1
+        assert failures[0] == (
+            "*:*:phenology: There is no rule for this taxon."
+        )
+
+        # Test the record against rules for org_group1.
+        failures = repo.run(record, org_group1.id)
+        # It should fail.
+        assert len(failures) == 1
+        assert failures[0] == (
+            "organisation1:group1:phenology: There is no rule for this taxon."
         )
 
     def test_test(self, session: Session):

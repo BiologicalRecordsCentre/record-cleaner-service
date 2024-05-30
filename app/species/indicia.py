@@ -64,6 +64,10 @@ class IndiciaAuth(requests.auth.AuthBase):
         return r
 
 
+class IndiciaError(Exception):
+    pass
+
+
 @router.get(
     '/species/indicia/taxon',
     tags=['Indicia'],
@@ -290,15 +294,14 @@ def make_search_request(params: dict) -> dict:
     try:
         r = requests.get(url, params=params,
                          auth=IndiciaAuth(settings.env.indicia_rest_password))
-    except Exception as e:
-        e.add_note("Indicia API connection error. Unable to "
-                   "look up species information from Indicia.")
-        raise
+    except Exception:
+        raise IndiciaError("Indicia API connection error. Unable to "
+                           "look up species information from Indicia.")
     else:
         if r.status_code == requests.codes.ok:
             return r.json()
         else:
-            raise Exception("Indicia API error. " + r.json())
+            raise IndiciaError("Indicia API error. " + r.json())
 
 
 def parse_response_full(response: dict) -> IndiciaResponse:
