@@ -15,6 +15,10 @@ from app.sqlmodels import User
 # Instantiate a router.
 router = APIRouter()
 
+# TODO: Add a refresh token
+# See https://github.com/k4black/fastapi-jwt for a possible solution.
+
+
 # Instantiate the security provider.
 # Set /token as the path to log in.
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")

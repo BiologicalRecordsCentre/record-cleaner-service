@@ -22,6 +22,6 @@ class ValidateTvk(Validate):
 class Validated(Validate):
     name: Optional[str] = None
     tvk: Optional[str] = None
-    id_difficulty: Optional[List[str]] = None
+    id_difficulty: Optional[List[str]] = []
     ok: bool = True
     messages: Optional[List[str]] = []
