@@ -1,7 +1,7 @@
 from functools import lru_cache
 
 from fastapi import APIRouter, HTTPException, status
-from sqlmodel import Session, func, select, delete
+from sqlmodel import SQLModel, Session, func, select, delete, or_
 
 from app.auth import Auth
 from app.database import DB
@@ -107,7 +107,6 @@ def add_taxon_by_tvk(session: Session, tvk: str) -> Taxon:
     """Look up taxon and add to cache."""
     params = {
         'external_key': tvk,
-        'preferred': 'true',
         'include': '["data"]'
     }
     response = driver.make_search_request(params)
@@ -115,6 +114,41 @@ def add_taxon_by_tvk(session: Session, tvk: str) -> Taxon:
 
     if len(taxa) == 0:
         raise ValueError("TVK not recognised.")
+    else:
+        taxon = taxa[0]
+        session.add(taxon)
+        session.commit()
+        session.refresh(taxon)
+        return taxon
+
+
+@lru_cache(maxsize=1024)
+def get_taxon_by_name(session: Session, name: str) -> Taxon:
+    """Look up taxon with given name."""
+
+    # First check our local database.
+    taxon = session.exec(
+        select(Taxon).where(
+            or_(Taxon.preferred_name == name, Taxon.name == name)
+        )
+    ).first()
+    if not taxon:
+        # If not found, add from the remote database.
+        taxon = add_taxon_by_name(session, name)
+    return taxon
+
+
+def add_taxon_by_name(session: Session, name: str) -> Taxon:
+    """Look up taxon and add to cache."""
+    params = {
+        'searchQuery': name,
+        'include': '["data"]'
+    }
+    response = driver.make_search_request(params)
+    taxa = driver.parse_response_taxa(response)
+
+    if len(taxa) == 0:
+        raise ValueError("Name not recognised.")
     else:
         taxon = taxa[0]
         session.add(taxon)

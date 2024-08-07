@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, status
 
 import app.auth as auth
+from app.database import DB
 import app.species.cache as cache
 # Indicia is the current source of taxon data but one day, maybe, there will
 # be a UKSI API. For this reason, it is abstracted into its own module.
@@ -19,15 +20,22 @@ router.include_router(cache.router)
     response_model=Taxon)
 async def read_taxon_by_tvk(
         auth: auth.Auth,
+        session: DB,
         tvk: str):
 
-    taxon = cache.get_taxon_by_tvk(tvk)
-    if taxon is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Taxon not found with TVK {tvk}.")
+    try:
+        taxon = cache.get_taxon_by_tvk(session, tvk)
+        if taxon is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Taxon not found with TVK {tvk}.")
 
-    return taxon
+        return taxon
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e))
 
 
 @router.get(
@@ -37,8 +45,19 @@ async def read_taxon_by_tvk(
     response_model=Taxon)
 async def read_taxon_by_name(
         auth: auth.Auth,
+        session: DB,
         name: str):
 
-    taxon = cache.get_taxon_by_name(name)
+    try:
+        taxon = cache.get_taxon_by_name(session, name)
+        if taxon is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Taxon not found with name {name}.")
 
-    return Taxon(**taxon)
+        return taxon
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e))
