@@ -11,11 +11,12 @@ class System(SQLModel, table=True):
 
 class Taxon(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
-    tvk: str = Field(index=True, unique=True)
-    preferred_tvk: str = Field(index=True)
-    organism_key: str | None
     name: str
     preferred_name: str
+    search_name: str = Field(index=True)
+    preferred_tvk: str = Field(index=True)
+    organism_key: str | None
+    preferred: bool
 
 
 class OrgGroup(SQLModel, table=True):

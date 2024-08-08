@@ -5,9 +5,9 @@ from sqlmodel import SQLModel, Session, func, select, delete, or_
 
 from app.auth import Auth
 from app.database import DB
-
 from app.sqlmodels import Taxon
 import app.species.indicia as driver
+from app.utility.search import Search
 
 router = APIRouter()
 
@@ -91,11 +91,13 @@ async def read_taxon_by_tvk(
 
 @lru_cache(maxsize=1024)
 def get_taxon_by_tvk(session: Session, tvk: str) -> Taxon:
-    """Look up taxon with given TVK."""
+    """Look up the preferred taxon with given TVK."""
 
     # First check our local database
     taxon = session.exec(
-        select(Taxon).where(Taxon.tvk == tvk)
+        select(Taxon)
+        .where(Taxon.preferred_tvk == tvk)
+        .where(Taxon.preferred == True)
     ).first()
     if not taxon:
         # If not found, add from the remote database.
@@ -104,9 +106,10 @@ def get_taxon_by_tvk(session: Session, tvk: str) -> Taxon:
 
 
 def add_taxon_by_tvk(session: Session, tvk: str) -> Taxon:
-    """Look up taxon and add to cache."""
+    """Look up preferred taxon with given TVK and add to cache."""
     params = {
         'external_key': tvk,
+        'preferred': 'true',
         'include': '["data"]'
     }
     response = driver.make_search_request(params)
@@ -126,11 +129,10 @@ def add_taxon_by_tvk(session: Session, tvk: str) -> Taxon:
 def get_taxon_by_name(session: Session, name: str) -> Taxon:
     """Look up taxon with given name."""
 
+    search_name = Search.get_search_name(name)
     # First check our local database.
     taxon = session.exec(
-        select(Taxon).where(
-            or_(Taxon.preferred_name == name, Taxon.name == name)
-        )
+        select(Taxon).where(Taxon.search_name == search_name)
     ).first()
     if not taxon:
         # If not found, add from the remote database.

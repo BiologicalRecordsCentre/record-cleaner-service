@@ -9,6 +9,7 @@ from pydantic import BaseModel
 
 from app.settings import settings
 import app.auth as auth
+from app.utility.search import Search
 from app.sqlmodels import Taxon
 
 router = APIRouter()
@@ -282,8 +283,13 @@ async def search_taxa(
         # Convert the list of strings to JSON.
         params['include'] = json.dumps(include_list)
 
-    response = make_search_request(params)
-    return parse_response_full(response)
+    try:
+        response = make_search_request(params)
+        return parse_response_full(response)
+    except IndiciaError as e:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e)
+        )
 
 
 def make_search_request(params: dict) -> dict:
@@ -321,10 +327,11 @@ def parse_response_taxa(response: dict) -> list[Taxon]:
     if 'data' in response:
         for taxon in response['data']:
             taxa.append(Taxon(
-                tvk=taxon['external_key'],
+                name=taxon['taxon'],
+                preferred_name=taxon['preferred_taxon'],
+                search_name=Search.get_search_name(taxon['taxon']),
                 preferred_tvk=taxon['external_key'],
                 organism_key=taxon['organism_key'],
-                name=taxon['taxon'],
-                preferred_name=taxon['preferred_taxon']
+                preferred=True if taxon['preferred'] == 't' else False,
             ))
     return taxa
