@@ -70,12 +70,11 @@ class IndiciaError(Exception):
 
 
 @router.get(
-    '/species/indicia/taxon',
+    '/indicia/taxon',
     tags=['Indicia'],
     summary="Search Indicia for taxa matching your parameters.",
     response_model=IndiciaResponse)
 async def search_taxa(
-    auth: auth.Auth,
     searchQuery: Annotated[
         str,
         Query(description="Search text which will be used to look up species "

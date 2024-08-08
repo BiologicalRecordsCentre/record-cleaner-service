@@ -13,12 +13,11 @@ router = APIRouter()
 
 
 @router.get(
-    "/species/cache/count",
+    "/cache/count",
     tags=['Species Cache'],
     summary="Get number of records in species cache.",
-    response_model=int)
+    response_model=dict)
 async def read_cache_size(
-    auth: Auth,
     session: DB
 ):
     count = session.exec(
@@ -28,12 +27,11 @@ async def read_cache_size(
 
 
 @router.get(
-    "/species/cache/{id}",
+    "/cache/{id}",
     tags=['Species Cache'],
     summary="Get item from species cache.",
     response_model=Taxon)
 async def read_cache_item(
-        auth: Auth,
         session: DB,
         id: int):
     taxon = session.get(Taxon, id)
@@ -46,12 +44,11 @@ async def read_cache_item(
 
 
 @router.delete(
-    "/species/cache/all",
+    "/cache/all",
     tags=['Species Cache'],
     summary="Empty the species cache.",
-    response_model=bool)
+    response_model=dict)
 async def cache_clear(
-    auth: Auth,
     session: DB
 ):
     session.exec(
@@ -62,12 +59,11 @@ async def cache_clear(
 
 
 @router.delete(
-    "/species/cache/{id}",
+    "/cache/{id}",
     tags=['Species Cache'],
     summary="Delete item from species cache.",
-    response_model=bool)
+    response_model=dict)
 async def delete_cache_item(
-        auth: Auth,
         session: DB,
         id: int):
     session.exec(
@@ -78,12 +74,11 @@ async def delete_cache_item(
 
 
 @router.get(
-    "/species/cache/taxon_by_tvk/{tvk}",
+    "/cache/taxon_by_tvk/{tvk}",
     tags=['Species Cache'],
     summary="Get taxon with given TVK from cache.",
     response_model=Taxon)
 async def read_taxon_by_tvk(
-        auth: Auth,
         session: DB,
         tvk: str):
     return get_taxon_by_tvk(session, tvk)

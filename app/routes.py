@@ -8,7 +8,7 @@ import app.auth as auth
 import app.main as app
 from app.rule.rule_routes import router as rule_router
 from app.settings import settings
-import app.species as species
+from app.species.species_routes import router as species_router
 from app.user.user_routes import router as user_router
 from app.validate.validate_routes import router as validate_router
 from app.verify.verify_routes import router as verify_router
@@ -38,7 +38,7 @@ class SettingResponse(BaseModel):
 router = APIRouter()
 router.include_router(auth.router)
 router.include_router(rule_router)
-router.include_router(species.router)
+router.include_router(species_router)
 router.include_router(user_router)
 router.include_router(validate_router)
 router.include_router(verify_router)
