@@ -2,19 +2,19 @@ from fastapi.testclient import TestClient
 from sqlmodel import Session
 
 from app.sqlmodels import OrgGroup
-from app.verify.verify_models import VerifyPackTvk, OrgGroupRules
+from app.verify.verify_models import VerifyPack, OrgGroupRules
 
 from ..mocks import mock_make_search_request
 
 
-class TestVerifyByTvk:
+class TestVerify:
 
     def test_no_records(self, client: TestClient):
-        pack = VerifyPackTvk(
+        pack = VerifyPack(
             records=[],
         )
         response = client.post(
-            '/verify/records_by_tvk',
+            '/verify',
             json=pack.model_dump(),
         )
         assert response.status_code == 200
@@ -30,7 +30,7 @@ class TestVerifyByTvk:
             mock_make_search_request
         )
 
-        pack = VerifyPackTvk(
+        pack = VerifyPack(
             records=[{
                 "id": 1,
                 "date": "3/4/2024",
@@ -42,7 +42,7 @@ class TestVerifyByTvk:
             }],
         )
         response = client.post(
-            '/verify/records_by_tvk',
+            '/verify',
             json=pack.model_dump(),
         )
         assert response.status_code == 200
@@ -64,7 +64,7 @@ class TestVerifyByTvk:
         )
         pack.org_group_rules_list = [rules]
         response = client.post(
-            '/verify/records_by_tvk',
+            '/verify',
             json=pack.model_dump(),
         )
         assert response.status_code == 200
@@ -79,7 +79,7 @@ class TestVerifyByTvk:
         session.commit()
         # Now try again with that test.
         response = client.post(
-            '/verify/records_by_tvk',
+            '/verify',
             json=pack.model_dump(),
         )
         assert response.status_code == 200
@@ -94,7 +94,7 @@ class TestVerifyByTvk:
         pack.org_group_rules_list[0].rules = ['tenkm']
         # Now try again with that test.
         response = client.post(
-            '/verify/records_by_tvk',
+            '/verify',
             json=pack.model_dump(),
         )
         assert response.status_code == 200

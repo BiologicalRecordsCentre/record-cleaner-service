@@ -6,17 +6,11 @@ from app.utility.sref import Sref
 
 class Verify(BaseModel):
     id: int = Field(ge=1)
+    name:  Optional[str] = None
+    tvk: Optional[str] = None
     date: str
     sref: Sref
     stage: str | None = None
-
-
-class VerifyName(Verify):
-    name: str
-
-
-class VerifyTvk(Verify):
-    tvk: str = Field(min_length=1)
 
 
 class OrgGroupRules(BaseModel):
@@ -26,20 +20,13 @@ class OrgGroupRules(BaseModel):
 
 
 class Verified(Verify):
-    name: Optional[str] = None
-    tvk: Optional[str] = None
     ok: bool = True
     messages: Optional[List[str]] = []
 
 
-class VerifyPackTvk(BaseModel):
+class VerifyPack(BaseModel):
     org_group_rules_list: Optional[List[OrgGroupRules]] = None
-    records: List[VerifyTvk]
-
-
-class VerifyPackName(BaseModel):
-    org_group_rules_list: Optional[List[OrgGroupRules]] = None
-    records: List[VerifyName]
+    records: List[Verify]
 
 
 class VerifiedPack(BaseModel):

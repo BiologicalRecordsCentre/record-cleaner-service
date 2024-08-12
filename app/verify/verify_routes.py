@@ -8,7 +8,7 @@ import app.species.cache as cache
 from app.utility.sref.sref_factory import SrefFactory
 from app.utility.vague_date import VagueDate
 
-from .verify_models import VerifyPackTvk, VerifyPackName, Verified, VerifiedPack
+from .verify_models import VerifyPack, Verified, VerifiedPack
 
 
 router = APIRouter(
@@ -19,18 +19,38 @@ router = APIRouter(
 
 
 @router.post(
-    "/records_by_tvk",
-    summary="Verify records identified by TVK.",
+    "/",
+    summary="Verify records.",
     response_model=VerifiedPack)
-async def verify_by_tvk(session: DB, data: VerifyPackTvk):
+async def verify(session: DB, data: VerifyPack):
 
     results = []
     for record in data.records:
         # Our response begins with the input data.
         result = Verified(**record.model_dump())
 
+        # TODO. Decide whether to accept names or only TVKs...
+
         try:
             # 1. Get preferred TVK.
+            if record.tvk is not None:
+                # Use TVK if provided as not ambiguous.
+                taxon = cache.get_taxon_by_tvk(session, record.tvk)
+                result.preferred_tvk = taxon.preferred_tvk
+                if record.name is None:
+                    result.name = taxon.name
+                elif record.name != taxon.name:
+                    result.ok = False
+                    result.messages.append(
+                        f"Name does not match TVK. Expected {taxon.name}.")
+            elif record.name is not None:
+                # Otherwise use name.
+                taxon = cache.get_taxon_by_name(session, record.name)
+                result.preferred_tvk = taxon.preferred_tvk
+            else:
+                result.ok = False
+                result.messages.append("TVK or name required.")
+
             taxon = cache.get_taxon_by_tvk(session, record.tvk)
             result.tvk = taxon.preferred_tvk
             result.name = taxon.preferred_name
@@ -64,13 +84,3 @@ async def verify_by_tvk(session: DB, data: VerifyPackTvk):
         org_group_rules_list=data.org_group_rules_list,
         records=results
     )
-
-
-@router.post(
-    "/records_by_name",
-    summary="Verify records identified by name.",
-    response_model=list[Verified])
-async def verify_by_name(records: list[VerifyPackName]):
-
-    results = []
-    return results

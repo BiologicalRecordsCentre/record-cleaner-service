@@ -9,7 +9,7 @@ from app.utility.sref.sref_factory import SrefFactory
 from app.utility.vice_county.vc_checker import VcChecker
 from app.utility.vague_date import VagueDate
 
-from .validate_models import ValidateTvk, ValidateName, Validated
+from .validate_models import Validate, Validated
 
 router = APIRouter(
     prefix="/validate",
@@ -19,27 +19,50 @@ router = APIRouter(
 
 
 @router.post(
-    "/records_by_tvk",
-    summary="Validate records identified by TVK.",
+    "/",
+    summary="Validate records.",
     response_model=list[Validated])
-async def validate_by_tvk(session: DB, records: list[ValidateTvk]):
+async def validate(session: DB, records: list[Validate]):
+    """You must provide a name or TVK to identify the taxon to be checked.
+    Id, date and a valid sref are also required.
+
+    The spatial reference can be given as a grid reference, a latitude and
+    longitude or an easting and northing. In the latter two cases, an accuracy
+    is also required. The srid parameter must match the spatial reference 
+    system in which the coordinates are given.
+
+    Supported systems are:
+    * 27700, The British National Grid
+    * 29903, The Irish National Grid
+    * 23030, Channel Islands Grid (WV/WA)
+    * 0, Automatically select from above 3 grids.
+    * 4326, WGS84 latitude/longitude
+"""
 
     results = []
     for record in records:
         # Our response begins with the input data.
         result = Validated(**record.model_dump())
 
-        # 1. Confirm TVK is valid.
+        # 1. Confirm TVK/name is valid.
         try:
-            taxon = cache.get_taxon_by_tvk(session, record.tvk)
-            # Return preferred TVK.
-            if record.tvk != taxon.preferred_tvk:
-                result.tvk = taxon.preferred_tvk
-                result.messages.append(
-                    f"TVK '{record.tvk}' replaced by preferred TVK."
-                )
-            # Return preferred name.
-            result.name = taxon.preferred_name
+            if record.tvk is not None:
+                # Use TVK if provided as not ambiguous.
+                taxon = cache.get_taxon_by_tvk(session, record.tvk)
+                result.preferred_tvk = taxon.preferred_tvk
+                if record.name is None:
+                    result.name = taxon.name
+                elif record.name != taxon.name:
+                    result.ok = False
+                    result.messages.append(
+                        f"Name does not match TVK. Expected {taxon.name}.")
+            elif record.name is not None:
+                # Otherwise use name.
+                taxon = cache.get_taxon_by_name(session, record.name)
+                result.preferred_tvk = taxon.preferred_tvk
+            else:
+                result.ok = False
+                result.messages.append("TVK or name required.")
 
             # Get id difficulty.
             repo = DifficultyRuleRepo(session)
@@ -79,14 +102,4 @@ async def validate_by_tvk(session: DB, records: list[ValidateTvk]):
 
         results.append(result)
 
-    return results
-
-
-@router.post(
-    "/records_by_name",
-    summary="Validate records identified by name.",
-    response_model=list[Validated])
-async def validate_by_name(session: DB, records: list[ValidateName]):
-
-    results = []
     return results
