@@ -14,8 +14,8 @@ class Taxon(SQLModel, table=True):
     name: str
     preferred_name: str
     search_name: str = Field(index=True)
-    preferred_tvk: str = Field(index=True)
-    organism_key: str | None
+    tvk: str = Field(index=True)
+    preferred_tvk: str
     preferred: bool
 
 

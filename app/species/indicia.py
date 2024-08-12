@@ -30,13 +30,14 @@ class IndiciaTaxon(BaseModel):
     taxon: str
     language_iso: str
     preferred_taxon: str
-    preferred_authority: str
+    preferred_authority: Optional[str] = None
     default_common_name: Optional[str] = None
     taxon_group: str
     preferred: bool
     preferred_taxa_taxon_list_id: int
     taxon_meaning_id: int
     external_key: str
+    search_code: str
     organism_key: str
     taxon_group_id: int
     parent_id: int
@@ -121,8 +122,13 @@ async def search_taxa(
     external_key: Annotated[
         list[str],
         Query(description="List of UKSI TVKs to limit the search to, using "
-              "the preferred name's TVK to filter against, therefore including "
-              "synonyms and common names in the response.")
+              "the preferred name's TVK to filter against, therefore "
+              "including synonyms and common names in the response.")
+    ] = None,
+    search_code: Annotated[
+        list[str],
+        Query(description="List of UKSI TVKs to limit the search to, using "
+              "the name's unique TVK to filter against.")
     ] = None,
     parent_id: Annotated[
         list[int],
@@ -242,6 +248,8 @@ async def search_taxa(
         params['preferred_taxon'] = json.dumps(preferred_taxon)
     if external_key:
         params['external_key'] = json.dumps(external_key)
+    if search_code:
+        params['search_code'] = json.dumps(search_code)
     if parent_id:
         params['parent_id'] = json.dumps(parent_id)
     if language:
@@ -329,8 +337,8 @@ def parse_response_taxa(response: dict) -> list[Taxon]:
                 name=taxon['taxon'],
                 preferred_name=taxon['preferred_taxon'],
                 search_name=Search.get_search_name(taxon['taxon']),
+                tvk=taxon['search_code'],
                 preferred_tvk=taxon['external_key'],
-                organism_key=taxon['organism_key'],
                 preferred=True if taxon['preferred'] == 't' else False,
             ))
     return taxa

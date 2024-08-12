@@ -86,13 +86,12 @@ async def read_taxon_by_tvk(
 
 @lru_cache(maxsize=1024)
 def get_taxon_by_tvk(session: Session, tvk: str) -> Taxon:
-    """Look up the preferred taxon with given TVK."""
+    """Look up the taxon with given TVK."""
 
     # First check our local database
     taxon = session.exec(
         select(Taxon)
-        .where(Taxon.preferred_tvk == tvk)
-        .where(Taxon.preferred == True)
+        .where(Taxon.tvk == tvk)
     ).first()
     if not taxon:
         # If not found, add from the remote database.
@@ -101,10 +100,9 @@ def get_taxon_by_tvk(session: Session, tvk: str) -> Taxon:
 
 
 def add_taxon_by_tvk(session: Session, tvk: str) -> Taxon:
-    """Look up preferred taxon with given TVK and add to cache."""
+    """Look up taxon with given TVK and add to cache."""
     params = {
-        'external_key': tvk,
-        'preferred': 'true',
+        'search_code': tvk,
         'include': '["data"]'
     }
     response = driver.make_search_request(params)
