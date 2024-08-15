@@ -1,0 +1,7 @@
+on:
+  pull_request:
+    branches: [ $default-branch ]
+
+jobs:
+    call-build-and-test:
+        uses: ./.github/workflows/reuse-build-and-test.yml
