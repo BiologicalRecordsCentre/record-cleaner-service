@@ -1,3 +1,5 @@
+name: Push workflow
+
 on:
   push:
     branches: [ $default-branch ]
