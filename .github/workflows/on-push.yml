@@ -2,10 +2,12 @@ name: Push workflow
 
 on:
   push:
-    branches: [ $default-branch ]
+    branches: 
+        - main
 
 jobs:
     call-build-and-test:
         uses: ./.github/workflows/reuse-build-and-test.yml
     call-publish:
+        needs: call-build-and-test
         uses: ./.github/workflows/reuse-publish.yml
