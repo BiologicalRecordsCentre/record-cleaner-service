@@ -9,6 +9,8 @@ from sqlmodel import create_engine, SQLModel, Session
 import app.sqlmodels as sqlmodels
 
 basedir = os.path.abspath(os.path.dirname(__file__))
+if not os.path.exists(f"{basedir}/data"):
+    os.mkdir(f"{basedir}/data")
 sqlite_file_name = f"{basedir}/data/database.sqlite"
 sqlite_url = f"sqlite:///{sqlite_file_name}"
 
