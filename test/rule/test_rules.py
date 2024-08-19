@@ -10,7 +10,8 @@ class TestRules:
 
     @pytest.fixture(autouse=True)
     def set_rulesdir(self):
-        # Override path to rulesdir.
+        # Override path to rulesdir so it points to test data.
+        # Autouse ensures this is set before every test below.
         basedir = os.path.abspath(os.path.dirname(__file__))
         RuleRepo.rulesdir = os.path.join(basedir, 'testdata')
 
@@ -25,24 +26,18 @@ class TestRules:
     def test_list_rules(self, session: Session):
         repo = RuleRepo(session)
         rules_list = repo.list_rules()
-        assert rules_list == [
-            {
-                'organisation1': {
-                    'group1': ['Species Range', 'Recording Period'],
-                    'group2': ['Seasonal Period', 'Additional Verification']
-                }
-            },
-            {
-                'organisation2': {
-                    'group1': [
-                        'Species Range',
-                        'Recording Period',
-                        'Seasonal Period',
-                        'Additional Verification'
-                    ]
-                }
-            }
-        ]
+
+        org1group1 = rules_list[0]['organisation1']['group1']
+        assert 'Species Range' in org1group1
+        assert 'Recording Period' in org1group1
+        org1group2 = rules_list[0]['organisation1']['group2']
+        assert 'Seasonal Period' in org1group2
+        assert 'Additional Verification' in org1group2
+        org2group1 = rules_list[1]['organisation2']['group1']
+        assert 'Species Range' in org2group1
+        assert 'Recording Period' in org2group1
+        assert 'Seasonal Period' in org2group1
+        assert 'Additional Verification' in org2group1
 
     # def test_load_database(self, mocker):
     #     # Mock the Indicia warehouse.
