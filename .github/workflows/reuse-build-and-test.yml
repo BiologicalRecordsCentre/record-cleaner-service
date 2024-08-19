@@ -25,8 +25,8 @@ jobs:
       RULES_BRANCH: ''
       RULES_DIR: ''
       RULES_SUBDIR: ''
-      INITIAL_USER_NAME: ''
-      INITIAL_USER_PASS: ''
+      INITIAL_USER_NAME: 'root'
+      INITIAL_USER_PASS: 'password'
 
     steps:
     - uses: actions/checkout@v4
