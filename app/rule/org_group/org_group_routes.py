@@ -1,7 +1,7 @@
 
 from fastapi import APIRouter, HTTPException, status, Depends
 
-from app.auth import Auth, get_current_user
+from app.auth import get_current_user
 from app.database import DB
 
 from .org_group_models import OrgGroupResponse

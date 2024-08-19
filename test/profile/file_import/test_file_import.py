@@ -1,12 +1,7 @@
 import cProfile
-import json
 import os
-import pstats
-import pytest
-from collections.abc import Generator
 
-from sqlmodel import create_engine, SQLModel, Session
-from sqlmodel.pool import StaticPool
+from sqlmodel import Session
 
 import app.rule.rule_repo as repo
 

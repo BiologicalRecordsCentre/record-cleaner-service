@@ -1,7 +1,7 @@
 from functools import lru_cache
 
 from fastapi import APIRouter, HTTPException, status
-from sqlmodel import SQLModel, Session, func, select, delete, or_
+from sqlmodel import SQLModel, Session, func, select, delete
 
 from app.auth import Auth
 from app.database import DB

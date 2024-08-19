@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter
 
 import app.auth as auth
 from app.utility.vice_county.vc_checker import VcChecker

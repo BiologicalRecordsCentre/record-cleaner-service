@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
-from app.database import DB
 from app.settings import Config
 
 import app.auth as auth

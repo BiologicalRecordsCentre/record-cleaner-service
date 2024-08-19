@@ -1,9 +1,5 @@
 from fastapi.testclient import TestClient
 
-import app.auth as auth
-from app.main import app
-from app.sqlmodels import User
-
 from ..mocks import mock_make_search_request
 
 

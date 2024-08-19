@@ -1,5 +1,5 @@
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter
 
 from app.auth import Auth
 from app.database import DB
