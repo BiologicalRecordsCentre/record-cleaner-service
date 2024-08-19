@@ -13,6 +13,20 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
+    env:
+      JWT_KEY: ''
+      JWT_ALGORITHM: ''
+      JWT_EXPIRES_MINUTES: ''
+      INDICIA_URL: ''
+      INDICIA_REST_USER: ''
+      INDICIA_REST_PASSWORD: ''
+      INDICIA_TAXON_LIST_ID: ''
+      RULES_REPO: ''
+      RULES_BRANC: ''
+      RULES_DIR: ''
+      RULES_SUBDIR: ''
+      INITIAL_USER_NAM: ''
+      INITIAL_USER_PASS: ''
 
     steps:
     - uses: actions/checkout@v4
