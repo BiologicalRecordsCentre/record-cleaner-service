@@ -36,7 +36,11 @@ async def verify(session: DB, data: VerifyPack):
             if record.tvk is not None:
                 # Use TVK if provided as not ambiguous.
                 taxon = cache.get_taxon_by_tvk(session, record.tvk)
-                result.preferred_tvk = taxon.preferred_tvk
+
+# TODO. Are we chasing Organism keys or preferred TVKs to connect records to
+#       rules?
+                # result.preferred_tvk = taxon.preferred_tvk
+
                 if record.name is None:
                     result.name = taxon.name
                 elif record.name != taxon.name:

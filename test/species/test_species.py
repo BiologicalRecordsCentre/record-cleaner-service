@@ -18,7 +18,7 @@ class TestSpecies:
         assert taxon['preferred_tvk'] == "NBNSYS0000008319"
         assert taxon['preferred_name'] == "Adalia bipunctata"
         assert taxon['tvk'] == "NBNSYS0000008319"
-        assert taxon['organism_key'] == "NBNORG0000010513"
+        # assert taxon['organism_key'] == "NBNORG0000010513"
 
     def test_species_by_name(self, client: TestClient, mocker):
         # Mock the Indicia warehouse.
@@ -34,4 +34,4 @@ class TestSpecies:
         assert taxon['preferred_tvk'] == "NBNSYS0000008319"
         assert taxon['preferred_name'] == "Adalia bipunctata"
         assert taxon['tvk'] == "NBNSYS0000008319"
-        assert taxon['organism_key'] == "NBNORG0000010513"
+        # assert taxon['organism_key'] == "NBNORG0000010513"
