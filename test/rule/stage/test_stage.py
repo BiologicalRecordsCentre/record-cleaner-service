@@ -1,7 +1,7 @@
 from fastapi.testclient import TestClient
 from sqlmodel import Session
 
-from app.sqlmodels import OrgGroup, Taxon, Stage, StageSynonym
+from app.sqlmodels import OrgGroup, Stage, StageSynonym
 
 
 class TestStage:

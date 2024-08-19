@@ -1,9 +1,7 @@
-from datetime import date
-
 from fastapi.testclient import TestClient
 from sqlmodel import Session
 
-from app.sqlmodels import OrgGroup, Taxon, PhenologyRule, Stage, StageSynonym
+from app.sqlmodels import OrgGroup, Taxon, PhenologyRule, Stage
 
 
 class TestPhenologyRule:

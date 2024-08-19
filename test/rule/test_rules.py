@@ -5,8 +5,6 @@ from sqlmodel import Session
 
 from app.rule.rule_repo import RuleRepo
 
-from ..mocks import mock_make_search_request
-
 
 class TestRules:
 

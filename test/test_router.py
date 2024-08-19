@@ -2,11 +2,6 @@ from fastapi import status
 from fastapi.testclient import TestClient
 
 
-import app.auth as auth
-from app.main import app
-from app.sqlmodels import User
-
-
 def test_read_root(client: TestClient):
     response = client.get("/")
     assert response.status_code == status.HTTP_200_OK

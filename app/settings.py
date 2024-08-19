@@ -3,7 +3,6 @@ from typing import TypeAlias, Annotated
 
 
 from fastapi import Depends
-from pydantic import BaseModel
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlmodel import Session, select
 
