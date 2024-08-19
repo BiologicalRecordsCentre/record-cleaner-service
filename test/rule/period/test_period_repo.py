@@ -33,15 +33,19 @@ class TestPeriodRuleRepo:
         # Create taxa.
         taxon1 = Taxon(
             name='Adalia bipunctata',
-            tvk='NBNSYS0000008319',
             preferred_name='Adalia bipunctata',
-            preferred_tvk='NBNSYS0000008319'
+            search_name='adaliabipunctata',
+            tvk='NBNSYS0000008319',
+            preferred_tvk='NBNSYS0000008319',
+            preferred=True
         )
         taxon2 = Taxon(
             name='Adalia decempunctata',
-            tvk='NBNSYS0000008320',
             preferred_name='Adalia decempunctata',
-            preferred_tvk='NBNSYS0000008320'
+            search_name='adaliadecempunctata',
+            tvk='NBNSYS0000008320',
+            preferred_tvk='NBNSYS0000008320',
+            preferred=True
         )
         session.add(taxon1)
         session.add(taxon2)
@@ -114,9 +118,11 @@ class TestPeriodRuleRepo:
         # Create taxa.
         taxon1 = Taxon(
             name='Adalia bipunctata',
-            tvk='NBNSYS0000008319',
             preferred_name='Adalia bipunctata',
-            preferred_tvk='NBNSYS0000008319'
+            search_name='adaliabipunctata',
+            tvk='NBNSYS0000008319',
+            preferred_tvk='NBNSYS0000008319',
+            preferred=True
         )
         session.add(taxon1)
         session.commit()

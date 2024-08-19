@@ -19,9 +19,11 @@ class TestTenkmRule:
         # Create taxon.
         taxon = Taxon(
             name='Adalia bipunctata',
-            tvk='NBNSYS0000008319',
             preferred_name='Adalia bipunctata',
-            preferred_tvk='NBNSYS0000008319'
+            search_name='adaliabipunctata',
+            tvk='NBNSYS0000008319',
+            preferred_tvk='NBNSYS0000008319',
+            preferred=True
         )
         session.add(taxon)
         session.commit()
