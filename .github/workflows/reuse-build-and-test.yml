@@ -16,16 +16,16 @@ jobs:
     env:
       JWT_KEY: ''
       JWT_ALGORITHM: ''
-      JWT_EXPIRES_MINUTES: ''
+      JWT_EXPIRES_MINUTES: 15
       INDICIA_URL: ''
       INDICIA_REST_USER: ''
       INDICIA_REST_PASSWORD: ''
-      INDICIA_TAXON_LIST_ID: ''
+      INDICIA_TAXON_LIST_ID: 1
       RULES_REPO: ''
-      RULES_BRANC: ''
+      RULES_BRANCH: ''
       RULES_DIR: ''
       RULES_SUBDIR: ''
-      INITIAL_USER_NAM: ''
+      INITIAL_USER_NAME: ''
       INITIAL_USER_PASS: ''
 
     steps:
