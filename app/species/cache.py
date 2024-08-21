@@ -109,7 +109,7 @@ def add_taxon_by_tvk(session: Session, tvk: str) -> Taxon:
     taxa = driver.parse_response_taxa(response)
 
     if len(taxa) == 0:
-        raise ValueError("TVK not recognised.")
+        raise ValueError(f"TVK {tvk} not recognised.")
     else:
         taxon = taxa[0]
         session.add(taxon)
