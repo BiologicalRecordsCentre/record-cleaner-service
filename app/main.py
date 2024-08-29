@@ -13,8 +13,8 @@ from app.user.user_repo import UserRepo
 app = FastAPI(
     title="Record Cleaner Service",
     summary="Service for checking species records against the record "
-    "cleaner rules",
-    version="0.0.1",
+    "cleaner rules.",
+    version="0.0.3",
     openapi_tags=[
         {
             "name": "Service",
