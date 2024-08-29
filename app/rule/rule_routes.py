@@ -1,6 +1,7 @@
 from typing import Annotated
-from fastapi import APIRouter, HTTPException, status, Query
+from fastapi import APIRouter, HTTPException, status, Query, Depends
 
+from app.auth import get_current_user
 from app.database import DB
 
 from .rule_repo import RuleRepo
@@ -16,7 +17,7 @@ from .tenkm.tenkm_routes import router as tenkm_router
 router = APIRouter(
     prefix="/rules",
     tags=['Rules'],
-    # dependencies=[Depends(get_current_user)]
+    dependencies=[Depends(get_current_user)]
 )
 router.include_router(org_group_router)
 router.include_router(stage_router)
