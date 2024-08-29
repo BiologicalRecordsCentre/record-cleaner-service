@@ -1,7 +1,9 @@
 import datetime
+import json
 import os
 import shutil
 import subprocess
+import threading
 from typing import Optional, List
 
 from app.settings import settings
@@ -94,13 +96,26 @@ class RuleRepo:
         # Check semaphore to ensure only one update is happening at a time.
         if settings.db.rules_updating:
             return {
-                "ok": False,
-                "data": 'Rule update already in progress.',
+                'ok': False,
+                'data': "Rule update already in progress.",
                 'commit': settings.db.rules_commit
             }
 
         # Set semaphore.
         settings.db.rules_updating = True
+
+        # Start the update thread.
+        thread = threading.Thread(target=self.update_thread, args=(full,))
+        thread.start()
+
+        # Return a response.
+        return {
+            'ok': True,
+            'data': "Rule update started. Use the update_status endpoint to check results."
+        }
+
+    def update_thread(self, full: bool):
+        """Performs the rule update in a thread."""
 
         # Keep a single update time for everything.
         self.loading_time = (
@@ -112,13 +127,12 @@ class RuleRepo:
             self.rules_commit = self.git_update()
             results = self.db_update(full)
             results['commit'] = self.rules_commit
+            settings.db.rules_update_results = json.dumps(results)
         except Exception:
             raise
         finally:
             # Always reset semaphore.
             settings.db.rules_updating = False
-
-        return results
 
     def git_update(self):
         """Installs and updates our copy of the rules."""

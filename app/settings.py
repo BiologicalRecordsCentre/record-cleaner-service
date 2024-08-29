@@ -90,6 +90,8 @@ class DbSettings:
     maintenance_message = DbSetting('Normal operation.')
     rules_commit = DbSetting('')
     rules_updating = DbSetting(False)
+    rules_update_result = DbSetting(
+        '{"ok": true, "data": "Rules not yet updated."}')
 
     def list(self):
         """List all database settings."""

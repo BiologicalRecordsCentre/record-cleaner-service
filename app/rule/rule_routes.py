@@ -1,8 +1,11 @@
+import json
+
 from typing import Annotated
 from fastapi import APIRouter, HTTPException, status, Query, Depends
 
 from app.auth import get_current_user
 from app.database import DB
+from app.settings import settings
 
 from .rule_repo import RuleRepo
 
@@ -48,6 +51,18 @@ async def update_rules(
     else:
         return response
 
+
+@router.get("/update_status", summary="Check results of last rule update.")
+async def update_status(session: DB):
+
+    if settings.db.rules_updating:
+        return {
+            'ok': False,
+            'data': "Rule update already in progress.",
+            'commit': settings.db.rules_commit
+        }
+    else:
+        return json.loads(settings.db.rules_update_result)
 
 # @router.get(
 #     "/rulesets",
