@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel
 
 from app.settings import Config
@@ -17,10 +17,15 @@ class Service(BaseModel):
     title: str
     version: str
     summary: str
+    contact: str
     docs_url: str
+    swagger_url: str
+    code_repo: str
+    rules_repo: str
+    rules_branch: str
+    rules_commit: str
     maintenance_mode: bool
     maintenance_message: str
-    rules_commit: str
 
 
 class Maintenance(BaseModel):
@@ -48,15 +53,21 @@ router.include_router(verify_router)
     tags=['Service'],
     summary="Show service information.",
     response_model=Service)
-async def read_service():
+async def read_service(request: Request):
+    base_url = str(request.base_url)[:-1]
     return Service(
         title=app.app.title,
         version=app.app.version,
         summary=app.app.summary,
-        docs_url=app.app.docs_url,
+        contact=app.app.contact['email'],
+        docs_url="https://biologicalrecordscentre.github.io/record-cleaner-service/",
+        swagger_url=base_url + app.app.docs_url,
+        code_repo="https://github.com/BiologicalRecordsCentre/record-cleaner-service",
+        rules_repo=settings.env.rules_repo,
+        rules_branch=settings.env.rules_branch,
+        rules_commit=settings.db.rules_commit,
         maintenance_mode=settings.db.maintenance_mode,
         maintenance_message=settings.db.maintenance_message,
-        rules_commit=settings.db.rules_commit
     )
 
 

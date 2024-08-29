@@ -15,6 +15,11 @@ app = FastAPI(
     summary="Service for checking species records against the record "
     "cleaner rules.",
     version="0.0.3",
+    contact={
+        "name": "Biological Records Centre at UK Centre for Ecology & Hydrology",
+        "url": "https://www.ceh.ac.uk/our-science/projects/biological-records-centre",
+        "email": "brc@ceh.ac.uk",
+    },
     openapi_tags=[
         {
             "name": "Service",
