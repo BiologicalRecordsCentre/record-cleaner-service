@@ -111,7 +111,8 @@ class RuleRepo:
         # Return a response.
         return {
             'ok': True,
-            'data': "Rule update started. Use the update_status endpoint to check results."
+            'data': ("Rule update started. Use the update_result endpoint to "
+                     "check results.")
         }
 
     def update_thread(self, full: bool):
@@ -125,10 +126,16 @@ class RuleRepo:
 
         try:
             self.rules_commit = self.git_update()
-            results = self.db_update(full)
-            results['commit'] = self.rules_commit
-            settings.db.rules_update_results = json.dumps(results)
-        except Exception:
+            result = self.db_update(full)
+            result['commit'] = self.rules_commit
+            settings.db.rules_update_result = json.dumps(result)
+        except Exception as e:
+            result = {
+                'ok': False,
+                'data': str(e),
+                'commit': self.rules_commit
+            }
+            settings.db.rules_update_result = json.dumps(result)
             raise
         finally:
             # Always reset semaphore.

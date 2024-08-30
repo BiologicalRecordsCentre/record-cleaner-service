@@ -52,13 +52,13 @@ async def update_rules(
         return response
 
 
-@router.get("/update_status", summary="Check results of last rule update.")
+@router.get("/update_result", summary="Check results of last rule update.")
 async def update_status(session: DB):
 
     if settings.db.rules_updating:
         return {
             'ok': False,
-            'data': "Rule update already in progress.",
+            'data': "Rule update in progress.",
             'commit': settings.db.rules_commit
         }
     else:
