@@ -24,6 +24,7 @@ class EnvSettings(BaseSettings):
     rules_subdir: str
     initial_user_name: str
     initial_user_pass: str
+    environment: str = 'prod'  # ['dev'|'test'|'prod']
 
     model_config = SettingsConfigDict(env_file=".env")
 
