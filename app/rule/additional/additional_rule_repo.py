@@ -102,7 +102,7 @@ class AdditionalRuleRepo(RuleRepoBase):
         df = pd.read_csv(
             f'{dir}/{file}',
             usecols=['tvk', 'code'],
-            dtype={'tvk': str, 'code': int}
+            dtype={'tvk': str, 'code': 'Int64'}
         )
 
         # Get the additional codes for this org_group

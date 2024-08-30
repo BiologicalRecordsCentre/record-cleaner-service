@@ -118,10 +118,10 @@ class PhenologyRuleRepo(RuleRepoBase):
             ],
             dtype={
                 'tvk': str,
-                'start_day': int,
-                'start_month': int,
-                'end_day': int,
-                'end_month': int,
+                'start_day': 'Int64',
+                'start_month': 'Int64',
+                'end_day': 'Int64',
+                'end_month': 'Int64',
                 'stage': str
             }
         )
