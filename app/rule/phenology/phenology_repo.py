@@ -126,9 +126,18 @@ class PhenologyRuleRepo(RuleRepoBase):
             }
         )
 
-        # Get the additional codes for this org_group
+        # Get the stage codes for this org_group
         stage_repo = StageRepo(self.session)
         stage_lookup = stage_repo.get_stage_lookup(org_group_id)
+
+        if len(stage_lookup) == 0:
+            # No stages defined for this org_group so add 'everything' stage.
+            stage = stage_repo.get_or_create(org_group_id, '*')
+            stage.commit = rules_commit
+            stage.sort_order = 0
+            self.session.add(stage)
+            self.session.commit()
+            stage_lookup['*'] = stage.id
 
         for row in df.to_dict('records'):
             # Lookup preferred tvk.
@@ -181,10 +190,7 @@ class PhenologyRuleRepo(RuleRepoBase):
 
             # Validate stage.
             stage = row['stage'].strip().lower()
-            if (
-                stage not in stage_lookup.keys() and
-                stage != '*'
-            ):
+            if stage not in stage_lookup.keys():
                 errors.append(f"Unknown stage '{stage}' for {row['tvk']}.")
                 continue
 

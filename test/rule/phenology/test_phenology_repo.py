@@ -123,6 +123,40 @@ class TestPhenologyRuleRepo:
         assert result[1]['end_date'] == '29/11'
         assert result[1]['stage'] == 'mature'
 
+    def test_load_file_wildcard_stage(self, session: Session, testdatadir: str):
+        # Create org_groups.
+        org_group1 = OrgGroup(organisation='organisation1', group='group1')
+        session.add(org_group1)
+        session.commit()
+
+        # Create taxa.
+        taxon1 = Taxon(
+            name='Adalia bipunctata',
+            preferred_name='Adalia bipunctata',
+            search_name='adaliabipunctata',
+            tvk='NBNSYS0000008319',
+            preferred_tvk='NBNSYS0000008319',
+            preferred=True
+        )
+        session.add(taxon1)
+        session.commit()
+
+        # Load a file.
+        repo = PhenologyRuleRepo(session)
+        errors = repo.load_file(
+            testdatadir, org_group1.id, 'abc123', 'periodwithinyear_1_3.csv'
+        )
+        assert (errors == [])
+
+        # Check the results by org_group.
+        result = repo.list_by_org_group(org_group1.id)
+        assert len(result) == 1
+        assert result[0]['tvk'] == taxon1.tvk
+        assert result[0]['taxon'] == taxon1.name
+        assert result[0]['start_date'] == '2/6'
+        assert result[0]['end_date'] == '29/11'
+        assert result[0]['stage'] == '*'
+
     def test_run(self, session: Session):
         # Create org_groups.
         org_group1 = OrgGroup(organisation='organisation1', group='group1')
