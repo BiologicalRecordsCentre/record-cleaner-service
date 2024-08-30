@@ -116,9 +116,12 @@ class DifficultyRuleRepo(RuleRepoBase):
 
         for row in difficulties.to_dict('records'):
             # Lookup preferred tvk.
-            taxon = cache.get_taxon_by_tvk(self.session, row['tvk'].strip())
-            if taxon is None:
-                errors.append(f"Could not find taxon for {row['tvk']}.")
+            try:
+                taxon = cache.get_taxon_by_tvk(
+                    self.session, row['tvk'].strip()
+                )
+            except ValueError as e:
+                errors.append(str(e))
                 continue
 
             if taxon.tvk != taxon.preferred_tvk:

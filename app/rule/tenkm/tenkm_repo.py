@@ -109,9 +109,12 @@ class TenkmRuleRepo(RuleRepoBase):
 
         for row in tenkms.to_dict('records'):
             # Lookup preferred tvk.
-            taxon = cache.get_taxon_by_tvk(self.session, row['tvk'].strip())
-            if taxon is None:
-                errors.add(f"Could not find taxon for {row['tvk']}.")
+            try:
+                taxon = cache.get_taxon_by_tvk(
+                    self.session, row['tvk'].strip()
+                )
+            except ValueError as e:
+                errors.add(str(e))
                 continue
 
             if taxon.tvk != taxon.preferred_tvk:
