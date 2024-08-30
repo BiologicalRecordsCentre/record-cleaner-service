@@ -7,7 +7,7 @@ from sqlmodel import create_engine, SQLModel, Session
 
 # Importing all the sqlmodels ensures the tables are created in the database
 import app.sqlmodels as sqlmodels
-from app.settings import settings
+from app.settings_env import get_env_settings
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 if not os.path.exists(f"{basedir}/data"):
@@ -16,7 +16,8 @@ sqlite_file_name = f"{basedir}/data/database.sqlite"
 sqlite_url = f"sqlite:///{sqlite_file_name}"
 
 # Import this engine everywhere we want to use the database
-if settings.env.environment == 'dev':
+env_settings = get_env_settings()
+if env_settings.environment == 'dev':
     engine = create_engine(sqlite_url, echo=True)
 else:
     engine = create_engine(sqlite_url)
