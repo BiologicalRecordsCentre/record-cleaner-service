@@ -89,7 +89,7 @@ async def set_maintenance(maintenance: Maintenance):
     tags=['Service'],
     summary="List settings.",
     response_model=dict,
-    #    dependencies=[Depends(auth.get_current_admin_user)]
+    dependencies=[Depends(auth.get_current_admin_user)]
 )
 async def read_settings(settings: Config):
     return settings.db.list()
@@ -100,7 +100,7 @@ async def read_settings(settings: Config):
     summary="Alter settings.",
     tags=['Service'],
     response_model=dict,
-    #    dependencies=[Depends(auth.get_current_admin_user)]
+    dependencies=[Depends(auth.get_current_admin_user)]
 )
 async def patch_settings(settings: Config, new_settings: dict):
     for name, value in new_settings.items():
