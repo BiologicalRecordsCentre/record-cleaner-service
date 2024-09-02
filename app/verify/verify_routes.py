@@ -29,17 +29,11 @@ async def verify(session: DB, data: VerifyPack):
         # Our response begins with the input data.
         result = Verified(**record.model_dump())
 
-        # TODO. Decide whether to accept names or only TVKs...
-
         try:
             # 1. Get preferred TVK.
             if record.tvk is not None:
                 # Use TVK if provided as not ambiguous.
                 taxon = cache.get_taxon_by_tvk(session, record.tvk)
-
-# TODO. Are we chasing Organism keys or preferred TVKs to connect records to
-#       rules?
-
                 if record.name is None:
                     result.name = taxon.name
                 elif record.name != taxon.name:
@@ -49,12 +43,10 @@ async def verify(session: DB, data: VerifyPack):
             elif record.name is not None:
                 # Otherwise use name.
                 taxon = cache.get_taxon_by_name(session, record.name)
-            else:
-                result.ok = False
-                result.messages.append("TVK or name required.")
+                if record.tvk is None:
+                    result.tvk = taxon.tvk
 
-            result.tvk = taxon.preferred_tvk
-            result.name = taxon.preferred_name
+            result.preferred_tvk = taxon.preferred_tvk
 
             # 2. Format date.
             vague_date = VagueDate(record.date)
@@ -66,7 +58,7 @@ async def verify(session: DB, data: VerifyPack):
 
             # 4. Format stage
             if record.stage is not None:
-                record.stage = record.stage.strip().lower()
+                result.stage = record.stage.strip().lower()
 
             # 5. Check against rules.
             repo = RuleRepo(session)
