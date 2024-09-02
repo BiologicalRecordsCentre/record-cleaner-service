@@ -1,9 +1,55 @@
+import pytest
+
 from fastapi.testclient import TestClient
+from sqlmodel import Session
+
+from app.sqlmodels import OrgGroup, Taxon, DifficultyCode, DifficultyRule
 
 from ..mocks import mock_make_search_request
 
 
 class TestValidate:
+
+    @pytest.fixture
+    def difficulty_fixture(self, session: Session):
+        # Create org_group.
+        org_group = OrgGroup(organisation='organisation1', group='group1')
+        session.add(org_group)
+        session.commit()
+        session.refresh(org_group)
+
+        # Create taxon.
+        taxon = Taxon(
+            name='Adalia bipunctata',
+            preferred_name='Adalia bipunctata',
+            search_name='adaliabipunctata',
+            tvk='NBNSYS0000008319',
+            preferred_tvk='NBNSYS0000008319',
+            preferred=True
+        )
+        session.add(taxon)
+        session.commit()
+        session.refresh(taxon)
+
+        # Create difficulty code.
+        difficulty_code = DifficultyCode(
+            code=1,
+            text='Easy',
+            org_group_id=org_group.id
+        )
+        session.add(difficulty_code)
+        session.commit()
+        session.refresh(difficulty_code)
+
+        # Create difficulty rule.
+        difficulty_rule = DifficultyRule(
+            org_group_id=org_group.id,
+            taxon_id=taxon.id,
+            difficulty_code_id=difficulty_code.id
+        )
+        session.add(difficulty_rule)
+        session.commit()
+        session.refresh(difficulty_rule)
 
     def test_no_records(self, client: TestClient):
         response = client.post(
@@ -64,7 +110,8 @@ class TestValidate:
         assert validated['messages'][1] == "Unreocognised date format."
         assert validated['messages'][2] == "Invalid spatial reference. A gridref must be provided."
 
-    def test_valid_record_accepted_tvk(self, client: TestClient, mocker):
+    def test_valid_record_accepted_tvk(
+            self, client: TestClient, mocker, difficulty_fixture):
         # Mock the Indicia warehouse.
         mocker.patch(
             'app.species.indicia.make_search_request',
@@ -89,10 +136,13 @@ class TestValidate:
         assert validated['date'] == "03/04/2024"
         assert validated['sref']['gridref'] == "TL123456"
         assert validated['preferred_tvk'] == "NBNSYS0000008319"
+        assert validated['id_difficulty'] == [
+            'organisation1:group1:difficulty:1: Easy']
         assert validated['ok']
         assert len(validated['messages']) == 0
 
-    def test_valid_record_common_tvk(self, client: TestClient, mocker):
+    def test_valid_record_common_tvk(
+            self, client: TestClient, mocker, difficulty_fixture):
         # Mock the Indicia warehouse.
         mocker.patch(
             'app.species.indicia.make_search_request',
@@ -117,10 +167,13 @@ class TestValidate:
         assert validated['date'] == "03/04/2024"
         assert validated['sref']['gridref'] == "TL123456"
         assert validated['preferred_tvk'] == "NBNSYS0000008319"
+        assert validated['id_difficulty'] == [
+            'organisation1:group1:difficulty:1: Easy']
         assert validated['ok']
         assert len(validated['messages']) == 0
 
-    def test_valid_record_accepted_name(self, client: TestClient, mocker):
+    def test_valid_record_accepted_name(
+            self, client: TestClient, mocker, difficulty_fixture):
         # Mock the Indicia warehouse.
         mocker.patch(
             'app.species.indicia.make_search_request',
@@ -144,10 +197,13 @@ class TestValidate:
         assert validated['date'] == "03/04/2024"
         assert validated['sref']['gridref'] == "TL123456"
         assert validated['preferred_tvk'] == "NBNSYS0000008319"
+        assert validated['id_difficulty'] == [
+            'organisation1:group1:difficulty:1: Easy']
         assert validated['ok']
         assert len(validated['messages']) == 0
 
-    def test_valid_record_common_name(self, client: TestClient, mocker):
+    def test_valid_record_common_name(
+            self, client: TestClient, mocker, difficulty_fixture):
         # Mock the Indicia warehouse.
         mocker.patch(
             'app.species.indicia.make_search_request',
@@ -171,6 +227,8 @@ class TestValidate:
         assert validated['date'] == "03/04/2024"
         assert validated['sref']['gridref'] == "TL123456"
         assert validated['preferred_tvk'] == "NBNSYS0000008319"
+        assert validated['id_difficulty'] == [
+            'organisation1:group1:difficulty:1: Easy']
         assert validated['ok']
         assert len(validated['messages']) == 0
 

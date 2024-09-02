@@ -46,27 +46,28 @@ async def validate(session: DB, records: list[Validate]):
 
         # 1. Confirm TVK/name is valid.
         try:
-            if record.tvk is not None:
-                # Use TVK if provided as not ambiguous.
-                taxon = cache.get_taxon_by_tvk(session, record.tvk)
-                result.preferred_tvk = taxon.preferred_tvk
-                if record.name is None:
-                    result.name = taxon.name
-                elif record.name != taxon.name:
-                    result.ok = False
-                    result.messages.append(
-                        f"Name does not match TVK. Expected {taxon.name}.")
-            elif record.name is not None:
-                # Otherwise use name.
-                taxon = cache.get_taxon_by_name(session, record.name)
-                result.preferred_tvk = taxon.preferred_tvk
-            else:
+            if record.tvk is None and record.name is None:
                 result.ok = False
                 result.messages.append("TVK or name required.")
+            else:
+                if record.tvk is not None:
+                    # Use TVK if provided as not ambiguous.
+                    taxon = cache.get_taxon_by_tvk(session, record.tvk)
+                    if record.name is None:
+                        result.name = taxon.name
+                    elif record.name != taxon.name:
+                        result.ok = False
+                        result.messages.append(
+                            f"Name does not match TVK. Expected {taxon.name}.")
+                elif record.name is not None:
+                    # Otherwise use name.
+                    taxon = cache.get_taxon_by_name(session, record.name)
+                    result.tvk = taxon.tvk
 
-            # Get id difficulty.
-            repo = DifficultyRuleRepo(session)
-            result.id_difficulty = repo.run(record)
+                result.preferred_tvk = taxon.preferred_tvk
+                # Get id difficulty.
+                repo = DifficultyRuleRepo(session)
+                result.id_difficulty = repo.run(result)
 
         except Exception as e:
             result.ok = False
