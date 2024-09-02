@@ -39,7 +39,6 @@ async def verify(session: DB, data: VerifyPack):
 
 # TODO. Are we chasing Organism keys or preferred TVKs to connect records to
 #       rules?
-                # result.preferred_tvk = taxon.preferred_tvk
 
                 if record.name is None:
                     result.name = taxon.name
@@ -50,12 +49,10 @@ async def verify(session: DB, data: VerifyPack):
             elif record.name is not None:
                 # Otherwise use name.
                 taxon = cache.get_taxon_by_name(session, record.name)
-                result.preferred_tvk = taxon.preferred_tvk
             else:
                 result.ok = False
                 result.messages.append("TVK or name required.")
 
-            taxon = cache.get_taxon_by_tvk(session, record.tvk)
             result.tvk = taxon.preferred_tvk
             result.name = taxon.preferred_name
 

@@ -20,6 +20,7 @@ class OrgGroupRules(BaseModel):
 
 
 class Verified(Verify):
+    preferred_tvk: Optional[str] = None
     ok: bool = True
     messages: Optional[List[str]] = []
 
