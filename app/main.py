@@ -49,10 +49,10 @@ app = FastAPI(
             "name": "Species Cache",
             "description": "Operations on the species cache"
         },
-        {
-            "name": "Counties",
-            "description": "Operations on counties"
-        },
+        # {
+        #     "name": "Counties",
+        #     "description": "Operations on counties"
+        # },
         {
             "name": "Users",
             "description": "Operations on users"
