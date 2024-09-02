@@ -49,6 +49,11 @@ async def read_users(session: DB):
     return users
 
 
+@router.get('/me', summary="Get logged in user.", response_model=UserGet)
+async def login(user: Auth):
+    return user
+
+
 @router.get('/{username}', summary="Get user.", response_model=UserGet)
 async def read_user(session: DB, username: str):
     """Get a single user."""
@@ -58,11 +63,6 @@ async def read_user(session: DB, username: str):
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"No user found with name {username}.")
 
-    return user
-
-
-@router.get('/me', summary="Get logged in user.", response_model=UserGet)
-async def login(user: Auth):
     return user
 
 
