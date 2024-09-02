@@ -9,14 +9,22 @@ from sqlmodel import create_engine, SQLModel, Session
 import app.sqlmodels as sqlmodels
 from app.settings_env import get_env_settings
 
-basedir = os.path.abspath(os.path.dirname(__file__))
-if not os.path.exists(f"{basedir}/data"):
-    os.mkdir(f"{basedir}/data")
-sqlite_file_name = f"{basedir}/data/database.sqlite"
+env_settings = get_env_settings()
+
+# Locate the directory for the database.
+basedir = env_settings.data_dir
+if basedir[0] == '.':
+    # Determine absolute path from relative path setting.
+    current_dir = os.path.abspath(os.path.dirname(__file__))
+    basedir = os.path.join(current_dir, basedir[1:])
+
+datadir = os.path.join(basedir, 'data')
+if not os.path.exists(datadir):
+    os.mkdir(datadir)
+sqlite_file_name = f"{datadir}/database.sqlite"
 sqlite_url = f"sqlite:///{sqlite_file_name}"
 
 # Import this engine everywhere we want to use the database
-env_settings = get_env_settings()
 if env_settings.environment == 'dev':
     engine = create_engine(sqlite_url, echo=True)
 else:
