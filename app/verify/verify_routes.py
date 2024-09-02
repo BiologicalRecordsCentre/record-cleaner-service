@@ -14,7 +14,7 @@ from .verify_models import VerifyPack, Verified, VerifiedPack
 router = APIRouter(
     prefix="/verify",
     tags=["Verify"],
-    # dependencies=[Depends(get_current_user)]
+    dependencies=[Depends(get_current_user)]
 )
 
 
