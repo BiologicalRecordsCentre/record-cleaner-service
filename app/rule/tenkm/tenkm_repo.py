@@ -185,7 +185,7 @@ class TenkmRuleRepo(RuleRepoBase):
             .distinct()
             .join(OrgGroup)
             .join(Taxon)
-            .where(Taxon.preferred_tvk == record.tvk)
+            .where(Taxon.preferred_tvk == record.preferred_tvk)
             .order_by(OrgGroup.organisation, OrgGroup.group)
         )
         if org_group_id is not None:
@@ -210,7 +210,7 @@ class TenkmRuleRepo(RuleRepoBase):
             query = (
                 select(TenkmRule)
                 .join(Taxon)
-                .where(Taxon.preferred_tvk == record.tvk)
+                .where(Taxon.preferred_tvk == record.preferred_tvk)
                 .where(TenkmRule.km100 == km100)
                 .where(TenkmRule.org_group_id == org_group.id)
             )

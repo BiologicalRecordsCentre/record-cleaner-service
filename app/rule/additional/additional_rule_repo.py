@@ -155,7 +155,7 @@ class AdditionalRuleRepo(RuleRepoBase):
             .join(AdditionalCode)
             .join(OrgGroup)
             .join(Taxon)
-            .where(Taxon.preferred_tvk == record.tvk)
+            .where(Taxon.preferred_tvk == record.preferred_tvk)
         )
         if org_group_id is not None:
             query = query.where(OrgGroup.id == org_group_id)

@@ -279,7 +279,7 @@ class TestPhenologyRuleRepo:
             id=1,
             date='1/8/1975',
             sref=Sref(gridref='TL123456', srid=SrefSystem.GB_GRID),
-            tvk=taxon1.tvk,
+            preferred_tvk=taxon1.preferred_tvk,
             stage='adult'
         )
 
@@ -323,7 +323,7 @@ class TestPhenologyRuleRepo:
         assert len(failures) == 0
 
         # Change to taxon2 with no rules.
-        record.tvk = taxon2.tvk
+        record.preferred_tvk = taxon2.preferred_tvk
         # Test the record against rules for all org_groups.
         failures = repo.run(record)
         # It should fail.

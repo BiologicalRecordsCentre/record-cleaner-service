@@ -150,7 +150,7 @@ class TestPeriodRuleRepo:
             id=1,
             date='1/6/1975',
             sref=Sref(gridref='TL123456', srid=SrefSystem.GB_GRID),
-            tvk=taxon1.tvk
+            preferred_tvk=taxon1.preferred_tvk
         )
 
         repo = PeriodRuleRepo(session)

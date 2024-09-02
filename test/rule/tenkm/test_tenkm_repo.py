@@ -198,7 +198,7 @@ class TestTenkmRuleRepo:
             sref=SrefFactory(
                 Sref(gridref='TL1234', srid=SrefSystem.GB_GRID)
             ).value,
-            tvk=taxon1.tvk
+            preferred_tvk=taxon1.preferred_tvk
         )
 
         repo = TenkmRuleRepo(session)
@@ -225,7 +225,7 @@ class TestTenkmRuleRepo:
         )
 
         # Change the record to taxon2 for which there are no rules.
-        record.tvk = taxon2.tvk
+        record.preferred_tvk = taxon2.preferred_tvk
 
         # Test the record against org_group1 rules.
         failures = repo.run(record, org_group1.id)

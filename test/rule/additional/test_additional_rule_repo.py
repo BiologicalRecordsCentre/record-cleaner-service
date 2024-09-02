@@ -192,7 +192,7 @@ class TestAdditionalRuleRepo:
             id=1,
             date='23/5/2024',
             sref=Sref(gridref='TL123456', srid=SrefSystem.GB_GRID),
-            tvk=taxon1.tvk
+            preferred_tvk=taxon1.preferred_tvk
         )
 
         repo = AdditionalRuleRepo(session)
@@ -209,6 +209,6 @@ class TestAdditionalRuleRepo:
         assert failures[1] == 'organisation2:group2:additional: Scarce'
 
         # Change record to taxon2 which has no additional rules.
-        record.tvk = taxon2.tvk
+        record.preferred_tvk = taxon2.preferred_tvk
         failures = repo.run(record)
         assert len(failures) == 0

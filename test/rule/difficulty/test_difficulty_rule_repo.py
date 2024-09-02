@@ -6,7 +6,7 @@ from app.rule.difficulty.difficulty_rule_repo import DifficultyRuleRepo
 from app.sqlmodels import OrgGroup, Taxon, DifficultyCode
 
 
-class TestDifficultyCodeRepo:
+class TestDifficultyRuleRepo:
     """Tests of the repo class."""
 
     def test_difficulty_rule_repo(self, session: Session):

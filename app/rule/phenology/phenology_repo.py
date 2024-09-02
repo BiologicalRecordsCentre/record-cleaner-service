@@ -222,7 +222,7 @@ class PhenologyRuleRepo(RuleRepoBase):
             .distinct()
             .join(OrgGroup)
             .join(Taxon)
-            .where(Taxon.preferred_tvk == record.tvk)
+            .where(Taxon.preferred_tvk == record.preferred_tvk)
             .order_by(OrgGroup.organisation, OrgGroup.group)
         )
         if org_group_id is not None:
@@ -250,7 +250,7 @@ class PhenologyRuleRepo(RuleRepoBase):
                 select(PhenologyRule)
                 .join(Taxon)
                 .join(Stage)
-                .where(Taxon.preferred_tvk == record.tvk)
+                .where(Taxon.preferred_tvk == record.preferred_tvk)
                 .where(PhenologyRule.org_group_id == org_group.id)
             )
 
