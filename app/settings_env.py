@@ -18,7 +18,7 @@ class EnvSettings(BaseSettings):
     initial_user_name: str
     initial_user_pass: str
     environment: str = 'prod'  # ['dev'|'test'|'prod']
-    data_dir: str = '/usr/app'
+    data_dir: str = '.'
 
     model_config = SettingsConfigDict(env_file=".env")
 
