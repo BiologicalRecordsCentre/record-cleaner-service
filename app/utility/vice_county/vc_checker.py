@@ -65,8 +65,8 @@ class VcChecker:
         # Search the VC names for a match if value was not a code.
         seek = value.lower()
         df = cls.__vc_names
-        # Locate in the dataframe of __vc_names, the code where the name matches
-        # the entered value.
+        # Locate in the dataframe of __vc_names, the code where the name
+        # matches the entered value.
         series = df.loc[df['name'] == seek, 'code']
         if series.size == 1:
             return series.iloc[0]
