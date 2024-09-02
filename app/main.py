@@ -20,6 +20,21 @@ app = FastAPI(
         "url": "https://www.ceh.ac.uk/our-science/projects/biological-records-centre",
         "email": "brc@ceh.ac.uk",
     },
+    description="""This is a web interface which allows you to experiment with
+the record cleaner service. It is intended for developers and not for general
+use. To use all but the base endpoint, which returns status information, you
+need a username and password to be created by an administrator.
+
+To authenticate, click a padlock icon, enter your username and password, and
+click the Authorize button followed by the Close buttion in the subsequent
+dialog. The padlock icon will then be closed and you will retain authentication
+for 15 minutes. Some services, such as user management, are only available to 
+admin users.
+
+To try an endpoint, expand it by clicking the down arrow at the right hand end
+of its title bar and click the Try It Out button that appears below. The
+request may require a parameter or a body to be specified. When ready, click
+the Execute button to sent the request. The response will appear below.""",
     openapi_tags=[
         {
             "name": "Service",
