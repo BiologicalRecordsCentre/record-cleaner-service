@@ -1,7 +1,7 @@
 from fastapi.testclient import TestClient
 from sqlmodel import Session
 
-from app.sqlmodels import OrgGroup
+from app.sqlmodels import OrgGroup, Taxon, TenkmRule
 from app.verify.verify_models import VerifyPack, OrgGroupRules
 
 from ..mocks import mock_make_search_request
@@ -102,3 +102,50 @@ class TestVerify:
         assert len(verified['messages']) == 1
         assert verified['messages'][0] == (
             "UK Ladybird Survey:UKLS:tenkm: There is no rule for this taxon.")
+
+        # Create a tenkm rule to test against.
+        # Create taxa.
+        taxon1 = Taxon(
+            name='Adalia bipunctata',
+            preferred_name='Adalia bipunctata',
+            search_name='adaliabipunctata',
+            tvk='NBNSYS0000008319',
+            preferred_tvk='NBNSYS0000008319',
+            preferred=True
+        )
+        session.add(taxon1)
+        session.commit()
+
+        # Create tenkm rule for org_group and taxon1.
+        rule1 = TenkmRule(
+            org_group_id=org_group.id,
+            taxon_id=taxon1.id,
+            km100='TL',
+            km10='14',
+            coord_system='OSGB'
+        )
+        session.add(rule1)
+        session.commit()
+
+        # Now try again with verification which should pass.
+        response = client.post(
+            '/verify',
+            json=pack.model_dump(),
+        )
+        assert response.status_code == 200
+        verified = response.json()['records'][0]
+        assert len(verified['messages']) == 0
+        assert verified['ok'] is True
+
+        # Change the record location to be outside the tenkm rule.
+        pack.records[0].sref.gridref = "TL 654 321"
+        response = client.post(
+            '/verify',
+            json=pack.model_dump(),
+        )
+        assert response.status_code == 200
+        verified = response.json()['records'][0]
+        assert len(verified['messages']) == 1
+        assert verified['messages'][0] == (
+            "UK Ladybird Survey:UKLS:tenkm: Record is outside known area.")
+        assert verified['ok'] is False

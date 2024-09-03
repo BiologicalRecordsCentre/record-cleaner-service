@@ -37,7 +37,7 @@ class Sref(BaseModel):
     latitude: Optional[float] = None
     easting: Optional[int] = None
     northing: Optional[int] = None
-    accuracy: Optional[SrefAccuracy] = 1000
+    accuracy: Optional[SrefAccuracy] = None
     country: Optional[SrefCountry] = None
     km100: Optional[str] = None
     km10: Optional[str] = None
