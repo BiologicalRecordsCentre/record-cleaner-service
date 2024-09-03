@@ -370,7 +370,7 @@ class RuleRepo:
     ):
         """Run all the specified rules against the record."""
         repo = OrgGroupRepo(self.session)
-        if org_groups_rules_list is None:
+        if org_groups_rules_list is None or len(org_groups_rules_list) == 0:
             # Use rules from all org_groups.
             self.run_rules_for_all(record)
         else:

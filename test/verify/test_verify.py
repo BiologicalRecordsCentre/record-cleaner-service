@@ -50,7 +50,7 @@ class TestVerify:
         assert verified['name'] == "Adalia bipunctata"
         assert verified['date'] == "03/04/2024"
         assert verified['sref']['gridref'] == "TL123456"
-        assert not verified['ok']
+        assert verified['ok'] is False
         assert len(verified['messages']) == 2
         assert verified['messages'][0] == (
             "*:*:phenology: There is no rule for this taxon.")
@@ -121,7 +121,7 @@ class TestVerify:
             org_group_id=org_group.id,
             taxon_id=taxon1.id,
             km100='TL',
-            km10='14',
+            km10='14 15 16',
             coord_system='OSGB'
         )
         session.add(rule1)
@@ -137,7 +137,7 @@ class TestVerify:
         assert len(verified['messages']) == 0
         assert verified['ok'] is True
 
-        # Change the record location to be outside the tenkm rule.
+        # Change record location to be outside the tenkm rule - should fail.
         pack.records[0].sref.gridref = "TL 654 321"
         response = client.post(
             '/verify',
@@ -147,5 +147,20 @@ class TestVerify:
         verified = response.json()['records'][0]
         assert len(verified['messages']) == 1
         assert verified['messages'][0] == (
+            "UK Ladybird Survey:UKLS:tenkm: Record is outside known area.")
+        assert verified['ok'] is False
+
+        # Remove the rule list - should still fail.
+        pack.org_group_rules_list = []
+        response = client.post(
+            '/verify',
+            json=pack.model_dump(),
+        )
+        assert response.status_code == 200
+        verified = response.json()['records'][0]
+        assert len(verified['messages']) == 2
+        assert verified['messages'][0] == (
+            "*:*:phenology: There is no rule for this taxon.")
+        assert verified['messages'][1] == (
             "UK Ladybird Survey:UKLS:tenkm: Record is outside known area.")
         assert verified['ok'] is False
