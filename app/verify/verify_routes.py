@@ -1,3 +1,4 @@
+import time
 
 from fastapi import APIRouter, Depends
 
@@ -25,6 +26,7 @@ router = APIRouter(
     response_model_exclude_none=True)
 async def verify(session: DB, data: VerifyPack):
 
+    start = time.time_ns()
     results = []
     for record in data.records:
         # Our response begins with the input data.
@@ -74,7 +76,10 @@ async def verify(session: DB, data: VerifyPack):
             results.append(result)
             continue
 
+    duration = time.time_ns() - start
+
     return VerifiedPack(
         org_group_rules_list=data.org_group_rules_list,
-        records=results
+        records=results,
+        duration_ns=duration
     )

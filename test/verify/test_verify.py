@@ -18,9 +18,8 @@ class TestVerify:
             json=pack.model_dump(),
         )
         assert response.status_code == 200
-        assert response.json() == {
-            "records": [],
-        }
+        verified = response.json()
+        assert verified['records'] == []
 
     def test_valid_record(self, client: TestClient, mocker, session: Session):
         # Mock the Indicia warehouse.
