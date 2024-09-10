@@ -21,7 +21,8 @@ router = APIRouter(
 @router.post(
     "/",
     summary="Verify records.",
-    response_model=VerifiedPack)
+    response_model=VerifiedPack,
+    response_model_exclude_none=True)
 async def verify(session: DB, data: VerifyPack):
 
     results = []

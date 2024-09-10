@@ -21,7 +21,8 @@ router = APIRouter(
 @router.post(
     "/",
     summary="Validate records.",
-    response_model=list[Validated])
+    response_model=list[Validated],
+    response_model_exclude_none=True)
 async def validate(session: DB, records: list[Validate]):
     """You must provide a name or TVK to identify the taxon to be checked.
     Id, date and a valid sref are also required.

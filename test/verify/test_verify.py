@@ -19,7 +19,6 @@ class TestVerify:
         )
         assert response.status_code == 200
         assert response.json() == {
-            "org_group_rules_list": None,
             "records": [],
         }
 
