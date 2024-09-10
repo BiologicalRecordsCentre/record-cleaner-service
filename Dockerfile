@@ -7,6 +7,8 @@ EXPOSE 8000
 RUN apt-get update && apt-get install -y git
 # Install Sqlite3
 RUN apt-get install -y sqlite3
+# Install ps utility
+RUN apt-get install -y procps
 
 # Keeps Python from generating .pyc files in the container
 ENV PYTHONDONTWRITEBYTECODE=1
