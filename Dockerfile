@@ -5,6 +5,8 @@ EXPOSE 8000
 
 # Install Git
 RUN apt-get update && apt-get install -y git
+# Install Sqlite3
+RUN apt-get install -y sqlite3
 
 # Keeps Python from generating .pyc files in the container
 ENV PYTHONDONTWRITEBYTECODE=1
