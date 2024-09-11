@@ -1,5 +1,6 @@
 import datetime
 import json
+import logging
 import os
 import shutil
 import subprocess
@@ -20,6 +21,8 @@ from .period.period_repo import PeriodRuleRepo
 from .phenology.phenology_repo import PhenologyRuleRepo
 from .stage.stage_repo import StageRepo
 from .tenkm.tenkm_repo import TenkmRuleRepo
+
+logger = logging.getLogger(__name__)
 
 
 class RuleRepo:
@@ -124,11 +127,14 @@ class RuleRepo:
             .strftime('%Y-%m-%d %H:%M:%S')
         )
 
+        logger.info("Rule update started.")
+
         try:
             self.rules_commit = self.git_update()
             result = self.db_update(full)
             result['commit'] = self.rules_commit
             settings.db.rules_update_result = json.dumps(result)
+            logger.info("Rule update complete.")
         except Exception as e:
             result = {
                 'ok': False,

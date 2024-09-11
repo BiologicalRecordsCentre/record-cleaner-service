@@ -1,3 +1,6 @@
+import logging
+import sys
+
 from fastapi import FastAPI, Request, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
@@ -8,6 +11,16 @@ import app.routes as routes
 from app.settings import settings
 from app.utility.vice_county.vc_checker import VcChecker
 from app.user.user_repo import UserRepo
+
+# Initialise logging.
+logging.basicConfig(
+    level=settings.env.log_level,
+    format='%(asctime)s %(levelname)s: %(name)s: %(message)s',
+    datefmt='%a, %b %d %Y %I:%M:%S %p',
+    stream=sys.stdout
+)
+logger = logging.getLogger(__name__)
+logger.info('Record Cleaner starting...')
 
 # Instantiate the app.
 app = FastAPI(
