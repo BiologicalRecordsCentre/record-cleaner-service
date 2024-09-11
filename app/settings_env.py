@@ -19,6 +19,7 @@ class EnvSettings(BaseSettings):
     initial_user_pass: str
     environment: str = 'prod'  # ['dev'|'test'|'prod']
     data_dir: str = '.'
+    backup_dir: str = ''
 
     model_config = SettingsConfigDict(env_file=".env")
 

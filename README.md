@@ -54,6 +54,20 @@ allowing them to access the service.
 *   `INITIAL_USER_NAME="{Some user name}"`
 *   `INITIAL_USER_PASS="{Some password}"`
 
+### Configuration for running environment.
+
+These settings tailor the application for its hosting environment.
+
+The type of environment: [dev|test|prod]. Defaults to prod.
+*   `ENVIRONMENT="prod"`
+The location for creating a data directory. Defaults to '.'
+Use . to indicate a path relative to application root.
+*   `DATA_DIR="."`
+The location for a backup of the data directory. Defaults to '' implying
+no backups exist. If, on startup, there is no database in the DATA_DIR but
+there is one in the BACKUP_DIR, then it is copied in.
+*   `BACKUP_DIR="/path/to/persistent/storage"`
+
 ## Development
 
 ## Testing

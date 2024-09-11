@@ -1,5 +1,6 @@
 from collections.abc import Generator
 import os
+import shutil
 from typing import TypeAlias, Annotated
 
 from fastapi import Depends
@@ -21,8 +22,20 @@ if basedir[0] == '.':
 datadir = os.path.join(basedir, 'data')
 if not os.path.exists(datadir):
     os.mkdir(datadir)
-sqlite_file_name = f"{datadir}/database.sqlite"
-sqlite_url = f"sqlite:///{sqlite_file_name}"
+sqlite_file_path = os.path.join(datadir, 'database.sqlite')
+
+# Check if the database file exists.
+if not os.path.exists(sqlite_file_path):
+    # If not, check if a backup exists.
+    backupdir = env_settings.backup_dir
+    if backupdir != '':
+        sqlite_backup_path = os.path.join(backupdir, 'database.sqlite')
+        if os.path.exists(sqlite_backup_path):
+            # Copy in the backup.
+            shutil.copy(sqlite_backup_path, sqlite_file_path)
+
+
+sqlite_url = f"sqlite:///{sqlite_file_path}"
 
 # Import this engine everywhere we want to use the database
 if env_settings.environment == 'dev':
