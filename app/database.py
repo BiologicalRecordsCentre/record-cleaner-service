@@ -44,7 +44,7 @@ sqlite_url = f"sqlite:///{sqlite_file_path}"
 if env_settings.environment == 'dev':
     engine = create_engine(sqlite_url, echo=True)
 else:
-    engine = create_engine(sqlite_url)
+    engine = create_engine(sqlite_url, echo=False)
 
 # Create tables if they don't exist.
 SQLModel.metadata.create_all(engine)

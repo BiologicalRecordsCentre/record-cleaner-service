@@ -14,10 +14,10 @@ from app.user.user_repo import UserRepo
 
 # Initialise logging.
 logging.basicConfig(
-    level=settings.env.log_level,
+    level=settings.env.log_level.upper(),
     format='%(asctime)s %(levelname)s: %(name)s: %(message)s',
     datefmt='%a, %b %d %Y %I:%M:%S %p',
-    stream=sys.stdout
+    stream=sys.stderr
 )
 logger = logging.getLogger(__name__)
 logger.info('Record Cleaner starting...')

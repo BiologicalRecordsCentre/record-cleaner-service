@@ -73,8 +73,8 @@ no backups exist. If, on startup, there is no database in the DATA_DIR but
 there is one in the BACKUP_DIR, then it is copied in.
 *   `BACKUP_DIR="/path/to/persistent/storage"`
 
-Log level: [DEBUG|INFO|WARNING|ERROR|CRITICAL]. Defaults to WARNING.
-*   LOG_LEVEL="INFO"
+Log level: [debug|info|warning|error|critical]. Defaults to warning.
+*   `LOG_LEVEL="info"`
 
 ## Development
 
