@@ -15,7 +15,7 @@ from app.user.user_routes import router as user_router
 from app.validate.validate_routes import router as validate_router
 from app.verify.verify_routes import router as verify_router
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(f"uvicorn.{__name__}")
 
 
 class Service(BaseModel):
@@ -60,7 +60,7 @@ router.include_router(verify_router)
     summary="Show service information.",
     response_model=Service)
 async def read_service(request: Request):
-    logger.info('TEST TEST TEST TEST TEST TEST')
+    logger.info('Uvicorn TEST TEST TEST TEST TEST TEST')
     base_url = str(request.base_url)[:-1]
     return Service(
         title=app.app.title,

@@ -13,13 +13,7 @@ from app.utility.vice_county.vc_checker import VcChecker
 from app.user.user_repo import UserRepo
 
 # Initialise logging.
-logging.basicConfig(
-    level=settings.env.log_level.upper(),
-    format='%(asctime)s %(levelname)s: %(name)s: %(message)s',
-    datefmt='%a, %b %d %Y %I:%M:%S %p',
-    stream=sys.stderr
-)
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(f"uvicorn.{__name__}")
 logger.info('Record Cleaner starting...')
 
 # Instantiate the app.
