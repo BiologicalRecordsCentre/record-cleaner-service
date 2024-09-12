@@ -13,7 +13,7 @@ from app.settings_env import get_env_settings
 
 env_settings = get_env_settings()
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(f"uvicorn.{__name__}")
 
 # Locate the directory for the database.
 basedir = env_settings.data_dir
@@ -36,7 +36,7 @@ if not os.path.exists(sqlite_file_path):
         if os.path.exists(sqlite_backup_path):
             # Copy in the backup.
             shutil.copy(sqlite_backup_path, sqlite_file_path)
-            logger.info('Database restored from backup.')
+            logger.warning('Database restored from backup.')
 
 sqlite_url = f"sqlite:///{sqlite_file_path}"
 

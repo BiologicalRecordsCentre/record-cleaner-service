@@ -60,7 +60,6 @@ router.include_router(verify_router)
     summary="Show service information.",
     response_model=Service)
 async def read_service(request: Request):
-    logger.info('Uvicorn TEST TEST TEST TEST TEST TEST')
     base_url = str(request.base_url)[:-1]
     return Service(
         title=app.app.title,
@@ -82,12 +81,18 @@ async def read_service(request: Request):
     "/maintenance",
     summary="Set maintenance information.",
     tags=['Service'],
-    response_model=Maintenance,
-    dependencies=[Depends(auth.get_current_admin_user)]
+    response_model=Maintenance
 )
-async def set_maintenance(maintenance: Maintenance):
+async def set_maintenance(
+    maintenance: Maintenance,
+    user=Depends(auth.get_current_admin_user)
+):
     settings.db.maintenance_mode = maintenance.mode
     settings.db.maintenance_message = maintenance.message
+    logger.warning(
+        "Maintenance mode set to %s by %s.",
+        maintenance.mode,
+        user.name)
     return maintenance
 
 

@@ -22,7 +22,7 @@ from .phenology.phenology_repo import PhenologyRuleRepo
 from .stage.stage_repo import StageRepo
 from .tenkm.tenkm_repo import TenkmRuleRepo
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(f"uvicorn.{__name__}")
 
 
 class RuleRepo:
