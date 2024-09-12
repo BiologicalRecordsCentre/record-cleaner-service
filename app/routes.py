@@ -83,10 +83,7 @@ async def read_service(request: Request):
     tags=['Service'],
     response_model=Maintenance
 )
-async def set_maintenance(
-    maintenance: Maintenance,
-    user=Depends(auth.get_current_admin_user)
-):
+async def set_maintenance(maintenance: Maintenance, user: auth.Admin):
     settings.db.maintenance_mode = maintenance.mode
     settings.db.maintenance_message = maintenance.message
     logger.warning(
