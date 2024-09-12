@@ -1,23 +1,47 @@
+from contextlib import asynccontextmanager
 import logging
-import sys
 
 from fastapi import FastAPI, Request, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from sqlmodel import Session
+from uvicorn.logging import ColourizedFormatter
 
 from app.database import engine
 import app.routes as routes
 from app.settings import settings
+from app.settings_env import get_env_settings
 from app.utility.vice_county.vc_checker import VcChecker
 from app.user.user_repo import UserRepo
 
-# Initialise logging.
-logger = logging.getLogger(f"uvicorn.{__name__}")
-logger.info('Record Cleaner starting...')
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Perform startup tasks.
+    env_settings = get_env_settings()
+
+    # Initialise logging.
+    logger = logging.getLogger("uvicorn")
+    logger.setLevel(env_settings.log_level.upper())
+    console_formatter = ColourizedFormatter(
+        fmt="{asctime} {levelprefix:<8} {message}",
+        style="{",
+        datefmt="%Y-%m-%d %H:%M:%S",
+        use_colors=True)
+    logger.handlers[0].setFormatter(console_formatter)
+
+    logger.info('Record Cleaner starting...')
+
+    # yield the context which the app will use
+    yield
+
+    # Perform shutdown tasks.
+    logger.info('Record Cleaner shutting down...')
+
 
 # Instantiate the app.
 app = FastAPI(
+    lifespan=lifespan,
     title="Record Cleaner Service",
     summary="Service for checking species records against the record "
     "cleaner rules.",
