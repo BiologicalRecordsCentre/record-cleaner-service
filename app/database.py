@@ -2,9 +2,10 @@ from collections.abc import Generator
 import logging
 import os
 import shutil
+import sqlite3
 from typing import TypeAlias, Annotated
 
-from fastapi import Depends
+from fastapi import Depends, HTTPException, status
 from sqlmodel import create_engine, SQLModel, Session
 
 # Importing all the sqlmodels ensures the tables are created in the database
@@ -53,7 +54,12 @@ SQLModel.metadata.create_all(engine)
 def get_db_session() -> Generator[Session, None, None]:
     """A function for injecting a session as a dependency."""
     with Session(engine) as session:
-        yield session
+        try:
+            yield session
+        except sqlite3.OperationalError:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Service busy. Please try again shortly.")
 
 
 # Create a type alias for brevity when defining an endpoint needing
