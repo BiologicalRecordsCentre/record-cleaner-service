@@ -32,6 +32,11 @@ async def lifespan(app: FastAPI):
 
     logger.info('Record Cleaner starting...')
 
+    # Make Uvicorn access logs consistent with root logger.
+    access_logger = logging.getLogger("uvicorn.access")
+    access_logger.setLevel(env_settings.log_level.upper())
+    access_logger.handlers[0].setFormatter(console_formatter)
+
     # yield the context which the app will use
     yield
 
