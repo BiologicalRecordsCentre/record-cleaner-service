@@ -1,7 +1,8 @@
+import bcrypt
 from datetime import datetime, timedelta, timezone
+import sqlite3
 from typing import Annotated, TypeAlias
 
-import bcrypt
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
@@ -92,10 +93,15 @@ def get_current_user(
     except JWTError:
         raise authentication_exception
 
-    user = session.exec(
-        select(User)
-        .where(User.name == username)
-    ).one_or_none()
+    try:
+        user = session.exec(
+            select(User)
+            .where(User.name == username)
+        ).one_or_none()
+    except sqlite3.OperationalError:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Service busy. Please try again shortly.")
 
     if user is None or user.is_disabled:
         raise authentication_exception
