@@ -1,11 +1,12 @@
 from sqlmodel import Session, select
 
-from app.database import engine
 from app.sqlmodels import System
 
 
 class DbSetting:
-    """A descriptor for database settings."""
+    """A descriptor for database settings.
+
+    Refer to https://docs.python.org/3/howto/descriptor.html"""
 
     def __init__(self, default):
         # A default value to use if the setting is not yet in the database.
@@ -25,7 +26,7 @@ class DbSetting:
     def __get__(self, obj, objtype=None):
         value = getattr(obj, self.obj_name, None)
         if value is None:
-            with Session(engine) as session:
+            with Session(obj.engine) as session:
                 response = session.exec(
                     select(System)
                     .where(System.key == self.name)
@@ -40,7 +41,7 @@ class DbSetting:
 
     def __set__(self, obj, value):
         setattr(obj, self.obj_name, value)
-        with Session(engine) as session:
+        with Session(obj.engine) as session:
             response = session.exec(
                 select(System)
                 .where(System.key == self.name)
@@ -62,6 +63,9 @@ class DbSettings:
     rules_updating = DbSetting(False)
     rules_update_result = DbSetting(
         '{"ok": true, "data": "Rules not yet updated."}')
+
+    def __init__(self, engine):
+        self.engine = engine
 
     def list(self):
         """List all database settings."""

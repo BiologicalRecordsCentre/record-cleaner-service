@@ -1,3 +1,4 @@
+
 def mock_make_search_request(params: dict) -> dict:
 
     if 'search_code' in params:
@@ -184,3 +185,14 @@ def mock_make_search_request(params: dict) -> dict:
 
     # Response when no matches.
     return {'data': []}
+
+
+def mock_env_settings() -> object:
+    # Add settings by assigning properties.
+    class EnvSettings(object):
+        pass
+    env_settings = EnvSettings()
+    env_settings.initial_user_name = "Jim"
+    env_settings.initial_user_pass = "pass"
+    env_settings.log_level = "info"
+    return env_settings

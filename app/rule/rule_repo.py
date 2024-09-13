@@ -7,7 +7,6 @@ import subprocess
 import threading
 from typing import Optional, List
 
-from app.settings import settings
 from app.sqlmodels import OrgGroup
 from app.verify.verify_models import OrgGroupRules, Verified
 
@@ -26,10 +25,6 @@ logger = logging.getLogger(f"uvicorn.{__name__}")
 
 
 class RuleRepo:
-    basedir = os.path.abspath(os.path.dirname(__file__))
-    datadir = os.path.join(basedir, 'data')
-    gitdir = os.path.join(datadir, settings.env.rules_dir)
-    rulesdir = os.path.join(gitdir, settings.env.rules_subdir)
     rule_file_types = [
         # A list of attributes for the file types we need to process with
         # each element having the following form:
@@ -90,10 +85,18 @@ class RuleRepo:
         'tenkm': TenkmRuleRepo
     }
 
-    def __init__(self, session):
+    def __init__(self, session, env_settings=False):
         self.session = session
+        # When we instantiate the repo for running rules we don't need the
+        # settings.
+        if env_settings:
+            self.basedir = os.path.abspath(os.path.dirname(__file__))
+            self.datadir = os.path.join(self.basedir, 'data')
+            self.gitdir = os.path.join(self.datadir, env_settings.rules_dir)
+            self.rulesdir = os.path.join(
+                self.gitdir, env_settings.rules_subdir)
 
-    def update(self, full: bool = False):
+    def update(self, settings, full: bool = False):
         """Installs and updates our copy of the rules."""
 
         # Check semaphore to ensure only one update is happening at a time.
@@ -108,7 +111,8 @@ class RuleRepo:
         settings.db.rules_updating = True
 
         # Start the update thread.
-        thread = threading.Thread(target=self.update_thread, args=(full,))
+        thread = threading.Thread(
+            target=self.update_thread, args=(settings, full))
         thread.start()
 
         # Return a response.
@@ -118,7 +122,7 @@ class RuleRepo:
                      "check results.")
         }
 
-    def update_thread(self, full: bool):
+    def update_thread(self, settings, full: bool):
         """Performs the rule update in a thread."""
 
         # Keep a single update time for everything.
@@ -130,7 +134,7 @@ class RuleRepo:
         logger.info("Rule update started.")
 
         try:
-            self.rules_commit = self.git_update()
+            self.rules_commit = self.git_update(settings)
             result = self.db_update(full)
             result['commit'] = self.rules_commit
             settings.db.rules_update_result = json.dumps(result)
@@ -147,9 +151,8 @@ class RuleRepo:
             # Always reset semaphore.
             settings.db.rules_updating = False
 
-    def git_update(self):
+    def git_update(self, settings):
         """Installs and updates our copy of the rules."""
-
         try:
             # Ensure data directory exists
             if not os.path.isdir(self.datadir):

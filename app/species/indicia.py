@@ -7,7 +7,7 @@ from typing import Annotated, Optional
 from fastapi import APIRouter, Query, HTTPException, status
 from pydantic import BaseModel
 
-from app.settings import settings
+from app.settings import Config
 import app.auth as auth
 from app.utility.search import Search
 from app.sqlmodels import Taxon
@@ -54,14 +54,15 @@ class IndiciaResponse(BaseModel):
 class IndiciaAuth(requests.auth.AuthBase):
     """A nice way for requests to add Indicia authentication."""
 
-    def __init__(self, password):
+    def __init__(self, user, password):
+        self.user = user
         self.password = password
 
     def __call__(self, r):
         key = self.password.encode('utf-8')
         msg = (r.url).encode('utf-8')
         hash = hmac.new(key, msg, 'sha1').hexdigest()
-        auth = f'USER:{settings.env.indicia_rest_user}:HMAC:{hash}'
+        auth = f'USER:{self.user}:HMAC:{hash}'
         r.headers['Authorization'] = auth
         return r
 
@@ -76,6 +77,7 @@ class IndiciaError(Exception):
     summary="Search Indicia for taxa matching your parameters.",
     response_model=IndiciaResponse)
 async def search_taxa(
+    settings: Config,
     searchQuery: Annotated[
         str,
         Query(description="Search text which will be used to look up species "
@@ -291,7 +293,7 @@ async def search_taxa(
         params['include'] = json.dumps(include_list)
 
     try:
-        response = make_search_request(params)
+        response = make_search_request(settings, params)
         return parse_response_full(response)
     except IndiciaError as e:
         raise HTTPException(
@@ -299,14 +301,17 @@ async def search_taxa(
         )
 
 
-def make_search_request(params: dict) -> dict:
+def make_search_request(settings, params: dict) -> dict:
     """Send a request to the Indicia taxa/searchAPI."""
     url = settings.env.indicia_url + 'taxa/search'
     params['taxon_list_id'] = settings.env.indicia_taxon_list_id
 
     try:
         r = requests.get(url, params=params,
-                         auth=IndiciaAuth(settings.env.indicia_rest_password))
+                         auth=IndiciaAuth(
+                             settings.env.indicia_rest_user,
+                             settings.env.indicia_rest_password
+                         ))
     except Exception:
         raise IndiciaError("Indicia API connection error. Unable to "
                            "look up species information from Indicia.")

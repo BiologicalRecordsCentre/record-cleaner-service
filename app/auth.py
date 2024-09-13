@@ -8,7 +8,7 @@ from jose import JWTError, jwt
 from sqlmodel import Session, select
 
 from app.database import DB
-from app.settings import settings
+from app.settings import Config
 from app.sqlmodels import User
 
 
@@ -52,7 +52,9 @@ def hash_password(password: str):
     return hashed_password
 
 
-def create_access_token(data: dict, expires_delta: timedelta | None = None):
+def create_access_token(
+        settings, data: dict, expires_delta: timedelta | None = None
+):
     """Creates an access token for a user."""
     to_encode = data.copy()
     if expires_delta:
@@ -79,6 +81,7 @@ def authenticate_user(session: Session, username: str, password: str):
 
 
 def get_current_user(
+    settings: Config,
     token:  Annotated[str, Depends(oauth2_scheme)],
     session: DB
 ):
@@ -123,7 +126,8 @@ Admin: TypeAlias = Annotated[User, Depends(get_current_admin_user)]
     summary="Login user.")
 async def login(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
-    session: DB
+    session: DB,
+    settings: Config
 ):
     # Automatic validation ensures username and password exist.
     user = authenticate_user(session, form_data.username, form_data.password)
@@ -132,6 +136,8 @@ async def login(
 
     access_token_expires = timedelta(minutes=settings.env.jwt_expires_minutes)
     access_token = create_access_token(
-        data={"sub": user.name}, expires_delta=access_token_expires
+        settings,
+        data={"sub": user.name},
+        expires_delta=access_token_expires
     )
     return {"access_token": access_token, "token_type": "bearer"}

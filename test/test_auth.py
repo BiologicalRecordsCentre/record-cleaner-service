@@ -2,7 +2,8 @@ from fastapi.testclient import TestClient
 from sqlmodel import Session
 
 import app.auth as auth
-from app.settings import settings
+
+from .mocks import mock_env_settings
 
 
 class TestAuth:
@@ -31,11 +32,12 @@ class TestAuth:
         assert response.status_code == 422
 
     def test_token(self, client: TestClient, session: Session):
+        env_settings = mock_env_settings()
         response = client.post(
             '/token',
             data={
-                'username': settings.env.initial_user_name,
-                'password': settings.env.initial_user_pass
+                'username': env_settings.initial_user_name,
+                'password': env_settings.initial_user_pass
             }
         )
         assert response.status_code == 200

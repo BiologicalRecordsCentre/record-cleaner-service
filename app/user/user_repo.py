@@ -1,7 +1,7 @@
 from sqlmodel import Session, select
 
 from app.auth import hash_password
-from app.settings import settings
+from app.settings_env import get_env_settings
 from app.sqlmodels import User
 
 
@@ -21,13 +21,13 @@ class UserRepo:
         self.session.refresh(db_user)
         return db_user
 
-    def create_initial_user(self):
+    def create_initial_user(self, env_settings):
         user = self.session.exec(select(User)).first()
         if user is None:
             user = User(
-                name=settings.env.initial_user_name,
+                name=env_settings.initial_user_name,
                 email="user@example.com",
-                hash=hash_password(settings.env.initial_user_pass),
+                hash=hash_password(env_settings.initial_user_pass),
                 is_admin=True
             )
             self.session.add(user)

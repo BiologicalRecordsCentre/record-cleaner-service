@@ -5,26 +5,32 @@ from sqlmodel import Session
 
 from app.rule.rule_repo import RuleRepo
 
+from ..mocks import mock_env_settings
+
 
 class TestRules:
 
-    @pytest.fixture(autouse=True)
+    @pytest.fixture(name='env_settings')
     def set_rulesdir(self):
-        # Override path to rulesdir so it points to test data.
-        # Autouse ensures this is set before every test below.
+        env_settings = mock_env_settings()
         basedir = os.path.abspath(os.path.dirname(__file__))
-        RuleRepo.rulesdir = os.path.join(basedir, 'testdata')
+        rulesdir = os.path.join(basedir, 'testdata')
+        env_settings.rules_dir = rulesdir
+        # Following required but not used.
+        env_settings.rules_subdir = ''
 
-    def test_list_organisation_rules(self, session: Session):
-        repo = RuleRepo(session)
+        return env_settings
+
+    def test_list_organisation_rules(self, session: Session, env_settings):
+        repo = RuleRepo(session, env_settings)
         organisation_groups_list = repo.list_organisation_groups()
         assert organisation_groups_list == [
             {'organisation1': ['group1', 'group2']},
             {'organisation2': ['group1']}
         ]
 
-    def test_list_rules(self, session: Session):
-        repo = RuleRepo(session)
+    def test_list_rules(self, session: Session, env_settings):
+        repo = RuleRepo(session, env_settings)
         rules_list = repo.list_rules()
 
         org1group1 = rules_list[0]['organisation1']['group1']

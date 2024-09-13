@@ -7,10 +7,10 @@ from fastapi.responses import JSONResponse
 from sqlmodel import Session
 from uvicorn.logging import ColourizedFormatter
 
-from app.database import engine
+from app.database import create__db
 import app.routes as routes
-from app.settings import settings
 from app.settings_env import get_env_settings
+from app.settings import Settings
 from app.utility.vice_county.vc_checker import VcChecker
 from app.user.user_repo import UserRepo
 
@@ -21,6 +21,9 @@ async def lifespan(app: FastAPI):
     env_settings = get_env_settings()
 
     # Initialise logging.
+    # I have an unexplained problem that, when running on the Kubernetes
+    # cluster, Uvicorn could output logs but not my application. To work around
+    # this, I am piggy backing on Uvicorn's logging.
     logger = logging.getLogger("uvicorn")
     logger.setLevel(env_settings.log_level.upper())
     console_formatter = ColourizedFormatter(
@@ -28,17 +31,35 @@ async def lifespan(app: FastAPI):
         style="{",
         datefmt="%Y-%m-%d %H:%M:%S",
         use_colors=True)
+    if len(logger.handlers) == 0:
+        logger.addHandler(logging.StreamHandler())
     logger.handlers[0].setFormatter(console_formatter)
-
-    logger.info('Record Cleaner starting...')
 
     # Make Uvicorn access logs consistent with root logger.
     access_logger = logging.getLogger("uvicorn.access")
     access_logger.setLevel(env_settings.log_level.upper())
+    if len(access_logger.handlers) == 0:
+        access_logger.addHandler(logging.StreamHandler())
     access_logger.handlers[0].setFormatter(console_formatter)
 
-    # yield the context which the app will use
-    yield
+    logger.info('Record Cleaner starting...')
+
+    # Initialise database.
+    engine = create__db()
+
+    # Initialise settings.
+    settings = Settings(engine)
+
+    # Create the initial user.
+    with Session(engine) as session:
+        repo = UserRepo(session)
+        repo.create_initial_user(settings.env)
+
+    # Load the county data once. Maybe find a better place for this.
+    VcChecker.load_data()
+
+    # Yield the context which will be available in request.state.
+    yield {'engine': engine, 'settings': settings}
 
     # Perform shutdown tasks.
     logger.info('Record Cleaner shutting down...')
@@ -118,14 +139,14 @@ the Execute button to sent the request. The response will appear below.""",
 async def maintenance_middleware(request: Request, call_next):
     """Middleware to handle maintenance mode."""
     if (
-        settings.db.maintenance_mode and
+        request.state.settings.db.maintenance_mode and
         request['path'] != '/' and
         request['path'] != '/token' and
         request['path'] != '/maintenance' and
         request['path'] != '/docs' and
         request['path'] != '/openapi.json'
     ):
-        data = {"message": settings.db.maintenance_message}
+        data = {"message": request.state.settings.db.maintenance_message}
         return JSONResponse(
             content=jsonable_encoder(data),
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE
@@ -134,14 +155,6 @@ async def maintenance_middleware(request: Request, call_next):
     # Process as normal
     response = await call_next(request)
     return response
-
-# Load the county data once. Maybe find a better place for this.
-VcChecker.load_data()
-
-# Create the initial user.
-with Session(engine) as session:
-    repo = UserRepo(session)
-    repo.create_initial_user()
 
 # Attach all the routes we serve.
 app.include_router(routes.router)

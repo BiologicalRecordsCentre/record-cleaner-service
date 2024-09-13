@@ -3,13 +3,11 @@ import logging
 from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel
 
-from app.settings import Config
-
 import app.auth as auth
 import app.main as app
 # from app.county.county_routes import router as county_router
 from app.rule.rule_routes import router as rule_router
-from app.settings import settings
+from app.settings import Config
 from app.species.species_routes import router as species_router
 from app.user.user_routes import router as user_router
 from app.validate.validate_routes import router as validate_router
@@ -59,7 +57,7 @@ router.include_router(verify_router)
     tags=['Service'],
     summary="Show service information.",
     response_model=Service)
-async def read_service(request: Request):
+async def read_service(request: Request, settings: Config):
     base_url = str(request.base_url)[:-1]
     return Service(
         title=app.app.title,
@@ -83,7 +81,11 @@ async def read_service(request: Request):
     tags=['Service'],
     response_model=Maintenance
 )
-async def set_maintenance(maintenance: Maintenance, user: auth.Admin):
+async def set_maintenance(
+    maintenance: Maintenance,
+    user: auth.Admin,
+    settings: Config
+):
     settings.db.maintenance_mode = maintenance.mode
     settings.db.maintenance_message = maintenance.message
     logger.warning(
