@@ -1,5 +1,7 @@
 from functools import lru_cache
+from typing import TypeAlias, Annotated
 
+from fastapi import Depends
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -29,3 +31,9 @@ class EnvSettings(BaseSettings):
 def get_env_settings():
     # A cached function keeping settings in memory.
     return EnvSettings()
+
+
+# Create a type alias for brevity when defining an endpoint needing env
+# settings.
+EnvDependency: TypeAlias = Annotated[EnvSettings, Depends(
+    get_env_settings)]

@@ -7,7 +7,7 @@ import app.auth as auth
 import app.main as app
 # from app.county.county_routes import router as county_router
 from app.rule.rule_routes import router as rule_router
-from app.settings import Config
+from app.settings import SettingsDependency
 from app.species.species_routes import router as species_router
 from app.user.user_routes import router as user_router
 from app.validate.validate_routes import router as validate_router
@@ -57,7 +57,7 @@ router.include_router(verify_router)
     tags=['Service'],
     summary="Show service information.",
     response_model=Service)
-async def read_service(request: Request, settings: Config):
+async def read_service(request: Request, settings: SettingsDependency):
     base_url = str(request.base_url)[:-1]
     return Service(
         title=app.app.title,
@@ -84,7 +84,7 @@ async def read_service(request: Request, settings: Config):
 async def set_maintenance(
     maintenance: Maintenance,
     user: auth.Admin,
-    settings: Config
+    settings: SettingsDependency
 ):
     settings.db.maintenance_mode = maintenance.mode
     settings.db.maintenance_message = maintenance.message
@@ -102,7 +102,7 @@ async def set_maintenance(
     response_model=dict,
     dependencies=[Depends(auth.get_current_admin_user)]
 )
-async def read_settings(settings: Config):
+async def read_settings(settings: SettingsDependency):
     return settings.db.list()
 
 
@@ -113,7 +113,7 @@ async def read_settings(settings: Config):
     response_model=dict,
     dependencies=[Depends(auth.get_current_admin_user)]
 )
-async def patch_settings(settings: Config, new_settings: dict):
+async def patch_settings(settings: SettingsDependency, new_settings: dict):
     for name, value in new_settings.items():
         setattr(settings.db, name, value)
 

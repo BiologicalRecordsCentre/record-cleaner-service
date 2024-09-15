@@ -7,7 +7,7 @@ from typing import Annotated, Optional
 from fastapi import APIRouter, Query, HTTPException, status
 from pydantic import BaseModel
 
-from app.settings import Config
+from app.settings_env import EnvSettings, EnvDependency
 import app.auth as auth
 from app.utility.search import Search
 from app.sqlmodels import Taxon
@@ -77,7 +77,7 @@ class IndiciaError(Exception):
     summary="Search Indicia for taxa matching your parameters.",
     response_model=IndiciaResponse)
 async def search_taxa(
-    settings: Config,
+    env: EnvDependency,
     searchQuery: Annotated[
         str,
         Query(description="Search text which will be used to look up species "
@@ -293,7 +293,7 @@ async def search_taxa(
         params['include'] = json.dumps(include_list)
 
     try:
-        response = make_search_request(settings, params)
+        response = make_search_request(env, params)
         return parse_response_full(response)
     except IndiciaError as e:
         raise HTTPException(
@@ -301,16 +301,16 @@ async def search_taxa(
         )
 
 
-def make_search_request(settings, params: dict) -> dict:
+def make_search_request(env: EnvSettings, params: dict) -> dict:
     """Send a request to the Indicia taxa/searchAPI."""
-    url = settings.env.indicia_url + 'taxa/search'
-    params['taxon_list_id'] = settings.env.indicia_taxon_list_id
+    url = env.indicia_url + 'taxa/search'
+    params['taxon_list_id'] = env.indicia_taxon_list_id
 
     try:
         r = requests.get(url, params=params,
                          auth=IndiciaAuth(
-                             settings.env.indicia_rest_user,
-                             settings.env.indicia_rest_password
+                             env.indicia_rest_user,
+                             env.indicia_rest_password
                          ))
     except Exception:
         raise IndiciaError("Indicia API connection error. Unable to "

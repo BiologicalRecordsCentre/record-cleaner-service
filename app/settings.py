@@ -18,4 +18,4 @@ def get_settings(request: Request) -> Settings:
 
 
 # Create a type alias for brevity when defining an endpoint needing settings.
-Config: TypeAlias = Annotated[Settings, Depends(get_settings)]
+SettingsDependency: TypeAlias = Annotated[Settings, Depends(get_settings)]

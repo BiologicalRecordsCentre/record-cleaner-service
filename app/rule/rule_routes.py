@@ -5,7 +5,8 @@ from fastapi import APIRouter, HTTPException, status, Query, Depends
 
 from app.auth import get_current_user
 from app.database import DbDependency
-from app.settings import Config
+from app.settings import SettingsDependency
+from app.settings_env import EnvDependency
 
 from .rule_repo import RuleRepo
 
@@ -34,7 +35,7 @@ router.include_router(tenkm_router)
 @router.get("/update", summary="Updates rules.")
 async def update_rules(
     db: DbDependency,
-    settings: Config,
+    env: EnvDependency,
     full: Annotated[
         bool,
         Query(description="Set true to force update from all files. By "
@@ -43,7 +44,7 @@ async def update_rules(
 ):
 
     try:
-        repo = RuleRepo(db, settings.env)
+        repo = RuleRepo(db, env)
         response = repo.update(full)
     except Exception as e:
         raise HTTPException(
@@ -54,7 +55,7 @@ async def update_rules(
 
 
 @router.get("/update_result", summary="Check results of last rule update.")
-async def update_status(db: DbDependency, settings: Config):
+async def update_status(db: DbDependency, settings: SettingsDependency):
 
     if settings.db.rules_updating:
         return {

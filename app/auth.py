@@ -8,7 +8,7 @@ from jose import JWTError, jwt
 from sqlmodel import Session, select
 
 from app.database import DbDependency
-from app.settings import Config
+from app.settings_env import EnvDependency
 from app.sqlmodels import User
 
 
@@ -53,7 +53,7 @@ def hash_password(password: str):
 
 
 def create_access_token(
-        settings, data: dict, expires_delta: timedelta | None = None
+        env, data: dict, expires_delta: timedelta | None = None
 ):
     """Creates an access token for a user."""
     to_encode = data.copy()
@@ -62,8 +62,8 @@ def create_access_token(
     else:
         expire = datetime.now(timezone.utc) + timedelta(minutes=15)
     to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, settings.env.jwt_key,
-                             algorithm=settings.env.jwt_algorithm)
+    encoded_jwt = jwt.encode(to_encode, env.jwt_key,
+                             algorithm=env.jwt_algorithm)
     return encoded_jwt
 
 
@@ -81,14 +81,14 @@ def authenticate_user(db: Session, username: str, password: str):
 
 
 def get_current_user(
-    settings: Config,
+    env: EnvDependency,
     token:  Annotated[str, Depends(oauth2_scheme)],
     db: DbDependency
 ):
     """Confirms an access token is valid."""
     try:
-        payload = jwt.decode(token, settings.env.jwt_key,
-                             algorithms=[settings.env.jwt_algorithm])
+        payload = jwt.decode(token, env.jwt_key,
+                             algorithms=[env.jwt_algorithm])
         username: str = payload.get("sub")
         if username is None:
             raise authentication_exception
@@ -127,16 +127,16 @@ Admin: TypeAlias = Annotated[User, Depends(get_current_admin_user)]
 async def login(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     db: DbDependency,
-    settings: Config
+    env: EnvDependency
 ):
     # Automatic validation ensures username and password exist.
     user = authenticate_user(db, form_data.username, form_data.password)
     if not user:
         raise authentication_exception
 
-    access_token_expires = timedelta(minutes=settings.env.jwt_expires_minutes)
+    access_token_expires = timedelta(minutes=env.jwt_expires_minutes)
     access_token = create_access_token(
-        settings,
+        env,
         data={"sub": user.name},
         expires_delta=access_token_expires
     )
