@@ -11,12 +11,12 @@ class TestPeriodRule:
 
     Fixtures for database and authentication come from ../conftest.py"""
 
-    def test_period_rule(self, client: TestClient, session: Session):
+    def test_period_rule(self, client: TestClient, db: Session):
         # Create org_group.
         org_group = OrgGroup(organisation='organisation1', group='group1')
-        session.add(org_group)
-        session.commit()
-        session.refresh(org_group)
+        db.add(org_group)
+        db.commit()
+        db.refresh(org_group)
 
         # Create taxon.
         taxon = Taxon(
@@ -27,9 +27,9 @@ class TestPeriodRule:
             preferred_tvk='NBNSYS0000008319',
             preferred=True
         )
-        session.add(taxon)
-        session.commit()
-        session.refresh(taxon)
+        db.add(taxon)
+        db.commit()
+        db.refresh(taxon)
 
         # Create period rule.
         period_rule = PeriodRule(
@@ -38,9 +38,9 @@ class TestPeriodRule:
             start_date=date(2020, 1, 1),
             end_date=date(2020, 12, 31)
         )
-        session.add(period_rule)
-        session.commit()
-        session.refresh(period_rule)
+        db.add(period_rule)
+        db.commit()
+        db.refresh(period_rule)
 
         # Request period rules for org_group.
         response = client.get(

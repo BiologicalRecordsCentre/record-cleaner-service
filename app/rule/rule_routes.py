@@ -4,7 +4,7 @@ from typing import Annotated
 from fastapi import APIRouter, HTTPException, status, Query, Depends
 
 from app.auth import get_current_user
-from app.database import DB
+from app.database import DbDependency
 from app.settings import Config
 
 from .rule_repo import RuleRepo
@@ -33,7 +33,7 @@ router.include_router(tenkm_router)
 
 @router.get("/update", summary="Updates rules.")
 async def update_rules(
-    session: DB,
+    db: DbDependency,
     settings: Config,
     full: Annotated[
         bool,
@@ -43,7 +43,7 @@ async def update_rules(
 ):
 
     try:
-        repo = RuleRepo(session, settings.env)
+        repo = RuleRepo(db, settings.env)
         response = repo.update(full)
     except Exception as e:
         raise HTTPException(
@@ -54,7 +54,7 @@ async def update_rules(
 
 
 @router.get("/update_result", summary="Check results of last rule update.")
-async def update_status(session: DB, settings: Config):
+async def update_status(db: DbDependency, settings: Config):
 
     if settings.db.rules_updating:
         return {

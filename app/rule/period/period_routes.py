@@ -2,7 +2,7 @@
 from fastapi import APIRouter
 
 from app.auth import Auth
-from app.database import DB
+from app.database import DbDependency
 
 
 from .period_models import PeriodRuleResponse, PeriodRuleResponseTvk
@@ -22,8 +22,8 @@ router = APIRouter(
     summary="List period rules for organisation group.",
     response_model=list[PeriodRuleResponse]
 )
-async def read_rules_by_org_group(session: DB, org_group_id: int):
-    repo = PeriodRuleRepo(session)
+async def read_rules_by_org_group(db: DbDependency, org_group_id: int):
+    repo = PeriodRuleRepo(db)
     rules = repo.list_by_org_group(org_group_id)
     return rules
 
@@ -33,7 +33,7 @@ async def read_rules_by_org_group(session: DB, org_group_id: int):
     summary="List period rules for TVK.",
     response_model=list[PeriodRuleResponseTvk]
 )
-async def read_rules_by_tvk(session: DB, tvk: str):
-    repo = PeriodRuleRepo(session)
+async def read_rules_by_tvk(db: DbDependency, tvk: str):
+    repo = PeriodRuleRepo(db)
     rules = repo.list_by_tvk(tvk)
     return rules

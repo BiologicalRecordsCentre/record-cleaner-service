@@ -72,4 +72,4 @@ def get_db_session(request: Request) -> Generator[Session, None, None]:
 
 # Create a type alias for brevity when defining an endpoint needing
 # a database session.
-DB: TypeAlias = Annotated[Session, Depends(get_db_session)]
+DbDependency: TypeAlias = Annotated[Session, Depends(get_db_session)]

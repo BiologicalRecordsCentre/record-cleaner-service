@@ -7,24 +7,24 @@ from app.sqlmodels import OrgGroup
 
 class OrgGroupRepo:
 
-    def __init__(self, session: Session):
-        self.session = session
+    def __init__(self, db: Session):
+        self.db = db
 
     def list(self, id: int = None):
         """List all records or a single record by id."""
         if id is None:
-            results = self.session.exec(
+            results = self.db.exec(
                 select(OrgGroup)
                 .order_by(OrgGroup.organisation, OrgGroup.group)
             ).all()
             return results
         else:
-            result = self.session.get(OrgGroup, id)
+            result = self.db.get(OrgGroup, id)
             return result
 
     def get(self, organisation: str, group: str):
         """Get record by organisation and group."""
-        return self.session.exec(
+        return self.db.exec(
             select(OrgGroup)
             .where(OrgGroup.organisation == organisation)
             .where(OrgGroup.group == group)
@@ -46,14 +46,14 @@ class OrgGroupRepo:
 
     def purge(self, rules_commit):
         """Delete records for org_group not from current commit."""
-        org_groups = self.session.exec(
+        org_groups = self.db.exec(
             select(OrgGroup)
             .where(OrgGroup.commit != rules_commit)
         )
         for row in org_groups:
             # Testing indicates that deletion cascades.
-            self.session.delete(row)
-        self.session.commit()
+            self.db.delete(row)
+        self.db.commit()
 
     def load_dir_structure(self, dir: str, rules_commit: str):
         """Scan the directory structure and save to database."""
@@ -73,8 +73,8 @@ class OrgGroupRepo:
                     # Save the organisation groups in the database.
                     org_group = self.get_or_create(organisation, group.name)
                     org_group.commit = rules_commit
-                    self.session.add(org_group)
-                    self.session.commit()
+                    self.db.add(org_group)
+                    self.db.commit()
 
         # Delete orphan OrgGroups.
         self.purge(rules_commit)

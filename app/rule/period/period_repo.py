@@ -16,7 +16,7 @@ class PeriodRuleRepo(RuleRepoBase):
     default_file = 'period.csv'
 
     def list_by_org_group(self, org_group_id: int):
-        results = self.session.exec(
+        results = self.db.exec(
             select(PeriodRule, Taxon)
             .join(Taxon)
             .where(PeriodRule.org_group_id == org_group_id)
@@ -35,7 +35,7 @@ class PeriodRuleRepo(RuleRepoBase):
         return rules
 
     def list_by_tvk(self, tvk: str):
-        results = self.session.exec(
+        results = self.db.exec(
             select(PeriodRule, Taxon, OrgGroup)
             .join(Taxon)
             .join(OrgGroup)
@@ -56,7 +56,7 @@ class PeriodRuleRepo(RuleRepoBase):
 
     def get_or_create(self, org_group_id: int, taxon_id: int):
         """Get existing record or create a new one."""
-        period_rule = self.session.exec(
+        period_rule = self.db.exec(
             select(PeriodRule)
             .where(PeriodRule.org_group_id == org_group_id)
             .where(PeriodRule.taxon_id == taxon_id)
@@ -73,14 +73,14 @@ class PeriodRuleRepo(RuleRepoBase):
 
     def purge(self, org_group_id: int, rules_commit):
         """Delete records for org_group not from current commit."""
-        period_rules = self.session.exec(
+        period_rules = self.db.exec(
             select(PeriodRule)
             .where(PeriodRule.org_group_id == org_group_id)
             .where(PeriodRule.commit != rules_commit)
         )
         for row in period_rules:
-            self.session.delete(row)
-        self.session.commit()
+            self.db.delete(row)
+        self.db.commit()
 
     def load_file(
             self,
@@ -124,7 +124,7 @@ class PeriodRuleRepo(RuleRepoBase):
             # Lookup preferred tvk.
             try:
                 taxon = cache.get_taxon_by_tvk(
-                    self.session, row['tvk'].strip()
+                    self.db, row['tvk'].strip()
                 )
             except ValueError as e:
                 errors.append(str(e))
@@ -132,7 +132,7 @@ class PeriodRuleRepo(RuleRepoBase):
 
             if taxon.tvk != taxon.preferred_tvk:
                 taxon = cache.get_taxon_by_tvk(
-                    self.session, taxon.preferred_tvk
+                    self.db, taxon.preferred_tvk
                 )
 
             # Validate the data supplied.
@@ -174,15 +174,15 @@ class PeriodRuleRepo(RuleRepoBase):
                     )
                     continue
 
-            # Add the rule to the session.
+            # Add the rule to the db.
             period_rule = self.get_or_create(org_group_id, taxon.id)
             period_rule.start_date = start_date
             period_rule.end_date = end_date
             period_rule.commit = rules_commit
-            self.session.add(period_rule)
+            self.db.add(period_rule)
 
         # Save all the changes.
-        self.session.commit()
+        self.db.commit()
         # Delete orphan PeriodRules.
         self.purge(org_group_id, rules_commit)
 
@@ -205,7 +205,7 @@ class PeriodRuleRepo(RuleRepoBase):
         if org_group_id is not None:
             query = query.where(OrgGroup.id == org_group_id)
 
-        results = self.session.exec(query).all()
+        results = self.db.exec(query).all()
         for period_rule, org_group in results:
             if (
                 period_rule.start_date is not None and

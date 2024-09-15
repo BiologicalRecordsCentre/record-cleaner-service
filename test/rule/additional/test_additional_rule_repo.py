@@ -11,13 +11,13 @@ from app.verify.verify_models import Verified
 class TestAdditionalRuleRepo:
     """Tests of the repo class."""
 
-    def test_load_file(self, session: Session):
+    def test_load_file(self, db: Session):
         # Create org_groups.
         org_group1 = OrgGroup(organisation='organisation1', group='group1')
         org_group2 = OrgGroup(organisation='organisation2', group='group2')
-        session.add(org_group1)
-        session.add(org_group2)
-        session.commit()
+        db.add(org_group1)
+        db.add(org_group2)
+        db.commit()
 
         # Create taxa.
         taxon1 = Taxon(
@@ -44,10 +44,10 @@ class TestAdditionalRuleRepo:
             preferred_tvk='NBNSYS0000008323',
             preferred=True
         )
-        session.add(taxon1)
-        session.add(taxon2)
-        session.add(taxon3)
-        session.commit()
+        db.add(taxon1)
+        db.add(taxon2)
+        db.add(taxon3)
+        db.commit()
 
         # Create additional codes.
         additional_code1 = AdditionalCode(
@@ -60,16 +60,16 @@ class TestAdditionalRuleRepo:
             text='Unknown',
             org_group_id=org_group2.id
         )
-        session.add(additional_code1)
-        session.add(additional_code2)
-        session.commit()
+        db.add(additional_code1)
+        db.add(additional_code2)
+        db.commit()
 
         # Locate the directory of test data.
         thisdir = os.path.abspath(os.path.dirname(__file__))
         dir = os.path.join(thisdir, 'testdata')
 
         # Load a file.
-        repo = AdditionalRuleRepo(session)
+        repo = AdditionalRuleRepo(db)
         errors = repo.load_file(
             dir, org_group1.id, 'abc123', 'additional_3.csv')
         assert (errors == [])
@@ -117,8 +117,8 @@ class TestAdditionalRuleRepo:
         assert result[1]['text'] == additional_code2.text
 
         # Delete org_group1.
-        session.delete(org_group1)
-        session.commit()
+        db.delete(org_group1)
+        db.commit()
 
         # Check the deletion cascades.
         result = repo.list_by_tvk(taxon1.tvk)
@@ -127,13 +127,13 @@ class TestAdditionalRuleRepo:
         assert result[0]['group'] == org_group2.group
         assert result[0]['code'] == additional_code2.code
 
-    def test_run(self, session: Session):
+    def test_run(self, db: Session):
         # Create org_groups.
         org_group1 = OrgGroup(organisation='organisation1', group='group1')
         org_group2 = OrgGroup(organisation='organisation2', group='group2')
-        session.add(org_group1)
-        session.add(org_group2)
-        session.commit()
+        db.add(org_group1)
+        db.add(org_group2)
+        db.commit()
 
         # Create taxa.
         taxon1 = Taxon(
@@ -152,9 +152,9 @@ class TestAdditionalRuleRepo:
             preferred_tvk='NBNSYS0000008320',
             preferred=True
         )
-        session.add(taxon1)
-        session.add(taxon2)
-        session.commit()
+        db.add(taxon1)
+        db.add(taxon2)
+        db.commit()
 
         # Create additional codes for org_group1 and org_group2.
         code1 = AdditionalCode(
@@ -167,9 +167,9 @@ class TestAdditionalRuleRepo:
             text='Scarce',
             org_group_id=org_group2.id
         )
-        session.add(code1)
-        session.add(code2)
-        session.commit()
+        db.add(code1)
+        db.add(code2)
+        db.commit()
 
         # Create additional rule for org_group1 and taxon1.
         rule1 = AdditionalRule(
@@ -183,9 +183,9 @@ class TestAdditionalRuleRepo:
             taxon_id=taxon1.id,
             additional_code_id=code2.id
         )
-        session.add(rule1)
-        session.add(rule2)
-        session.commit()
+        db.add(rule1)
+        db.add(rule2)
+        db.commit()
 
         # Create record of taxon1 to test.
         record = Verified(
@@ -195,7 +195,7 @@ class TestAdditionalRuleRepo:
             preferred_tvk=taxon1.preferred_tvk
         )
 
-        repo = AdditionalRuleRepo(session)
+        repo = AdditionalRuleRepo(db)
 
         # Test the record against rules for org_group1.
         failures = repo.run(record, org_group1.id)

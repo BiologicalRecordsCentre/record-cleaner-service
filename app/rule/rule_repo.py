@@ -85,8 +85,8 @@ class RuleRepo:
         'tenkm': TenkmRuleRepo
     }
 
-    def __init__(self, session, env_settings=False):
-        self.session = session
+    def __init__(self, db, env_settings=False):
+        self.db = db
         # When we instantiate the repo for running rules we don't need the
         # settings.
         if env_settings:
@@ -236,7 +236,7 @@ class RuleRepo:
         data = []
 
         # Load the rule directory structure.
-        org_group_repo = OrgGroupRepo(self.session)
+        org_group_repo = OrgGroupRepo(self.db)
         org_group_repo.load_dir_structure(self.rulesdir, self.rules_commit)
 
         org_groups = org_group_repo.list()
@@ -278,7 +278,7 @@ class RuleRepo:
         group = org_group.group
         groupdir = os.path.join(self.rulesdir, organisation, group)
         # Create an instance of the repository class.
-        repo = repo_class(self.session)
+        repo = repo_class(self.db)
         # Update if full = True or if the file has changed.
         if not full:
             file_updated = repo.file_updated(groupdir)
@@ -297,8 +297,8 @@ class RuleRepo:
             )
             # Save the update time.
             setattr(org_group, update_field_name, self.loading_time)
-            self.session.add(org_group)
-            self.session.commit()
+            self.db.add(org_group)
+            self.db.commit()
         except FileNotFoundError:
             # It is not an error for a rule file to not exist.
             return []
@@ -378,7 +378,7 @@ class RuleRepo:
         record: Verified
     ):
         """Run all the specified rules against the record."""
-        repo = OrgGroupRepo(self.session)
+        repo = OrgGroupRepo(self.db)
         if org_groups_rules_list is None or len(org_groups_rules_list) == 0:
             # Use rules from all org_groups.
             self.run_rules_for_all(record)
@@ -403,7 +403,7 @@ class RuleRepo:
     def run_rules_for_all(self, record: Verified):
         """Run all the rules against the record from all org_groups."""
         for rule_repo_class in self.verification_rule_types.values():
-            repo = rule_repo_class(self.session)
+            repo = rule_repo_class(self.db)
             record.messages.extend(repo.run(record))
 
     def run_rules_for_org_group(
@@ -416,7 +416,7 @@ class RuleRepo:
         if rules is None:
             # Try all the rules
             for rule_repo_class in self.verification_rule_types.values():
-                repo = rule_repo_class(self.session)
+                repo = rule_repo_class(self.db)
                 record.messages.extend(repo.run(record, org_group.id))
         else:
             # Only use rules listed.
@@ -425,5 +425,5 @@ class RuleRepo:
                     # Not a valid rule type.
                     continue
                 rule_repo_class = self.verification_rule_types[rule]
-                repo = rule_repo_class(self.session)
+                repo = rule_repo_class(self.db)
                 record.messages.extend(repo.run(record, org_group.id))

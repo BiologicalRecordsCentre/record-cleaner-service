@@ -21,7 +21,7 @@ class TestVerify:
         verified = response.json()
         assert verified['records'] == []
 
-    def test_valid_record(self, client: TestClient, mocker, session: Session):
+    def test_valid_record(self, client: TestClient, mocker, db: Session):
         # Mock the Indicia warehouse.
         mocker.patch(
             'app.species.indicia.make_search_request',
@@ -73,8 +73,8 @@ class TestVerify:
 
         # Create the missing org_group.
         org_group = OrgGroup(organisation='UK Ladybird Survey', group='UKLS')
-        session.add(org_group)
-        session.commit()
+        db.add(org_group)
+        db.commit()
         # Now try again with that test.
         response = client.post(
             '/verify',
@@ -111,8 +111,8 @@ class TestVerify:
             preferred_tvk='NBNSYS0000008319',
             preferred=True
         )
-        session.add(taxon1)
-        session.commit()
+        db.add(taxon1)
+        db.commit()
 
         # Create tenkm rule for org_group and taxon1.
         rule1 = TenkmRule(
@@ -122,8 +122,8 @@ class TestVerify:
             km10='14 15 16',
             coord_system='OSGB'
         )
-        session.add(rule1)
-        session.commit()
+        db.add(rule1)
+        db.commit()
 
         # Now try again with verification which should pass.
         response = client.post(

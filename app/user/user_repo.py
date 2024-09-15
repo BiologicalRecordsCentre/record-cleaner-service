@@ -6,23 +6,23 @@ from app.sqlmodels import User
 
 
 class UserRepo:
-    def __init__(self, session):
-        self.session = session
+    def __init__(self, db: Session):
+        self.db = db
 
     def get_user(self, username):
-        return self.session.get(User, username)
+        return self.db.get(User, username)
 
     def create_user(self, user):
         hash = hash_password(user.password)
         extra_data = {"hash": hash}
         db_user = User.model_validate(user, update=extra_data)
-        self.session.add(db_user)
-        self.session.commit()
-        self.session.refresh(db_user)
+        self.db.add(db_user)
+        self.db.commit()
+        self.db.refresh(db_user)
         return db_user
 
     def create_initial_user(self, env_settings):
-        user = self.session.exec(select(User)).first()
+        user = self.db.exec(select(User)).first()
         if user is None:
             user = User(
                 name=env_settings.initial_user_name,
@@ -30,5 +30,5 @@ class UserRepo:
                 hash=hash_password(env_settings.initial_user_pass),
                 is_admin=True
             )
-            self.session.add(user)
-            self.session.commit()
+            self.db.add(user)
+            self.db.commit()

@@ -17,7 +17,7 @@ class TenkmRuleRepo(RuleRepoBase):
     default_file = 'tenkm.csv'
 
     def list_by_org_group(self, org_group_id: int):
-        results = self.session.exec(
+        results = self.db.exec(
             select(TenkmRule, Taxon)
             .join(Taxon)
             .where(TenkmRule.org_group_id == org_group_id)
@@ -37,7 +37,7 @@ class TenkmRuleRepo(RuleRepoBase):
         return rules
 
     def list_by_tvk(self, tvk: str):
-        results = self.session.exec(
+        results = self.db.exec(
             select(TenkmRule, Taxon, OrgGroup)
             .join(Taxon)
             .join(OrgGroup)
@@ -59,7 +59,7 @@ class TenkmRuleRepo(RuleRepoBase):
 
     def get_or_create(self, org_group_id: int, taxon_id: int, km100: str):
         """Get existing record or create a new one."""
-        tenkm_rule = self.session.exec(
+        tenkm_rule = self.db.exec(
             select(TenkmRule)
             .where(TenkmRule.org_group_id == org_group_id)
             .where(TenkmRule.taxon_id == taxon_id)
@@ -78,14 +78,14 @@ class TenkmRuleRepo(RuleRepoBase):
 
     def purge(self, org_group_id: int, rules_commit):
         """Delete records for org_group not from current commit."""
-        tenkm_rules = self.session.exec(
+        tenkm_rules = self.db.exec(
             select(TenkmRule)
             .where(TenkmRule.org_group_id == org_group_id)
             .where(TenkmRule.commit != rules_commit)
         )
         for row in tenkm_rules:
-            self.session.delete(row)
-        self.session.commit()
+            self.db.delete(row)
+        self.db.commit()
 
     def load_file(
             self,
@@ -111,7 +111,7 @@ class TenkmRuleRepo(RuleRepoBase):
             # Lookup preferred tvk.
             try:
                 taxon = cache.get_taxon_by_tvk(
-                    self.session, row['tvk'].strip()
+                    self.db, row['tvk'].strip()
                 )
             except ValueError as e:
                 errors.add(str(e))
@@ -119,7 +119,7 @@ class TenkmRuleRepo(RuleRepoBase):
 
             if taxon.tvk != taxon.preferred_tvk:
                 taxon = cache.get_taxon_by_tvk(
-                    self.session, taxon.preferred_tvk
+                    self.db, taxon.preferred_tvk
                 )
 
             # Validate the data supplied.
@@ -157,15 +157,15 @@ class TenkmRuleRepo(RuleRepoBase):
                     )
                     continue
 
-            # Add the rule to the session.
+            # Add the rule to the db.
             tenkm_rule = self.get_or_create(org_group_id, taxon.id, km100)
             tenkm_rule.km10 = km10str
             tenkm_rule.coord_system = coord_system
             tenkm_rule.commit = rules_commit
-            self.session.add(tenkm_rule)
+            self.db.add(tenkm_rule)
 
         # Save all the changes.
-        self.session.commit()
+        self.db.commit()
         # Delete orphan PeriodRules.
         self.purge(org_group_id, rules_commit)
 
@@ -192,12 +192,12 @@ class TenkmRuleRepo(RuleRepoBase):
             query = query.where(OrgGroup.id == org_group_id)
 
         # Do we have any rules?
-        org_groups = self.session.exec(query).all()
+        org_groups = self.db.exec(query).all()
         if len(org_groups) == 0:
             if org_group_id is None:
                 failures.append("*:*:tenkm: There is no rule for this taxon.")
             else:
-                org_group = self.session.get(OrgGroup, org_group_id)
+                org_group = self.db.get(OrgGroup, org_group_id)
                 failures.append(
                     f"{org_group.organisation}:{org_group.group}:tenkm: "
                     "There is no rule for this taxon."
@@ -214,7 +214,7 @@ class TenkmRuleRepo(RuleRepoBase):
                 .where(TenkmRule.km100 == km100)
                 .where(TenkmRule.org_group_id == org_group.id)
             )
-            tenkm_rule = self.session.exec(query).one_or_none()
+            tenkm_rule = self.db.exec(query).one_or_none()
 
             if tenkm_rule is None:
                 # No matching km100 in the rules

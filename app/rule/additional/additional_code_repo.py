@@ -11,7 +11,7 @@ class AdditionalCodeRepo(RuleRepoBase):
     default_file = 'additional_codes.csv'
 
     def list(self, org_group_id: int):
-        results = self.session.exec(
+        results = self.db.exec(
             select(AdditionalCode)
             .where(AdditionalCode.org_group_id == org_group_id)
             .order_by(AdditionalCode.code)
@@ -28,7 +28,7 @@ class AdditionalCodeRepo(RuleRepoBase):
 
     def get_or_create(self, org_group_id: int, code: int):
         """Get existing record or create a new one."""
-        additional_code = self.session.exec(
+        additional_code = self.db.exec(
             select(AdditionalCode)
             .where(AdditionalCode.org_group_id == org_group_id)
             .where(AdditionalCode.code == code)
@@ -45,18 +45,18 @@ class AdditionalCodeRepo(RuleRepoBase):
 
     def purge(self, org_group_id: int, rules_commit):
         """Delete records for org_group not from current commit."""
-        additional_codes = self.session.exec(
+        additional_codes = self.db.exec(
             select(AdditionalCode)
             .where(AdditionalCode.org_group_id == org_group_id)
             .where(AdditionalCode.commit != rules_commit)
         )
         for row in additional_codes:
-            self.session.delete(row)
-        self.session.commit()
+            self.db.delete(row)
+        self.db.commit()
 
     def get_code_lookup(self, org_group_id: int) -> {}:
         """Return a look up from code to code_id"""
-        additional_codes = self.session.exec(
+        additional_codes = self.db.exec(
             select(AdditionalCode)
             .where(AdditionalCode.org_group_id == org_group_id)
         )
@@ -85,15 +85,15 @@ class AdditionalCodeRepo(RuleRepoBase):
             f'{dir}/{file}', dtype={'code': int, 'text': str}
         )
 
-        # Add the rule to the session.
+        # Add the rule to the db.
         for row in codes.to_dict('records'):
             additional_code = self.get_or_create(org_group_id, row['code'])
             additional_code.text = row['text'].strip()
             additional_code.commit = rules_commit
-            self.session.add(additional_code)
+            self.db.add(additional_code)
 
         # Save all the changes.
-        self.session.commit()
+        self.db.commit()
         # Delete orphan AdditionalCodes.
         self.purge(org_group_id, rules_commit)
 

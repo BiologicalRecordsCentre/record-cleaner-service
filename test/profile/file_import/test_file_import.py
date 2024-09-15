@@ -6,26 +6,11 @@ from sqlmodel import Session
 import app.rule.rule_repo as repo
 
 
-# @pytest.fixture(name="session")
-# def session_fixture() -> Generator[Session, None, None]:
-#     """Fixture which creates an in-memory SQLite database for testing."""
-
-#     engine = create_engine(
-#         "sqlite://",
-#         connect_args={"check_same_thread": False},
-#         poolclass=StaticPool
-#     )
-#     SQLModel.metadata.create_all(engine)
-
-#     with Session(engine) as session:
-#         yield session
-
-
 class TestFileImport:
 
-    def test_file_import(self, session: Session):
+    def test_file_import(self, db: Session):
 
-        rule_repo = repo.RuleRepo(session)
+        rule_repo = repo.RuleRepo(db)
 
         basedir = os.path.abspath(os.path.dirname(__file__))
         rule_repo.rulesdir = os.path.join(basedir, 'testdata')

@@ -11,12 +11,12 @@ class TestOrgGroup:
 
     Fixtures for database and authentication come from ../conftest.py"""
 
-    def test_org_group(self, client: TestClient, session: Session):
+    def test_org_group(self, client: TestClient, db: Session):
         # Create org_group.
         org_group = OrgGroup(organisation='organisation1', group='group1')
-        session.add(org_group)
-        session.commit()
-        session.refresh(org_group)
+        db.add(org_group)
+        db.commit()
+        db.refresh(org_group)
 
         # Request all org_groups.
         response = client.get('/rules/org-groups')

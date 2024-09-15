@@ -21,16 +21,16 @@ class TestRules:
 
         return env_settings
 
-    def test_list_organisation_rules(self, session: Session, env_settings):
-        repo = RuleRepo(session, env_settings)
+    def test_list_organisation_rules(self, db: Session, env_settings):
+        repo = RuleRepo(db, env_settings)
         organisation_groups_list = repo.list_organisation_groups()
         assert organisation_groups_list == [
             {'organisation1': ['group1', 'group2']},
             {'organisation2': ['group1']}
         ]
 
-    def test_list_rules(self, session: Session, env_settings):
-        repo = RuleRepo(session, env_settings)
+    def test_list_rules(self, db: Session, env_settings):
+        repo = RuleRepo(db, env_settings)
         rules_list = repo.list_rules()
 
         org1group1 = rules_list[0]['organisation1']['group1']

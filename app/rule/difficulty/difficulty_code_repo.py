@@ -11,7 +11,7 @@ class DifficultyCodeRepo(RuleRepoBase):
     default_file = 'difficulty_codes.csv'
 
     def list(self, org_group_id: int):
-        results = self.session.exec(
+        results = self.db.exec(
             select(DifficultyCode)
             .where(DifficultyCode.org_group_id == org_group_id)
             .order_by(DifficultyCode.code)
@@ -28,7 +28,7 @@ class DifficultyCodeRepo(RuleRepoBase):
 
     def get_or_create(self, org_group_id: int, code: int):
         """Get existing record or create a new one."""
-        difficulty_code = self.session.exec(
+        difficulty_code = self.db.exec(
             select(DifficultyCode)
             .where(DifficultyCode.org_group_id == org_group_id)
             .where(DifficultyCode.code == code)
@@ -45,18 +45,18 @@ class DifficultyCodeRepo(RuleRepoBase):
 
     def purge(self, org_group_id: int, rules_commit):
         """Delete records for org_group not from current commit."""
-        difficulty_codes = self.session.exec(
+        difficulty_codes = self.db.exec(
             select(DifficultyCode)
             .where(DifficultyCode.org_group_id == org_group_id)
             .where(DifficultyCode.commit != rules_commit)
         )
         for row in difficulty_codes:
-            self.session.delete(row)
-        self.session.commit()
+            self.db.delete(row)
+        self.db.commit()
 
     def get_code_lookup(self, org_group_id: int) -> {}:
         """Return a look up from code to code_id"""
-        difficulty_codes = self.session.exec(
+        difficulty_codes = self.db.exec(
             select(DifficultyCode)
             .where(DifficultyCode.org_group_id == org_group_id)
         )
@@ -85,15 +85,15 @@ class DifficultyCodeRepo(RuleRepoBase):
             f'{dir}/{file}', dtype={'code': int, 'text': str}
         )
 
-        # Add the rule to the session.
+        # Add the rule to the db.
         for row in codes.to_dict('records'):
             difficulty_code = self.get_or_create(org_group_id, row['code'])
             difficulty_code.text = row['text'].strip()
             difficulty_code.commit = rules_commit
-            self.session.add(difficulty_code)
+            self.db.add(difficulty_code)
 
         # Save all the changes.
-        self.session.commit()
+        self.db.commit()
         # Delete orphan DifficultyCodes.
         self.purge(org_group_id, rules_commit)
 

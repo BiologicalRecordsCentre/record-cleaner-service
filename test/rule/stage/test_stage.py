@@ -9,11 +9,11 @@ class TestStage:
 
     Fixtures for database and authentication come from ../conftest.py"""
 
-    def test_stage(self, client: TestClient, session: Session):
+    def test_stage(self, client: TestClient, db: Session):
         # Create org_group.
         org_group = OrgGroup(organisation='organisation1', group='group1')
-        session.add(org_group)
-        session.commit()
+        db.add(org_group)
+        db.commit()
 
         # Create stage.
         stage = Stage(
@@ -22,8 +22,8 @@ class TestStage:
             org_group_id=org_group.id,
             sort_order=1
         )
-        session.add(stage)
-        session.commit()
+        db.add(stage)
+        db.commit()
 
         # Create stage-synonyms.
         synonym1 = StageSynonym(
@@ -34,9 +34,9 @@ class TestStage:
             stage_id=stage.id,
             synonym='oldie'
         )
-        session.add(synonym1)
-        session.add(synonym2)
-        session.commit()
+        db.add(synonym1)
+        db.add(synonym2)
+        db.commit()
 
         # Request stages for org_group.
         response = client.get(f'/rules/stage-synonyms/{org_group.id}')

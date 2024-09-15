@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from sqlmodel import select, delete
 
 from app.auth import hash_password, get_current_admin_user, Auth
-from app.database import DB
+from app.database import DbDependency
 from app.sqlmodels import User
 
 from .user_repo import UserRepo
@@ -40,9 +40,9 @@ class UserPatch(BaseModel):
 
 
 @router.get('/', summary="List users.", response_model=list[UserGet])
-async def read_users(session: DB):
+async def read_users(db: DbDependency):
     """Get all users."""
-    users = session.exec(
+    users = db.exec(
         select(User).order_by(User.name)
     ).all()
 
@@ -55,9 +55,9 @@ async def login(user: Auth):
 
 
 @router.get('/{username}', summary="Get user.", response_model=UserGet)
-async def read_user(session: DB, username: str):
+async def read_user(db: DbDependency, username: str):
     """Get a single user."""
-    user = session.get(User, username)
+    user = db.get(User, username)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -67,16 +67,16 @@ async def read_user(session: DB, username: str):
 
 
 @router.post('/', summary="Create user.", response_model=UserGet)
-async def create_user(session: DB, user_in: UserPost):
+async def create_user(db: DbDependency, user_in: UserPost):
     """Create a new user."""
-    repo = UserRepo(session)
+    repo = UserRepo(db)
     return repo.create_user(user_in)
 
 
 @router.patch("/{username}",  summary="Update user.", response_model=UserGet)
-async def update_user(session: DB, username: str, user_in: UserPatch):
+async def update_user(db: DbDependency, username: str, user_in: UserPatch):
     """Update user with the given name."""
-    db_user = session.get(User, username)
+    db_user = db.get(User, username)
     if not db_user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -89,18 +89,18 @@ async def update_user(session: DB, username: str, user_in: UserPatch):
         extra_data = {"hash": hash}
 
     db_user.sqlmodel_update(user_in_data, update=extra_data)
-    session.add(db_user)
-    session.commit()
-    session.refresh(db_user)
+    db.add(db_user)
+    db.commit()
+    db.refresh(db_user)
 
     return db_user
 
 
 @router.delete("/{username}", summary="Delete user.")
-async def delete_user(session: DB, username: str):
+async def delete_user(db: DbDependency, username: str):
     """Delete user with the given name."""
-    session.exec(
+    db.exec(
         delete(User).where(User.name == username)
     )
-    session.commit()
+    db.commit()
     return {"ok": True}

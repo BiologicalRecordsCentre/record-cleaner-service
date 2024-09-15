@@ -15,7 +15,7 @@ class DifficultyRuleRepo(RuleRepoBase):
     default_file = 'id_difficulty.csv'
 
     def list_by_org_group(self, org_group_id: int):
-        results = self.session.exec(
+        results = self.db.exec(
             select(DifficultyRule, Taxon, DifficultyCode)
             .join(Taxon)
             .join(DifficultyCode)
@@ -34,7 +34,7 @@ class DifficultyRuleRepo(RuleRepoBase):
         return rules
 
     def list_by_tvk(self, tvk: str):
-        results = self.session.exec(
+        results = self.db.exec(
             select(DifficultyRule, Taxon, DifficultyCode, OrgGroup)
             .join(Taxon)
             .join(DifficultyCode)
@@ -58,7 +58,7 @@ class DifficultyRuleRepo(RuleRepoBase):
         self, org_group_id: int, taxon_id: int, stage: str = 'mature'
     ):
         """Get existing record or create a new one."""
-        difficulty_rule = self.session.exec(
+        difficulty_rule = self.db.exec(
             select(DifficultyRule)
             .where(DifficultyRule.org_group_id == org_group_id)
             .where(DifficultyRule.taxon_id == taxon_id)
@@ -77,14 +77,14 @@ class DifficultyRuleRepo(RuleRepoBase):
 
     def purge(self, org_group_id: int, rules_commit):
         """Delete records for org_group not from current commit."""
-        difficulty_codes = self.session.exec(
+        difficulty_codes = self.db.exec(
             select(DifficultyRule)
             .where(DifficultyRule.org_group_id == org_group_id)
             .where(DifficultyRule.commit != rules_commit)
         )
         for row in difficulty_codes:
-            self.session.delete(row)
-        self.session.commit()
+            self.db.delete(row)
+        self.db.commit()
 
     def load_file(
             self,
@@ -108,7 +108,7 @@ class DifficultyRuleRepo(RuleRepoBase):
         )
 
         # Get the difficulty codes for this org_group
-        code_repo = DifficultyCodeRepo(self.session)
+        code_repo = DifficultyCodeRepo(self.db)
         code_lookup = code_repo.get_code_lookup(org_group_id)
         if len(code_lookup) == 0:
             errors.append("No difficulty codes exist.")
@@ -118,7 +118,7 @@ class DifficultyRuleRepo(RuleRepoBase):
             # Lookup preferred tvk.
             try:
                 taxon = cache.get_taxon_by_tvk(
-                    self.session, row['tvk'].strip()
+                    self.db, row['tvk'].strip()
                 )
             except ValueError as e:
                 errors.append(str(e))
@@ -126,7 +126,7 @@ class DifficultyRuleRepo(RuleRepoBase):
 
             if taxon.tvk != taxon.preferred_tvk:
                 taxon = cache.get_taxon_by_tvk(
-                    self.session, taxon.preferred_tvk
+                    self.db, taxon.preferred_tvk
                 )
 
             # Check code is in limits
@@ -134,14 +134,14 @@ class DifficultyRuleRepo(RuleRepoBase):
                 errors.append(f"Unknown code {row['code']} for {row['tvk']}.")
                 continue
 
-            # Add the rule to the session.
+            # Add the rule to the db.
             difficulty_rule = self.get_or_create(org_group_id, taxon.id)
             difficulty_rule.difficulty_code_id = code_lookup[row['code']]
             difficulty_rule.commit = rules_commit
-            self.session.add(difficulty_rule)
+            self.db.add(difficulty_rule)
 
         # Save all the changes.
-        self.session.commit()
+        self.db.commit()
         # Delete orphan DifficultyRules.
         self.purge(org_group_id, rules_commit)
 
@@ -162,7 +162,7 @@ class DifficultyRuleRepo(RuleRepoBase):
         if org_group_id is not None:
             query = query.where(OrgGroup.id == org_group_id)
 
-        results = self.session.exec(query).all()
+        results = self.db.exec(query).all()
         for org_group, difficulty_code in results:
             difficulties.append(
                 f"{org_group.organisation}:{org_group.group}:difficulty:"

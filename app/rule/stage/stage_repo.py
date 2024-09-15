@@ -1,6 +1,6 @@
 import pandas as pd
 
-from sqlmodel import select, func
+from sqlmodel import Session, select, func
 
 from app.sqlmodels import Stage, StageSynonym
 
@@ -11,9 +11,9 @@ from .stage_synonym_repo import StageSynonymRepo
 class StageRepo(RuleRepoBase):
     default_file = 'stage_synonyms.csv'
 
-    def __init__(self, session):
-        super().__init__(session)
-        self.stage_synonym_repo = StageSynonymRepo(session)
+    def __init__(self, db: Session):
+        super().__init__(db)
+        self.stage_synonym_repo = StageSynonymRepo(db)
 
     def list(self, org_group_id: int):
         """Return a list of stages for the org_group.
@@ -21,7 +21,7 @@ class StageRepo(RuleRepoBase):
         Stages are listed in original sort order.
         Synonyms are aggregated and listed in alphabetical order.
         """
-        results = self.session.exec(
+        results = self.db.exec(
             select(
                 Stage.stage,
                 func.group_concat(StageSynonym.synonym).label('synonyms')
@@ -43,7 +43,7 @@ class StageRepo(RuleRepoBase):
 
     def get_or_create(self, org_group_id: int, stage: str):
         """Get existing record or create a new one."""
-        record = self.session.exec(
+        record = self.db.exec(
             select(Stage)
             .where(Stage.org_group_id == org_group_id)
             .where(Stage.stage == stage)
@@ -60,7 +60,7 @@ class StageRepo(RuleRepoBase):
 
     def purge(self, org_group_id: int, rules_commit):
         """Delete records for org_group not from current commit."""
-        stages = self.session.exec(
+        stages = self.db.exec(
             select(Stage)
             .where(Stage.org_group_id == org_group_id)
             .where(Stage.commit != rules_commit)
@@ -68,12 +68,12 @@ class StageRepo(RuleRepoBase):
         for stage in stages:
             # Delete all synonyms of the stage we are purging.
             self.stage_synonym_repo.purge(stage.id)
-            self.session.delete(stage)
-        self.session.commit()
+            self.db.delete(stage)
+        self.db.commit()
 
     def get_stage_lookup(self, org_group_id: int) -> dict:
         """Return a look up from stage to stage_id"""
-        records = self.session.exec(
+        records = self.db.exec(
             select(Stage)
             .where(Stage.org_group_id == org_group_id)
         )
@@ -112,8 +112,8 @@ class StageRepo(RuleRepoBase):
             record = self.get_or_create(org_group_id, stage)
             record.commit = rules_commit
             record.sort_order = index
-            self.session.add(record)
-            self.session.commit()
+            self.db.add(record)
+            self.db.commit()
 
             # Add or update the synonyms.
             self.stage_synonym_repo.load(

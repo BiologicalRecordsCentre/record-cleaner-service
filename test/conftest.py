@@ -29,7 +29,7 @@ def engine_fixture():
     return engine
 
 
-@pytest.fixture(name="session")
+@pytest.fixture(name="db")
 def session_fixture(engine) -> Generator[Session, None, None]:
     """Fixture which creates a session with the test database engine."""
 
@@ -43,7 +43,7 @@ def session_fixture(engine) -> Generator[Session, None, None]:
 
 
 @pytest.fixture(name="client")
-def client_fixture(session: Session, mocker) -> Generator[TestClient, None, None]:
+def client_fixture(db: Session, mocker) -> Generator[TestClient, None, None]:
     """Fixture for testing API endpoints."""
 
     # Mock environment settings in app.main.lifespan
@@ -69,7 +69,7 @@ def client_fixture(session: Session, mocker) -> Generator[TestClient, None, None
         is_disabled=False
     )
     # Override database connection dependency.
-    app.dependency_overrides[get_db_session] = lambda: session
+    app.dependency_overrides[get_db_session] = lambda: db
 
     with TestClient(app) as client:
         yield client

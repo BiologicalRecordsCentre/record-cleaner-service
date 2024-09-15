@@ -9,12 +9,12 @@ class TestAdditional:
 
     Fixtures for database and authentication come from ../conftest.py"""
 
-    def test_additional(self, client: TestClient, session: Session):
+    def test_additional(self, client: TestClient, db: Session):
         # Create org_group.
         org_group = OrgGroup(organisation='organisation1', group='group1')
-        session.add(org_group)
-        session.commit()
-        session.refresh(org_group)
+        db.add(org_group)
+        db.commit()
+        db.refresh(org_group)
 
         # Create taxon.
         taxon = Taxon(
@@ -25,9 +25,9 @@ class TestAdditional:
             preferred_tvk='NBNSYS0000008319',
             preferred=True
         )
-        session.add(taxon)
-        session.commit()
-        session.refresh(taxon)
+        db.add(taxon)
+        db.commit()
+        db.refresh(taxon)
 
         # Create additional code.
         additional_code = AdditionalCode(
@@ -35,9 +35,9 @@ class TestAdditional:
             text='Rare',
             org_group_id=org_group.id
         )
-        session.add(additional_code)
-        session.commit()
-        session.refresh(additional_code)
+        db.add(additional_code)
+        db.commit()
+        db.refresh(additional_code)
 
         # Create additional rule.
         additional_rule = AdditionalRule(
@@ -45,9 +45,9 @@ class TestAdditional:
             taxon_id=taxon.id,
             additional_code_id=additional_code.id
         )
-        session.add(additional_rule)
-        session.commit()
-        session.refresh(additional_rule)
+        db.add(additional_rule)
+        db.commit()
+        db.refresh(additional_rule)
 
         # Request additional codes for org_group.
         response = client.get(f'/rules/additional-codes/{org_group.id}')

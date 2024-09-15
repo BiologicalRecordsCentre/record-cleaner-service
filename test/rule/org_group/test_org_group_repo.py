@@ -9,7 +9,7 @@ from app.sqlmodels import OrgGroup
 class TestOrgGroupRepo:
     """Tests of the repo class."""
 
-    def test_org_group_repo(self, session: Session):
+    def test_org_group_repo(self, db: Session):
 
         # Locate the directory for test data.
         thisdir = os.path.abspath(os.path.dirname(__file__))
@@ -24,7 +24,7 @@ class TestOrgGroupRepo:
             os.makedirs(os.path.join(dir, 'org2/group1'))
 
         # Load file structure.
-        repo = OrgGroupRepo(session)
+        repo = OrgGroupRepo(db)
         repo.load_dir_structure(dir, 'abc123')
 
         # Check the results.
@@ -41,7 +41,7 @@ class TestOrgGroupRepo:
         os.rmdir(os.path.join(dir, 'org1/group1'))
 
         # Load file structure.
-        repo = OrgGroupRepo(session)
+        repo = OrgGroupRepo(db)
         repo.load_dir_structure(dir, 'xyz321')
 
         # Check the results.

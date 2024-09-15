@@ -9,15 +9,15 @@ from app.sqlmodels import OrgGroup, Taxon, DifficultyCode
 class TestDifficultyRuleRepo:
     """Tests of the repo class."""
 
-    def test_difficulty_rule_repo(self, session: Session):
+    def test_difficulty_rule_repo(self, db: Session):
         # Create org_groups.
         org_group1 = OrgGroup(organisation='organisation1', group='group1')
         org_group2 = OrgGroup(organisation='organisation2', group='group2')
-        session.add(org_group1)
-        session.add(org_group2)
-        session.commit()
-        session.refresh(org_group1)
-        session.refresh(org_group2)
+        db.add(org_group1)
+        db.add(org_group2)
+        db.commit()
+        db.refresh(org_group1)
+        db.refresh(org_group2)
 
         # Create taxa.
         taxon1 = Taxon(
@@ -44,13 +44,13 @@ class TestDifficultyRuleRepo:
             preferred_tvk='NBNSYS0000008323',
             preferred=True
         )
-        session.add(taxon1)
-        session.add(taxon2)
-        session.add(taxon3)
-        session.commit()
-        session.refresh(taxon1)
-        session.refresh(taxon2)
-        session.refresh(taxon3)
+        db.add(taxon1)
+        db.add(taxon2)
+        db.add(taxon3)
+        db.commit()
+        db.refresh(taxon1)
+        db.refresh(taxon2)
+        db.refresh(taxon3)
 
         # Create difficulty codes.
         difficulty_code1 = DifficultyCode(
@@ -63,18 +63,18 @@ class TestDifficultyRuleRepo:
             text='Hard',
             org_group_id=org_group2.id
         )
-        session.add(difficulty_code1)
-        session.add(difficulty_code2)
-        session.commit()
-        session.refresh(difficulty_code1)
-        session.refresh(difficulty_code2)
+        db.add(difficulty_code1)
+        db.add(difficulty_code2)
+        db.commit()
+        db.refresh(difficulty_code1)
+        db.refresh(difficulty_code2)
 
         # Locate the directory of test data.
         thisdir = os.path.abspath(os.path.dirname(__file__))
         dir = os.path.join(thisdir, 'testdata')
 
         # Load a file.
-        repo = DifficultyRuleRepo(session)
+        repo = DifficultyRuleRepo(db)
         errors = repo.load_file(
             dir, org_group1.id, 'abc123', 'id_difficulty_3.csv')
         assert (errors == [])
@@ -122,8 +122,8 @@ class TestDifficultyRuleRepo:
         assert result[1]['text'] == difficulty_code2.text
 
         # Delete org_group1.
-        session.delete(org_group1)
-        session.commit()
+        db.delete(org_group1)
+        db.commit()
 
         # Check the deletion cascades.
         result = repo.list_by_tvk(taxon1.tvk)

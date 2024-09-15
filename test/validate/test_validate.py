@@ -11,12 +11,12 @@ from ..mocks import mock_make_search_request
 class TestValidate:
 
     @pytest.fixture
-    def difficulty_fixture(self, session: Session):
+    def difficulty_fixture(self, db: Session):
         # Create org_group.
         org_group = OrgGroup(organisation='organisation1', group='group1')
-        session.add(org_group)
-        session.commit()
-        session.refresh(org_group)
+        db.add(org_group)
+        db.commit()
+        db.refresh(org_group)
 
         # Create taxon.
         taxon = Taxon(
@@ -27,9 +27,9 @@ class TestValidate:
             preferred_tvk='NBNSYS0000008319',
             preferred=True
         )
-        session.add(taxon)
-        session.commit()
-        session.refresh(taxon)
+        db.add(taxon)
+        db.commit()
+        db.refresh(taxon)
 
         # Create difficulty code.
         difficulty_code = DifficultyCode(
@@ -37,9 +37,9 @@ class TestValidate:
             text='Easy',
             org_group_id=org_group.id
         )
-        session.add(difficulty_code)
-        session.commit()
-        session.refresh(difficulty_code)
+        db.add(difficulty_code)
+        db.commit()
+        db.refresh(difficulty_code)
 
         # Create difficulty rule.
         difficulty_rule = DifficultyRule(
@@ -47,9 +47,9 @@ class TestValidate:
             taxon_id=taxon.id,
             difficulty_code_id=difficulty_code.id
         )
-        session.add(difficulty_rule)
-        session.commit()
-        session.refresh(difficulty_rule)
+        db.add(difficulty_rule)
+        db.commit()
+        db.refresh(difficulty_rule)
 
     def test_no_records(self, client: TestClient):
         response = client.post(

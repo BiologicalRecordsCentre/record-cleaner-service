@@ -9,19 +9,19 @@ from app.sqlmodels import OrgGroup
 class TestStageRepo:
     """Tests of the repo class."""
 
-    def test_stage_repo(self, session: Session):
+    def test_stage_repo(self, db: Session):
         # Create an org_group.
         org_group = OrgGroup(organisation='organisation1', group='group1')
-        session.add(org_group)
-        session.commit()
-        session.refresh(org_group)
+        db.add(org_group)
+        db.commit()
+        db.refresh(org_group)
 
         # Locate the directory of test data.
         thisdir = os.path.abspath(os.path.dirname(__file__))
         dir = os.path.join(thisdir, 'testdata')
 
         # Load a file.
-        repo = StageRepo(session)
+        repo = StageRepo(db)
         repo.load_file(dir, org_group.id, 'abc123', 'stage_synonyms_3.csv')
         result = repo.list(org_group.id)
 

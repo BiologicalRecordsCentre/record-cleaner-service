@@ -6,8 +6,8 @@ from sqlmodel import Session
 
 class RuleRepoBase:
 
-    def __init__(self, session: Session):
-        self.session = session
+    def __init__(self, db: Session):
+        self.db = db
 
     def file_updated(self, dir: str, file: str | None = None):
         if file is None:

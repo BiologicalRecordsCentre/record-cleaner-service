@@ -7,7 +7,7 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from sqlmodel import Session, select
 
-from app.database import DB
+from app.database import DbDependency
 from app.settings import Config
 from app.sqlmodels import User
 
@@ -67,9 +67,9 @@ def create_access_token(
     return encoded_jwt
 
 
-def authenticate_user(session: Session, username: str, password: str):
+def authenticate_user(db: Session, username: str, password: str):
     """Confirms a username and password match."""
-    user = session.exec(
+    user = db.exec(
         select(User)
         .where(User.name == username)
     ).one_or_none()
@@ -83,7 +83,7 @@ def authenticate_user(session: Session, username: str, password: str):
 def get_current_user(
     settings: Config,
     token:  Annotated[str, Depends(oauth2_scheme)],
-    session: DB
+    db: DbDependency
 ):
     """Confirms an access token is valid."""
     try:
@@ -95,7 +95,7 @@ def get_current_user(
     except JWTError:
         raise authentication_exception
 
-    user = session.exec(
+    user = db.exec(
         select(User)
         .where(User.name == username)
     ).one_or_none()
@@ -126,11 +126,11 @@ Admin: TypeAlias = Annotated[User, Depends(get_current_admin_user)]
     summary="Login user.")
 async def login(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
-    session: DB,
+    db: DbDependency,
     settings: Config
 ):
     # Automatic validation ensures username and password exist.
-    user = authenticate_user(session, form_data.username, form_data.password)
+    user = authenticate_user(db, form_data.username, form_data.password)
     if not user:
         raise authentication_exception
 

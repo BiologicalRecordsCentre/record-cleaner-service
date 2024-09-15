@@ -9,11 +9,11 @@ class TestPhenologyRule:
 
     Fixtures for database and authentication come from ../conftest.py"""
 
-    def test_phenology_rule(self, client: TestClient, session: Session):
+    def test_phenology_rule(self, client: TestClient, db: Session):
         # Create org_group.
         org_group = OrgGroup(organisation='organisation1', group='group1')
-        session.add(org_group)
-        session.commit()
+        db.add(org_group)
+        db.commit()
 
         # Create taxon.
         taxon = Taxon(
@@ -24,8 +24,8 @@ class TestPhenologyRule:
             preferred_tvk='NBNSYS0000008319',
             preferred=True
         )
-        session.add(taxon)
-        session.commit()
+        db.add(taxon)
+        db.commit()
 
         # Create stage.
         stage = Stage(
@@ -34,8 +34,8 @@ class TestPhenologyRule:
             org_group_id=org_group.id,
             sort_order=1
         )
-        session.add(stage)
-        session.commit()
+        db.add(stage)
+        db.commit()
 
         # Create phenology rule.
         phenology_rule = PhenologyRule(
@@ -47,8 +47,8 @@ class TestPhenologyRule:
             end_day=6,
             end_month=10
         )
-        session.add(phenology_rule)
-        session.commit()
+        db.add(phenology_rule)
+        db.commit()
 
         # Request phenology rules for org_group.
         response = client.get(

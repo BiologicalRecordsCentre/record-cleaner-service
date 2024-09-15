@@ -9,19 +9,19 @@ from app.sqlmodels import OrgGroup
 class TestAdditionalCodeRepo:
     """Tests of the repo class."""
 
-    def test_additional_code_repo(self, session: Session):
+    def test_additional_code_repo(self, db: Session):
         # Create an org_group.
         org_group = OrgGroup(organisation='organisation1', group='group1')
-        session.add(org_group)
-        session.commit()
-        session.refresh(org_group)
+        db.add(org_group)
+        db.commit()
+        db.refresh(org_group)
 
         # Locate the directory of test data.
         thisdir = os.path.abspath(os.path.dirname(__file__))
         dir = os.path.join(thisdir, 'testdata')
 
         # Load a file.
-        repo = AdditionalCodeRepo(session)
+        repo = AdditionalCodeRepo(db)
         repo.load_file(dir, org_group.id, 'abc123', 'additional_codes_3.csv')
         result = repo.list(org_group.id)
 

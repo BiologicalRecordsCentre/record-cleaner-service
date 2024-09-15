@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException, status
 from sqlmodel import SQLModel, Session, func, select, delete
 
 from app.auth import Auth
-from app.database import DB
+from app.database import DbDependency
 from app.sqlmodels import Taxon
 import app.species.indicia as driver
 from app.utility.search import Search
@@ -18,9 +18,9 @@ router = APIRouter()
     summary="Get number of records in species cache.",
     response_model=dict)
 async def read_cache_size(
-    session: DB
+    db: DbDependency
 ):
-    count = session.exec(
+    count = db.exec(
         select(func.count(Taxon.id))
     ).first()
     return {"count": count}
@@ -32,9 +32,9 @@ async def read_cache_size(
     summary="Get item from species cache.",
     response_model=Taxon)
 async def read_cache_item(
-        session: DB,
+        db: DbDependency,
         id: int):
-    taxon = session.get(Taxon, id)
+    taxon = db.get(Taxon, id)
     if not taxon:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -49,12 +49,12 @@ async def read_cache_item(
     summary="Empty the species cache.",
     response_model=dict)
 async def cache_clear(
-    session: DB
+    db: DbDependency
 ):
-    session.exec(
+    db.exec(
         delete(Taxon)
     )
-    session.commit()
+    db.commit()
     return {"ok": True}
 
 
@@ -64,12 +64,12 @@ async def cache_clear(
     summary="Delete item from species cache.",
     response_model=dict)
 async def delete_cache_item(
-        session: DB,
+        db: DbDependency,
         id: int):
-    session.exec(
+    db.exec(
         delete(Taxon).where(Taxon.id == id)
     )
-    session.commit()
+    db.commit()
     return {"ok": True}
 
 
@@ -79,27 +79,27 @@ async def delete_cache_item(
     summary="Get taxon with given TVK from cache.",
     response_model=Taxon)
 async def read_taxon_by_tvk(
-        session: DB,
+        db: DbDependency,
         tvk: str):
-    return get_taxon_by_tvk(session, tvk)
+    return get_taxon_by_tvk(db, tvk)
 
 
 @lru_cache(maxsize=1024)
-def get_taxon_by_tvk(session: Session, tvk: str) -> Taxon:
+def get_taxon_by_tvk(db: Session, tvk: str) -> Taxon:
     """Look up the taxon with given TVK."""
 
     # First check our local database
-    taxon = session.exec(
+    taxon = db.exec(
         select(Taxon)
         .where(Taxon.tvk == tvk)
     ).first()
     if not taxon:
         # If not found, add from the remote database.
-        taxon = add_taxon_by_tvk(session, tvk)
+        taxon = add_taxon_by_tvk(db, tvk)
     return taxon
 
 
-def add_taxon_by_tvk(session: Session, tvk: str) -> Taxon:
+def add_taxon_by_tvk(db: Session, tvk: str) -> Taxon:
     """Look up taxon with given TVK and add to cache."""
     params = {
         'search_code': tvk,
@@ -112,28 +112,28 @@ def add_taxon_by_tvk(session: Session, tvk: str) -> Taxon:
         raise ValueError(f"TVK {tvk} not recognised.")
     else:
         taxon = taxa[0]
-        session.add(taxon)
-        session.commit()
-        session.refresh(taxon)
+        db.add(taxon)
+        db.commit()
+        db.refresh(taxon)
         return taxon
 
 
 @lru_cache(maxsize=1024)
-def get_taxon_by_name(session: Session, name: str) -> Taxon:
+def get_taxon_by_name(db: Session, name: str) -> Taxon:
     """Look up taxon with given name."""
 
     search_name = Search.get_search_name(name)
     # First check our local database.
-    taxon = session.exec(
+    taxon = db.exec(
         select(Taxon).where(Taxon.search_name == search_name)
     ).first()
     if not taxon:
         # If not found, add from the remote database.
-        taxon = add_taxon_by_name(session, name)
+        taxon = add_taxon_by_name(db, name)
     return taxon
 
 
-def add_taxon_by_name(session: Session, name: str) -> Taxon:
+def add_taxon_by_name(db: Session, name: str) -> Taxon:
     """Look up taxon and add to cache."""
     params = {
         'searchQuery': name,
@@ -146,7 +146,7 @@ def add_taxon_by_name(session: Session, name: str) -> Taxon:
         raise ValueError("Name not recognised.")
     else:
         taxon = taxa[0]
-        session.add(taxon)
-        session.commit()
-        session.refresh(taxon)
+        db.add(taxon)
+        db.commit()
+        db.refresh(taxon)
         return taxon

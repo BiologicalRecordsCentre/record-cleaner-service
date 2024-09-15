@@ -20,15 +20,15 @@ class TestPeriodRuleRepo:
         thisdir = os.path.abspath(os.path.dirname(__file__))
         return os.path.join(thisdir, 'testdata')
 
-    def test_load_file(self, session: Session, testdatadir: str):
+    def test_load_file(self, db: Session, testdatadir: str):
         # Create org_groups.
         org_group1 = OrgGroup(organisation='organisation1', group='group1')
         org_group2 = OrgGroup(organisation='organisation2', group='group2')
-        session.add(org_group1)
-        session.add(org_group2)
-        session.commit()
-        session.refresh(org_group1)
-        session.refresh(org_group2)
+        db.add(org_group1)
+        db.add(org_group2)
+        db.commit()
+        db.refresh(org_group1)
+        db.refresh(org_group2)
 
         # Create taxa.
         taxon1 = Taxon(
@@ -47,14 +47,14 @@ class TestPeriodRuleRepo:
             preferred_tvk='NBNSYS0000008320',
             preferred=True
         )
-        session.add(taxon1)
-        session.add(taxon2)
-        session.commit()
-        session.refresh(taxon1)
-        session.refresh(taxon2)
+        db.add(taxon1)
+        db.add(taxon2)
+        db.commit()
+        db.refresh(taxon1)
+        db.refresh(taxon2)
 
         # Load a file.
-        repo = PeriodRuleRepo(session)
+        repo = PeriodRuleRepo(db)
         errors = repo.load_file(
             testdatadir, org_group1.id, 'abc123', 'period_2.csv'
         )
@@ -99,21 +99,21 @@ class TestPeriodRuleRepo:
         assert result[1]['start_date'] == '1965-11-01'
         assert result[1]['end_date'] == '2000-11-11'
 
-    def test_file_updated(self, session: Session, testdatadir: str):
-        repo = PeriodRuleRepo(session)
+    def test_file_updated(self, db: Session, testdatadir: str):
+        repo = PeriodRuleRepo(db)
         time_before = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         Path(f'{testdatadir}/period_1.csv').touch()
         time_modified = repo.file_updated(testdatadir, 'period_1.csv')
 
         assert time_modified >= time_before
 
-    def test_run(self, session: Session):
+    def test_run(self, db: Session):
         # Create org_groups.
         org_group1 = OrgGroup(organisation='organisation1', group='group1')
         org_group2 = OrgGroup(organisation='organisation2', group='group2')
-        session.add(org_group1)
-        session.add(org_group2)
-        session.commit()
+        db.add(org_group1)
+        db.add(org_group2)
+        db.commit()
 
         # Create taxa.
         taxon1 = Taxon(
@@ -124,8 +124,8 @@ class TestPeriodRuleRepo:
             preferred_tvk='NBNSYS0000008319',
             preferred=True
         )
-        session.add(taxon1)
-        session.commit()
+        db.add(taxon1)
+        db.commit()
 
         # Create period rule for org_group1 and taxon1.
         rule1 = PeriodRule(
@@ -141,9 +141,9 @@ class TestPeriodRuleRepo:
             start_date='1971-01-01',
             end_date='1978-12-31'
         )
-        session.add(rule1)
-        session.add(rule2)
-        session.commit()
+        db.add(rule1)
+        db.add(rule2)
+        db.commit()
 
         # Create record of taxon1 to test.
         record = Verified(
@@ -153,7 +153,7 @@ class TestPeriodRuleRepo:
             preferred_tvk=taxon1.preferred_tvk
         )
 
-        repo = PeriodRuleRepo(session)
+        repo = PeriodRuleRepo(db)
 
         # Test the record against all rules.
         failures = repo.run(record)

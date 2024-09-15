@@ -3,7 +3,7 @@ import time
 from fastapi import APIRouter, Depends
 
 from app.auth import get_current_user
-from app.database import DB
+from app.database import DbDependency
 from app.rule.rule_repo import RuleRepo
 import app.species.cache as cache
 from app.utility.sref.sref_factory import SrefFactory
@@ -24,7 +24,7 @@ router = APIRouter(
     summary="Verify records.",
     response_model=VerifiedPack,
     response_model_exclude_none=True)
-async def verify(session: DB, data: VerifyPack):
+async def verify(db: DbDependency, data: VerifyPack):
 
     start = time.time_ns()
     results = []
@@ -36,7 +36,7 @@ async def verify(session: DB, data: VerifyPack):
             # 1. Get preferred TVK.
             if record.tvk is not None:
                 # Use TVK if provided as not ambiguous.
-                taxon = cache.get_taxon_by_tvk(session, record.tvk)
+                taxon = cache.get_taxon_by_tvk(db, record.tvk)
                 if record.name is None:
                     result.name = taxon.name
                 elif record.name != taxon.name:
@@ -45,7 +45,7 @@ async def verify(session: DB, data: VerifyPack):
                         f"Name does not match TVK. Expected {taxon.name}.")
             elif record.name is not None:
                 # Otherwise use name.
-                taxon = cache.get_taxon_by_name(session, record.name)
+                taxon = cache.get_taxon_by_name(db, record.name)
                 if record.tvk is None:
                     result.tvk = taxon.tvk
 
@@ -64,7 +64,7 @@ async def verify(session: DB, data: VerifyPack):
                 result.stage = record.stage.strip().lower()
 
             # 5. Check against rules.
-            repo = RuleRepo(session)
+            repo = RuleRepo(db)
             repo.run_rules(data.org_group_rules_list, result)
 
             # Accumulate results.

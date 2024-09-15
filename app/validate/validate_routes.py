@@ -2,7 +2,7 @@
 from fastapi import APIRouter, Depends
 
 from app.auth import get_current_user
-from app.database import DB
+from app.database import DbDependency
 from app.rule.difficulty.difficulty_rule_repo import DifficultyRuleRepo
 import app.species.cache as cache
 from app.utility.sref.sref_factory import SrefFactory
@@ -23,7 +23,7 @@ router = APIRouter(
     summary="Validate records.",
     response_model=list[Validated],
     response_model_exclude_none=True)
-async def validate(session: DB, records: list[Validate]):
+async def validate(db: DbDependency, records: list[Validate]):
     """You must provide a name or TVK to identify the taxon to be checked.
     Id, date and a valid sref are also required.
 
@@ -53,7 +53,7 @@ async def validate(session: DB, records: list[Validate]):
             else:
                 if record.tvk is not None:
                     # Use TVK if provided as not ambiguous.
-                    taxon = cache.get_taxon_by_tvk(session, record.tvk)
+                    taxon = cache.get_taxon_by_tvk(db, record.tvk)
                     if record.name is None:
                         result.name = taxon.name
                     elif record.name != taxon.name:
@@ -62,12 +62,12 @@ async def validate(session: DB, records: list[Validate]):
                             f"Name does not match TVK. Expected {taxon.name}.")
                 elif record.name is not None:
                     # Otherwise use name.
-                    taxon = cache.get_taxon_by_name(session, record.name)
+                    taxon = cache.get_taxon_by_name(db, record.name)
                     result.tvk = taxon.tvk
 
                 result.preferred_tvk = taxon.preferred_tvk
                 # Get id difficulty.
-                repo = DifficultyRuleRepo(session)
+                repo = DifficultyRuleRepo(db)
                 result.id_difficulty = repo.run(result)
 
         except Exception as e:

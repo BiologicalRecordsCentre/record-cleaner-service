@@ -17,7 +17,7 @@ class PhenologyRuleRepo(RuleRepoBase):
     default_file = 'periodwithinyear.csv'
 
     def list_by_org_group(self, org_group_id: int):
-        results = self.session.exec(
+        results = self.db.exec(
             select(PhenologyRule, Taxon, Stage)
             .join(Taxon)
             .join(Stage)
@@ -46,7 +46,7 @@ class PhenologyRuleRepo(RuleRepoBase):
             .where(Taxon.tvk == tvk)
             .order_by(OrgGroup.organisation, OrgGroup.group)
         )
-        results = self.session.exec(query).all()
+        results = self.db.exec(query).all()
 
         rules = []
         for phenology, org_group, stage in results:
@@ -63,7 +63,7 @@ class PhenologyRuleRepo(RuleRepoBase):
     def get_or_create(self, org_group_id: int, taxon_id: int, stage_id: int):
         """Get existing record or create a new one."""
 
-        phenology_rule = self.session.exec(
+        phenology_rule = self.db.exec(
             select(PhenologyRule)
             .where(PhenologyRule.org_group_id == org_group_id)
             .where(PhenologyRule.taxon_id == taxon_id)
@@ -82,14 +82,14 @@ class PhenologyRuleRepo(RuleRepoBase):
 
     def purge(self, org_group_id: int, rules_commit):
         """Delete records for org_group not from current commit."""
-        phenology_rules = self.session.exec(
+        phenology_rules = self.db.exec(
             select(PhenologyRule)
             .where(PhenologyRule.org_group_id == org_group_id)
             .where(PhenologyRule.commit != rules_commit)
         )
         for row in phenology_rules:
-            self.session.delete(row)
-        self.session.commit()
+            self.db.delete(row)
+        self.db.commit()
 
     def load_file(
             self,
@@ -127,7 +127,7 @@ class PhenologyRuleRepo(RuleRepoBase):
         )
 
         # Get the stage codes for this org_group
-        stage_repo = StageRepo(self.session)
+        stage_repo = StageRepo(self.db)
         stage_lookup = stage_repo.get_stage_lookup(org_group_id)
 
         if len(stage_lookup) == 0:
@@ -135,15 +135,15 @@ class PhenologyRuleRepo(RuleRepoBase):
             stage = stage_repo.get_or_create(org_group_id, '*')
             stage.commit = rules_commit
             stage.sort_order = 0
-            self.session.add(stage)
-            self.session.commit()
+            self.db.add(stage)
+            self.db.commit()
             stage_lookup['*'] = stage.id
 
         for row in df.to_dict('records'):
             # Lookup preferred tvk.
             try:
                 taxon = cache.get_taxon_by_tvk(
-                    self.session, row['tvk'].strip()
+                    self.db, row['tvk'].strip()
                 )
             except ValueError as e:
                 errors.append(str(e))
@@ -151,7 +151,7 @@ class PhenologyRuleRepo(RuleRepoBase):
 
             if taxon.tvk != taxon.preferred_tvk:
                 taxon = cache.get_taxon_by_tvk(
-                    self.session, taxon.preferred_tvk
+                    self.db, taxon.preferred_tvk
                 )
 
             # Validate start date.
@@ -194,7 +194,7 @@ class PhenologyRuleRepo(RuleRepoBase):
                 errors.append(f"Unknown stage '{stage}' for {row['tvk']}.")
                 continue
 
-            # Add the rule to the session.
+            # Add the rule to the db.
             phenology_rule = self.get_or_create(
                 org_group_id, taxon.id, stage_lookup[stage])
             phenology_rule.start_day = row['start_day']
@@ -202,10 +202,10 @@ class PhenologyRuleRepo(RuleRepoBase):
             phenology_rule.end_day = row['end_day']
             phenology_rule.end_month = row['end_month']
             phenology_rule.commit = rules_commit
-            self.session.add(phenology_rule)
+            self.db.add(phenology_rule)
 
         # Save all the changes.
-        self.session.commit()
+        self.db.commit()
         # Delete orphan PeriodRules.
         self.purge(org_group_id, rules_commit)
 
@@ -229,14 +229,14 @@ class PhenologyRuleRepo(RuleRepoBase):
             query = query.where(OrgGroup.id == org_group_id)
 
         # Do we have any rules?
-        org_groups = self.session.exec(query).all()
+        org_groups = self.db.exec(query).all()
         if len(org_groups) == 0:
             if org_group_id is None:
                 failures.append(
                     "*:*:phenology: There is no rule for this taxon."
                 )
             else:
-                org_group = self.session.get(OrgGroup, org_group_id)
+                org_group = self.db.get(OrgGroup, org_group_id)
                 failures.append(
                     f"{org_group.organisation}:{org_group.group}:phenology: "
                     "There is no rule for this taxon."
@@ -271,7 +271,7 @@ class PhenologyRuleRepo(RuleRepoBase):
                         Stage.stage == '*'))
                 )
 
-            phenology_rule = self.session.exec(query).one_or_none()
+            phenology_rule = self.db.exec(query).one_or_none()
 
             if phenology_rule is None:
                 # No rule found matching stage.

@@ -15,7 +15,7 @@ class AdditionalRuleRepo(RuleRepoBase):
     default_file = 'additional.csv'
 
     def list_by_org_group(self, org_group_id: int):
-        results = self.session.exec(
+        results = self.db.exec(
             select(AdditionalRule, Taxon, AdditionalCode)
             .join(Taxon)
             .join(AdditionalCode)
@@ -34,7 +34,7 @@ class AdditionalRuleRepo(RuleRepoBase):
         return rules
 
     def list_by_tvk(self, tvk: str):
-        results = self.session.exec(
+        results = self.db.exec(
             select(AdditionalRule, Taxon, AdditionalCode, OrgGroup)
             .join(Taxon)
             .join(AdditionalCode)
@@ -58,7 +58,7 @@ class AdditionalRuleRepo(RuleRepoBase):
         self, org_group_id: int, taxon_id: int
     ):
         """Get existing record or create a new one."""
-        additional_rule = self.session.exec(
+        additional_rule = self.db.exec(
             select(AdditionalRule)
             .where(AdditionalRule.org_group_id == org_group_id)
             .where(AdditionalRule.taxon_id == taxon_id)
@@ -75,14 +75,14 @@ class AdditionalRuleRepo(RuleRepoBase):
 
     def purge(self, org_group_id: int, rules_commit):
         """Delete records for org_group not from current commit."""
-        additional_codes = self.session.exec(
+        additional_codes = self.db.exec(
             select(AdditionalRule)
             .where(AdditionalRule.org_group_id == org_group_id)
             .where(AdditionalRule.commit != rules_commit)
         )
         for row in additional_codes:
-            self.session.delete(row)
-        self.session.commit()
+            self.db.delete(row)
+        self.db.commit()
 
     def load_file(
             self,
@@ -106,7 +106,7 @@ class AdditionalRuleRepo(RuleRepoBase):
         )
 
         # Get the additional codes for this org_group
-        code_repo = AdditionalCodeRepo(self.session)
+        code_repo = AdditionalCodeRepo(self.db)
         code_lookup = code_repo.get_code_lookup(org_group_id)
         if len(code_lookup) == 0:
             errors.append("No additional codes exist.")
@@ -116,7 +116,7 @@ class AdditionalRuleRepo(RuleRepoBase):
             # Lookup preferred tvk.
             try:
                 taxon = cache.get_taxon_by_tvk(
-                    self.session, row['tvk'].strip()
+                    self.db, row['tvk'].strip()
                 )
             except ValueError as e:
                 errors.append(str(e))
@@ -124,7 +124,7 @@ class AdditionalRuleRepo(RuleRepoBase):
 
             if taxon.tvk != taxon.preferred_tvk:
                 taxon = cache.get_taxon_by_tvk(
-                    self.session, taxon.preferred_tvk
+                    self.db, taxon.preferred_tvk
                 )
 
             # Check code is in limits
@@ -132,14 +132,14 @@ class AdditionalRuleRepo(RuleRepoBase):
                 errors.append(f"Unknown code {row['code']} for {row['tvk']}.")
                 continue
 
-            # Add the rule to the session.
+            # Add the rule to the db.
             additional_rule = self.get_or_create(org_group_id, taxon.id)
             additional_rule.additional_code_id = code_lookup[row['code']]
             additional_rule.commit = rules_commit
-            self.session.add(additional_rule)
+            self.db.add(additional_rule)
 
         # Save all the changes.
-        self.session.commit()
+        self.db.commit()
         # Delete orphan AdditionalRules.
         self.purge(org_group_id, rules_commit)
 
@@ -160,7 +160,7 @@ class AdditionalRuleRepo(RuleRepoBase):
         if org_group_id is not None:
             query = query.where(OrgGroup.id == org_group_id)
 
-        results = self.session.exec(query).all()
+        results = self.db.exec(query).all()
         for org_group, additional_code in results:
             failures.append(
                 f"{org_group.organisation}:{org_group.group}:additional: "
