@@ -6,10 +6,12 @@ from sqlmodel import select, delete
 
 from app.auth import hash_password, get_current_admin_user, Auth
 from app.database import DbDependency
+from app.settings_env import EnvDependency
 from app.sqlmodels import User
 
 from .user_repo import UserRepo
 
+# Must be an admin user to access these routes.
 router = APIRouter(
     prefix="/users",
     tags=["Users"],
@@ -74,13 +76,24 @@ async def create_user(db: DbDependency, user_in: UserPost):
 
 
 @router.patch("/{username}",  summary="Update user.", response_model=UserGet)
-async def update_user(db: DbDependency, username: str, user_in: UserPatch):
+async def update_user(
+    db: DbDependency,
+    env: EnvDependency,
+    username: str,
+    user_in: UserPatch
+):
     """Update user with the given name."""
     db_user = db.get(User, username)
     if not db_user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"No user found with name {username}.")
+            detail=f"No user found with name {username}."
+        )
+    if username == env.initial_user_name:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"User {env.initial_user_name} cannot be modified."
+        )
 
     user_in_data = user_in.model_dump(exclude_unset=True)
     extra_data = {}
