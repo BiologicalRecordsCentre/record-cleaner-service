@@ -201,6 +201,9 @@ def mock_env_settings() -> object:
     env_settings.log_level = 'info'
     env_settings.jwt_key = '8f4e5dc18c0bc185c71f889ece4250210cbc76517a8b7d24cd3959b42e501a50'
     env_settings.jwt_algorithm = 'HS256'
+    env_settings.jwt_expires_minutes = 15
+    env_settings.rules_repo = 'rules_repo'
+    env_settings.rules_branch = 'rules_branch'
     return env_settings
 
 
