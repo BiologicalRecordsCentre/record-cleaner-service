@@ -2,13 +2,12 @@ from collections.abc import Generator
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlmodel import create_engine, SQLModel, Session
+from sqlmodel import Session
 
 from app.sqlmodels import User
 from app.auth import get_current_admin_user, get_current_user
-from app.database import get_db_session
 from app.main import app
-from app.settings import Settings
+from app.settings_env import get_env_settings
 from app.user.user_repo import UserRepo
 
 from .mocks import mock_env_settings, mock_create_db
@@ -74,6 +73,8 @@ def client_fixture(mocker) -> Generator[TestClient, None, None]:
         is_admin=False,
         is_disabled=False
     )
+    # Override environment settings dependency.
+    app.dependency_overrides[get_env_settings] = mock_env_settings
 
     with TestClient(app) as client:
         yield client
