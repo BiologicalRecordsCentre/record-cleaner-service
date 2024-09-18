@@ -16,7 +16,6 @@ router = APIRouter()
     summary="List difficulty codes.",
     response_model=list[DifficultyCodeResponse]
 )
-# async def read_rules(token: auth.Auth):
 async def read_codes(db: DbDependency, org_group_id: int):
     repo = DifficultyCodeRepo(db)
     codes = repo.list(org_group_id)

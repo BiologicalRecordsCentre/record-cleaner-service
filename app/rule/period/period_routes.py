@@ -1,9 +1,7 @@
 
 from fastapi import APIRouter
 
-from app.auth import Auth
 from app.database import DbDependency
-
 
 from .period_models import PeriodRuleResponse, PeriodRuleResponseTvk
 from .period_repo import PeriodRuleRepo

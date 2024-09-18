@@ -3,9 +3,10 @@ import logging
 from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel
 
-import app.auth as auth
+from app.auth import AdminDependency, get_current_admin_user
 import app.main as app
 # from app.county.county_routes import router as county_router
+from app.auth import router as auth_router
 from app.rule.rule_routes import router as rule_router
 from app.settings import SettingsDependency
 from app.species.species_routes import router as species_router
@@ -43,7 +44,7 @@ class SettingResponse(BaseModel):
 
 # Instantiate a router.
 router = APIRouter()
-router.include_router(auth.router)
+router.include_router(auth_router)
 router.include_router(rule_router)
 router.include_router(species_router)
 router.include_router(user_router)
@@ -83,7 +84,7 @@ async def read_service(request: Request, settings: SettingsDependency):
 )
 async def set_maintenance(
     maintenance: Maintenance,
-    user: auth.Admin,
+    user: AdminDependency,
     settings: SettingsDependency
 ):
     settings.db.maintenance_mode = maintenance.mode
@@ -100,7 +101,7 @@ async def set_maintenance(
     tags=['Service'],
     summary="List settings.",
     response_model=dict,
-    dependencies=[Depends(auth.get_current_admin_user)]
+    dependencies=[Depends(get_current_admin_user)]
 )
 async def read_settings(settings: SettingsDependency):
     return settings.db.list()
@@ -111,7 +112,7 @@ async def read_settings(settings: SettingsDependency):
     summary="Alter settings.",
     tags=['Service'],
     response_model=dict,
-    dependencies=[Depends(auth.get_current_admin_user)]
+    dependencies=[Depends(get_current_admin_user)]
 )
 async def patch_settings(settings: SettingsDependency, new_settings: dict):
     for name, value in new_settings.items():

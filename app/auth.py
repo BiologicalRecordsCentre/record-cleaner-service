@@ -117,7 +117,7 @@ def get_current_admin_user(
 # Create a type alias for brevity when defining an endpoint needing
 # authentication.
 Auth: TypeAlias = Annotated[User, Depends(get_current_user)]
-Admin: TypeAlias = Annotated[User, Depends(get_current_admin_user)]
+AdminDependency: TypeAlias = Annotated[User, Depends(get_current_admin_user)]
 
 
 @router.post(

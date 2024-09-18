@@ -1,9 +1,8 @@
 from functools import lru_cache
 
 from fastapi import APIRouter, HTTPException, status
-from sqlmodel import SQLModel, Session, func, select, delete
+from sqlmodel import Session, func, select, delete
 
-from app.auth import Auth
 from app.database import DbDependency
 from app.sqlmodels import Taxon
 import app.species.indicia as driver
