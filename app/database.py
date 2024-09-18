@@ -16,7 +16,7 @@ from app.settings_env import get_env_settings
 logger = logging.getLogger(f"uvicorn.{__name__}")
 
 
-def create__db():
+def create_db():
     env_settings = get_env_settings()
     # Locate the directory for the database.
     basedir = env_settings.data_dir

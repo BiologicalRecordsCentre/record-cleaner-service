@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 from sqlmodel import Session
 from uvicorn.logging import ColourizedFormatter
 
-from app.database import create__db
+from app.database import create_db
 import app.routes as routes
 from app.settings_env import get_env_settings
 from app.settings import Settings
@@ -45,7 +45,7 @@ async def lifespan(app: FastAPI):
     logger.info('Record Cleaner starting...')
 
     # Initialise database.
-    engine = create__db()
+    engine = create_db()
 
     # Initialise settings.
     settings = Settings(engine)
