@@ -58,8 +58,12 @@ async def lifespan(app: FastAPI):
     # Load the county data once. Maybe find a better place for this.
     VcChecker.load_data()
 
+    context = {'engine': engine, 'settings': settings}
+    # Store the context so it is available in unit tests.
+    app.context = context
+
     # Yield the context which will be available in request.state.
-    yield {'engine': engine, 'settings': settings}
+    yield context
 
     # Perform shutdown tasks.
     logger.info('Record Cleaner shutting down...')

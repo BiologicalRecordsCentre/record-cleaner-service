@@ -21,144 +21,148 @@ class TestVerify:
         verified = response.json()
         assert verified['records'] == []
 
-    def test_valid_record(self, client: TestClient, mocker, db: Session):
-        # Mock the Indicia warehouse.
-        mocker.patch(
-            'app.species.indicia.make_search_request',
-            mock_make_search_request
-        )
+    def test_valid_record(self, client: TestClient, mocker):
+        # Get database connection from client.
+        engine = client.app.context['engine']
+        with Session(engine) as db:
+            # Mock the Indicia warehouse.
+            mocker.patch(
+                'app.species.indicia.make_search_request',
+                mock_make_search_request
+            )
 
-        pack = VerifyPack(
-            records=[{
-                "id": 1,
-                "date": "3/4/2024",
-                "sref": {
-                    "srid": 0,
-                    "gridref": "TL 123 456"
-                },
-                "tvk": "NBNSYS0000008319"
-            }],
-        )
-        response = client.post(
-            '/verify',
-            json=pack.model_dump(),
-        )
-        assert response.status_code == 200
-        verified = response.json()['records'][0]
-        assert verified['name'] == "Adalia bipunctata"
-        assert verified['date'] == "03/04/2024"
-        assert verified['sref']['gridref'] == "TL123456"
-        assert verified['ok'] is False
-        assert len(verified['messages']) == 2
-        assert verified['messages'][0] == (
-            "*:*:phenology: There is no rule for this taxon.")
-        assert verified['messages'][1] == (
-            "*:*:tenkm: There is no rule for this taxon.")
+            pack = VerifyPack(
+                records=[{
+                    "id": 1,
+                    "date": "3/4/2024",
+                    "sref": {
+                        "srid": 0,
+                        "gridref": "TL 123 456"
+                    },
+                    "tvk": "NBNSYS0000008319"
+                }],
+            )
+            response = client.post(
+                '/verify',
+                json=pack.model_dump(),
+            )
+            assert response.status_code == 200
+            verified = response.json()['records'][0]
+            assert verified['name'] == "Adalia bipunctata"
+            assert verified['date'] == "03/04/2024"
+            assert verified['sref']['gridref'] == "TL123456"
+            assert verified['ok'] is False
+            assert len(verified['messages']) == 2
+            assert verified['messages'][0] == (
+                "*:*:phenology: There is no rule for this taxon.")
+            assert verified['messages'][1] == (
+                "*:*:tenkm: There is no rule for this taxon.")
 
-        # Update to test against specific org_group.
-        rules = OrgGroupRules(
-            organisation="UK Ladybird Survey",
-            group="UKLS",
-        )
-        pack.org_group_rules_list = [rules]
-        response = client.post(
-            '/verify',
-            json=pack.model_dump(),
-        )
-        assert response.status_code == 200
-        verified = response.json()['records'][0]
-        assert len(verified['messages']) == 1
-        assert verified['messages'][0] == (
-            "Unrecognised organisation:group, 'UK Ladybird Survey:UKLS'.")
+            # Update to test against specific org_group.
+            rules = OrgGroupRules(
+                organisation="UK Ladybird Survey",
+                group="UKLS",
+            )
+            pack.org_group_rules_list = [rules]
+            response = client.post(
+                '/verify',
+                json=pack.model_dump(),
+            )
+            assert response.status_code == 200
+            verified = response.json()['records'][0]
+            assert len(verified['messages']) == 1
+            assert verified['messages'][0] == (
+                "Unrecognised organisation:group, 'UK Ladybird Survey:UKLS'.")
 
-        # Create the missing org_group.
-        org_group = OrgGroup(organisation='UK Ladybird Survey', group='UKLS')
-        db.add(org_group)
-        db.commit()
-        # Now try again with that test.
-        response = client.post(
-            '/verify',
-            json=pack.model_dump(),
-        )
-        assert response.status_code == 200
-        verified = response.json()['records'][0]
-        assert len(verified['messages']) == 2
-        assert verified['messages'][0] == (
-            "UK Ladybird Survey:UKLS:phenology: There is no rule for this taxon.")
-        assert verified['messages'][1] == (
-            "UK Ladybird Survey:UKLS:tenkm: There is no rule for this taxon.")
+            # Create the missing org_group.
+            org_group = OrgGroup(
+                organisation='UK Ladybird Survey', group='UKLS')
+            db.add(org_group)
+            db.commit()
+            # Now try again with that test.
+            response = client.post(
+                '/verify',
+                json=pack.model_dump(),
+            )
+            assert response.status_code == 200
+            verified = response.json()['records'][0]
+            assert len(verified['messages']) == 2
+            assert verified['messages'][0] == (
+                "UK Ladybird Survey:UKLS:phenology: There is no rule for this taxon.")
+            assert verified['messages'][1] == (
+                "UK Ladybird Survey:UKLS:tenkm: There is no rule for this taxon.")
 
-        # Update to test against specific rule.
-        pack.org_group_rules_list[0].rules = ['tenkm']
-        # Now try again with that test.
-        response = client.post(
-            '/verify',
-            json=pack.model_dump(),
-        )
-        assert response.status_code == 200
-        verified = response.json()['records'][0]
-        assert len(verified['messages']) == 1
-        assert verified['messages'][0] == (
-            "UK Ladybird Survey:UKLS:tenkm: There is no rule for this taxon.")
+            # Update to test against specific rule.
+            pack.org_group_rules_list[0].rules = ['tenkm']
+            # Now try again with that test.
+            response = client.post(
+                '/verify',
+                json=pack.model_dump(),
+            )
+            assert response.status_code == 200
+            verified = response.json()['records'][0]
+            assert len(verified['messages']) == 1
+            assert verified['messages'][0] == (
+                "UK Ladybird Survey:UKLS:tenkm: There is no rule for this taxon.")
 
-        # Create a tenkm rule to test against.
-        # Create taxa.
-        taxon1 = Taxon(
-            name='Adalia bipunctata',
-            preferred_name='Adalia bipunctata',
-            search_name='adaliabipunctata',
-            tvk='NBNSYS0000008319',
-            preferred_tvk='NBNSYS0000008319',
-            preferred=True
-        )
-        db.add(taxon1)
-        db.commit()
+            # Create a tenkm rule to test against.
+            # Create taxa.
+            taxon1 = Taxon(
+                name='Adalia bipunctata',
+                preferred_name='Adalia bipunctata',
+                search_name='adaliabipunctata',
+                tvk='NBNSYS0000008319',
+                preferred_tvk='NBNSYS0000008319',
+                preferred=True
+            )
+            db.add(taxon1)
+            db.commit()
 
-        # Create tenkm rule for org_group and taxon1.
-        rule1 = TenkmRule(
-            org_group_id=org_group.id,
-            taxon_id=taxon1.id,
-            km100='TL',
-            km10='14 15 16',
-            coord_system='OSGB'
-        )
-        db.add(rule1)
-        db.commit()
+            # Create tenkm rule for org_group and taxon1.
+            rule1 = TenkmRule(
+                org_group_id=org_group.id,
+                taxon_id=taxon1.id,
+                km100='TL',
+                km10='14 15 16',
+                coord_system='OSGB'
+            )
+            db.add(rule1)
+            db.commit()
 
-        # Now try again with verification which should pass.
-        response = client.post(
-            '/verify',
-            json=pack.model_dump(),
-        )
-        assert response.status_code == 200
-        verified = response.json()['records'][0]
-        assert len(verified['messages']) == 0
-        assert verified['ok'] is True
+            # Now try again with verification which should pass.
+            response = client.post(
+                '/verify',
+                json=pack.model_dump(),
+            )
+            assert response.status_code == 200
+            verified = response.json()['records'][0]
+            assert len(verified['messages']) == 0
+            assert verified['ok'] is True
 
-        # Change record location to be outside the tenkm rule - should fail.
-        pack.records[0].sref.gridref = "TL 654 321"
-        response = client.post(
-            '/verify',
-            json=pack.model_dump(),
-        )
-        assert response.status_code == 200
-        verified = response.json()['records'][0]
-        assert len(verified['messages']) == 1
-        assert verified['messages'][0] == (
-            "UK Ladybird Survey:UKLS:tenkm: Record is outside known area.")
-        assert verified['ok'] is False
+            # Change record location to be outside the tenkm rule - should fail.
+            pack.records[0].sref.gridref = "TL 654 321"
+            response = client.post(
+                '/verify',
+                json=pack.model_dump(),
+            )
+            assert response.status_code == 200
+            verified = response.json()['records'][0]
+            assert len(verified['messages']) == 1
+            assert verified['messages'][0] == (
+                "UK Ladybird Survey:UKLS:tenkm: Record is outside known area.")
+            assert verified['ok'] is False
 
-        # Remove the rule list - should still fail.
-        pack.org_group_rules_list = []
-        response = client.post(
-            '/verify',
-            json=pack.model_dump(),
-        )
-        assert response.status_code == 200
-        verified = response.json()['records'][0]
-        assert len(verified['messages']) == 2
-        assert verified['messages'][0] == (
-            "*:*:phenology: There is no rule for this taxon.")
-        assert verified['messages'][1] == (
-            "UK Ladybird Survey:UKLS:tenkm: Record is outside known area.")
-        assert verified['ok'] is False
+            # Remove the rule list - should still fail.
+            pack.org_group_rules_list = []
+            response = client.post(
+                '/verify',
+                json=pack.model_dump(),
+            )
+            assert response.status_code == 200
+            verified = response.json()['records'][0]
+            assert len(verified['messages']) == 2
+            assert verified['messages'][0] == (
+                "*:*:phenology: There is no rule for this taxon.")
+            assert verified['messages'][1] == (
+                "UK Ladybird Survey:UKLS:tenkm: Record is outside known area.")
+            assert verified['ok'] is False

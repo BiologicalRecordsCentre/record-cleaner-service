@@ -10,8 +10,11 @@ from ..mocks import mock_make_search_request
 
 class TestValidate:
 
-    @pytest.fixture
-    def difficulty_fixture(self, db: Session):
+    def difficulty_unfixture(self, db):
+        # This is just a function to set up the database.
+        # I can't make it a fixture because I can't figure out how to pass
+        # in the database session.
+
         # Create org_group.
         org_group = OrgGroup(organisation='organisation1', group='group1')
         db.add(org_group)
@@ -110,8 +113,12 @@ class TestValidate:
         assert validated['messages'][1] == "Unreocognised date format."
         assert validated['messages'][2] == "Invalid spatial reference. A gridref must be provided."
 
-    def test_valid_record_accepted_tvk(
-            self, client: TestClient, mocker, difficulty_fixture):
+    def test_valid_record_accepted_tvk(self, client: TestClient, mocker):
+        # Set up database for test.
+        engine = client.app.context['engine']
+        with Session(engine) as db:
+            self.difficulty_unfixture(db)
+
         # Mock the Indicia warehouse.
         mocker.patch(
             'app.species.indicia.make_search_request',
@@ -141,8 +148,12 @@ class TestValidate:
         assert validated['ok']
         assert len(validated['messages']) == 0
 
-    def test_valid_record_common_tvk(
-            self, client: TestClient, mocker, difficulty_fixture):
+    def test_valid_record_common_tvk(self, client: TestClient, mocker):
+        # Set up database for test.
+        engine = client.app.context['engine']
+        with Session(engine) as db:
+            self.difficulty_unfixture(db)
+
         # Mock the Indicia warehouse.
         mocker.patch(
             'app.species.indicia.make_search_request',
@@ -172,8 +183,12 @@ class TestValidate:
         assert validated['ok']
         assert len(validated['messages']) == 0
 
-    def test_valid_record_accepted_name(
-            self, client: TestClient, mocker, difficulty_fixture):
+    def test_valid_record_accepted_name(self, client: TestClient, mocker):
+        # Set up database for test.
+        engine = client.app.context['engine']
+        with Session(engine) as db:
+            self.difficulty_unfixture(db)
+
         # Mock the Indicia warehouse.
         mocker.patch(
             'app.species.indicia.make_search_request',
@@ -202,8 +217,12 @@ class TestValidate:
         assert validated['ok']
         assert len(validated['messages']) == 0
 
-    def test_valid_record_common_name(
-            self, client: TestClient, mocker, difficulty_fixture):
+    def test_valid_record_common_name(self, client: TestClient, mocker):
+        # Set up database for test.
+        engine = client.app.context['engine']
+        with Session(engine) as db:
+            self.difficulty_unfixture(db)
+
         # Mock the Indicia warehouse.
         mocker.patch(
             'app.species.indicia.make_search_request',

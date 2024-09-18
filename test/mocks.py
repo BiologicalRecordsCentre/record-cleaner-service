@@ -1,4 +1,8 @@
 
+from sqlmodel import create_engine, SQLModel
+from sqlmodel.pool import StaticPool
+
+
 def mock_make_search_request(params: dict) -> dict:
 
     if 'search_code' in params:
@@ -192,7 +196,21 @@ def mock_env_settings() -> object:
     class EnvSettings(object):
         pass
     env_settings = EnvSettings()
-    env_settings.initial_user_name = "Jim"
-    env_settings.initial_user_pass = "pass"
-    env_settings.log_level = "info"
+    env_settings.initial_user_name = 'Jim'
+    env_settings.initial_user_pass = 'pass'
+    env_settings.log_level = 'info'
+    env_settings.jwt_key = '8f4e5dc18c0bc185c71f889ece4250210cbc76517a8b7d24cd3959b42e501a50'
+    env_settings.jwt_algorithm = 'HS256'
     return env_settings
+
+
+def mock_create_db():
+    # Creates an in-memory SQLite database
+    engine = create_engine(
+        'sqlite://',
+        connect_args={'check_same_thread': False},
+        poolclass=StaticPool
+    )
+    SQLModel.metadata.create_all(engine)
+
+    return engine

@@ -3,7 +3,6 @@ from collections.abc import Generator
 import pytest
 from fastapi.testclient import TestClient
 from sqlmodel import create_engine, SQLModel, Session
-from sqlmodel.pool import StaticPool
 
 from app.sqlmodels import User
 from app.auth import get_current_admin_user, get_current_user
@@ -12,26 +11,20 @@ from app.main import app
 from app.settings import Settings
 from app.user.user_repo import UserRepo
 
-from .mocks import mock_env_settings
+from .mocks import mock_env_settings, mock_create_db
 
 
 @pytest.fixture(name="engine")
 def engine_fixture():
     """Fixture which creates an in-memory SQLite database for testing."""
-
-    engine = create_engine(
-        "sqlite://",
-        connect_args={"check_same_thread": False},
-        poolclass=StaticPool
-    )
-    SQLModel.metadata.create_all(engine)
-
-    return engine
+    return mock_create_db()
 
 
 @pytest.fixture(name="db")
 def session_fixture(engine) -> Generator[Session, None, None]:
-    """Fixture which creates a session with the test database engine."""
+    """Fixture which creates a session with the test database engine.
+
+    Use this in tests which do not use the client-fixture."""
 
     with Session(engine) as session:
         env_settings = mock_env_settings()
@@ -39,17 +32,24 @@ def session_fixture(engine) -> Generator[Session, None, None]:
         repo.create_initial_user(env_settings)
         yield session
 
-    # Clean up after use?
-
 
 @pytest.fixture(name="client")
-def client_fixture(db: Session, mocker) -> Generator[TestClient, None, None]:
-    """Fixture for testing API endpoints."""
+def client_fixture(mocker) -> Generator[TestClient, None, None]:
+    """Fixture for testing API endpoints.
+
+    This starts the app and triggers the lifespan function.
+    Use client.app.context['engine'] to access the database engine
+    in tests."""
 
     # Mock environment settings in app.main.lifespan
     mocker.patch(
         'app.main.get_env_settings',
         mock_env_settings
+    )
+    # Mock database
+    mocker.patch(
+        'app.main.create_db',
+        mock_create_db
     )
 
     # Override authentication to allow admin requests.
@@ -68,8 +68,6 @@ def client_fixture(db: Session, mocker) -> Generator[TestClient, None, None]:
         is_admin=False,
         is_disabled=False
     )
-    # Override database connection dependency.
-    app.dependency_overrides[get_db_session] = lambda: db
 
     with TestClient(app) as client:
         yield client
