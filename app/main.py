@@ -53,9 +53,9 @@ async def lifespan(app: FastAPI):
     # Create the initial user.
     with Session(engine) as session:
         repo = UserRepo(session)
-        repo.create_initial_user(settings.env)
+        repo.create_initial_user(env_settings)
 
-    # Load the county data once. Maybe find a better place for this.
+    # Load the county data once.
     VcChecker.load_data()
 
     context = {'engine': engine, 'settings': settings}

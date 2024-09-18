@@ -32,12 +32,12 @@ class TestAuth:
         assert response.status_code == 422
 
     def test_token(self, client: TestClient):
-        env_settings = mock_env_settings()
+        env = mock_env_settings()
         response = client.post(
             '/token',
             data={
-                'username': env_settings.initial_user_name,
-                'password': env_settings.initial_user_pass
+                'username': env.initial_user_name,
+                'password': env.initial_user_pass
             }
         )
         assert response.status_code == 200

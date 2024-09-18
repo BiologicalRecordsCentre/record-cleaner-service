@@ -46,6 +46,12 @@ def client_fixture(mocker) -> Generator[TestClient, None, None]:
         'app.main.get_env_settings',
         mock_env_settings
     )
+    # Mock environment settings in app.settings
+    mocker.patch(
+        'app.settings.get_env_settings',
+        mock_env_settings
+    )
+
     # Mock database
     mocker.patch(
         'app.main.create_db',
