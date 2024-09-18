@@ -110,10 +110,19 @@ async def update_user(
 
 
 @router.delete("/{username}", summary="Delete user.")
-async def delete_user(db: DbDependency, username: str):
+async def delete_user(db: DbDependency, env: EnvDependency, username: str):
     """Delete user with the given name."""
-    db.exec(
-        delete(User).where(User.name == username)
-    )
+    db_user = db.get(User, username)
+    if not db_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"No user found with name {username}."
+        )
+    if username == env.initial_user_name:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"User {env.initial_user_name} cannot be deleted."
+        )
+    db.delete(db_user)
     db.commit()
     return {"ok": True}
