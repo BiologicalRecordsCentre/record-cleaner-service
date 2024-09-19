@@ -77,5 +77,99 @@ Log level: [debug|info|warning|error|critical]. Defaults to warning.
 *   `LOG_LEVEL="info"`
 
 ## Development
+Do development in a fork or branch of the repo.
+
+All pushes or merge requests to the main branch of the repository trigger unit
+testing. Running the tests locally and not submitting until all tests pass saves
+embarrassment.
+
+###VS Code
+When developing with VS Code the following two configuration files can be used
+to debug the code locally or in a container.
+
+#### launch.json
+```json
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python Debugger: FastAPI",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "uvicorn",
+            "args": [
+                "app.main:app",
+                "--reload",
+                "--port",
+                "8000"
+            ],
+            "jinja": true
+        },
+        {
+            "name": "Docker: Python - Fastapi",
+            "type": "docker",
+            "request": "launch",
+            "preLaunchTask": "docker-run: debug",
+            "python": {
+                "pathMappings": [
+                    {
+                        "localRoot": "${workspaceFolder}",
+                        "remoteRoot": "/app"
+                    }
+                ],
+                "projectType": "fastapi"
+            }
+        }
+    ]
+}
+```
+#### tasks.json
+```json
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "docker-build",
+			"label": "docker-build",
+			"platform": "python",
+			"dockerBuild": {
+				"tag": "recordcleanerservice:latest",
+				"dockerfile": "${workspaceFolder}/Dockerfile",
+				"context": "${workspaceFolder}",
+				"pull": true
+			}
+		},
+		{
+			"type": "docker-run",
+			"label": "docker-run: debug",
+			"dependsOn": [
+				"docker-build"
+			],
+			"python": {
+				"args": [
+					"app.main:app",
+					"--host",
+					"0.0.0.0",
+					"--port",
+					"8000"
+				],
+				"module": "uvicorn"
+			}
+        }
+	]
+}
+```
 
 ## Testing
+If a commit is tagged `v{semver}-{type}{N} where 
+- {semver} is a semantic version number like 1.2.3
+- {type} is a pre-release type [alpha|beta|rc]
+- {N} is an integer
+it will be built and deployed to the UKCEH staging server. This is not publicly
+accessible.
+
+Full releases will also be deployed to staging.
+
+## Production
+If a commit is tagged `v{semver} it will be built and deployed to 
+record-cleaner.brc.ac.uk.
