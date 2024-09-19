@@ -1,11 +1,4 @@
-import pytest
-
 from fastapi.testclient import TestClient
-from sqlmodel import Session
-
-from app.auth import get_current_admin_user, get_current_user, authorization_exception
-from app.settings_env import EnvSettings
-from app.sqlmodels import User
 
 from ..mocks import mock_env_settings
 

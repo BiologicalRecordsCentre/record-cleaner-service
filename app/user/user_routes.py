@@ -2,7 +2,7 @@ from typing import Optional
 
 from fastapi import APIRouter, HTTPException, status, Depends
 from pydantic import BaseModel
-from sqlmodel import select, delete
+from sqlmodel import select
 
 from app.auth import hash_password, get_current_admin_user, Auth
 from app.database import DbDependency
