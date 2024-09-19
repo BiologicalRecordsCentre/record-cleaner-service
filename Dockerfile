@@ -27,6 +27,7 @@ ENV PYTHONUNBUFFERED=1
 
 # Copy in the dependencies from the builder
 COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
 
 # Copy in the application code.
 WORKDIR /app
