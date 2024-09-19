@@ -1,25 +1,34 @@
-# For more information, please refer to https://aka.ms/vscode-docker-python
+# Perform a two-stage build - 
+# Ref https://www.docker.com/blog/containerized-python-development-part-1/
+FROM python:3.12 AS builder
+# The full python image contains all the tools necessary for building.
+COPY requirements.txt .
+# Install dependencies.
+# A local user directory, though suggested, is not used as it confuses VS Code
+# when starting a container for development.
+RUN python -m pip install -r requirements.txt
+
+# Perform second stage
 FROM python:3.12-slim
+# The slim image allows our final image to be smaller.
 
 EXPOSE 8000
 
-# Install Git
+# Install Git so the app can obtain rules from a git repo.
 RUN apt-get update && apt-get install -y git
-# Install Sqlite3
+# Install Sqlite3 as a utility for database backups etc.
 RUN apt-get install -y sqlite3
-# Install ps utility
-RUN apt-get install -y procps
 
-# Keeps Python from generating .pyc files in the container
+# Keeps Python from generating .pyc files in the container.
 ENV PYTHONDONTWRITEBYTECODE=1
 
 # Turns off buffering for easier container logging
 ENV PYTHONUNBUFFERED=1
 
-# Install pip requirements
-COPY requirements.txt .
-RUN python -m pip install -r requirements.txt
+# Copy in the dependencies from the builder
+COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
 
+# Copy in the application code.
 WORKDIR /app
 COPY . /app
 
