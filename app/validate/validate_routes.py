@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends
 from app.auth import get_current_user
 from app.database import DbDependency
 from app.rule.difficulty.difficulty_rule_repo import DifficultyRuleRepo
+from app.settings_env import EnvDependency
 import app.species.cache as cache
 from app.utility.sref.sref_factory import SrefFactory
 from app.utility.vice_county.vc_checker import VcChecker
@@ -23,7 +24,11 @@ router = APIRouter(
     summary="Validate records.",
     response_model=list[Validated],
     response_model_exclude_none=True)
-async def validate(db: DbDependency, records: list[Validate]):
+async def validate(
+    db: DbDependency,
+    env: EnvDependency,
+    records: list[Validate]
+):
     """You must provide a name or TVK to identify the taxon to be checked.
     Id, date and a valid sref are also required.
 
@@ -53,7 +58,7 @@ async def validate(db: DbDependency, records: list[Validate]):
             else:
                 if record.tvk is not None:
                     # Use TVK if provided as not ambiguous.
-                    taxon = cache.get_taxon_by_tvk(db, record.tvk)
+                    taxon = cache.get_taxon_by_tvk(db, env, record.tvk)
                     if record.name is None:
                         result.name = taxon.name
                     elif record.name != taxon.name:
@@ -62,12 +67,12 @@ async def validate(db: DbDependency, records: list[Validate]):
                             f"Name does not match TVK. Expected {taxon.name}.")
                 elif record.name is not None:
                     # Otherwise use name.
-                    taxon = cache.get_taxon_by_name(db, record.name)
+                    taxon = cache.get_taxon_by_name(db, env, record.name)
                     result.tvk = taxon.tvk
 
                 result.preferred_tvk = taxon.preferred_tvk
                 # Get id difficulty.
-                repo = DifficultyRuleRepo(db)
+                repo = DifficultyRuleRepo(db, env)
                 result.id_difficulty = repo.run(result)
 
         except Exception as e:

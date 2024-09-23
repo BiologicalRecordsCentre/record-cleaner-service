@@ -4,13 +4,14 @@ import os
 from sqlmodel import Session
 
 import app.rule.rule_repo as repo
+from app.settings_env import EnvSettings
 
 
 class TestFileImport:
 
-    def test_file_import(self, db: Session):
+    def test_file_import(self, db: Session, env: EnvSettings):
 
-        rule_repo = repo.RuleRepo(db)
+        rule_repo = repo.RuleRepo(db, env)
 
         basedir = os.path.abspath(os.path.dirname(__file__))
         rule_repo.rulesdir = os.path.join(basedir, 'testdata')

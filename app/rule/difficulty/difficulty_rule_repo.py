@@ -108,7 +108,7 @@ class DifficultyRuleRepo(RuleRepoBase):
         )
 
         # Get the difficulty codes for this org_group
-        code_repo = DifficultyCodeRepo(self.db)
+        code_repo = DifficultyCodeRepo(self.db, self.env)
         code_lookup = code_repo.get_code_lookup(org_group_id)
         if len(code_lookup) == 0:
             errors.append("No difficulty codes exist.")
@@ -118,7 +118,7 @@ class DifficultyRuleRepo(RuleRepoBase):
             # Lookup preferred tvk.
             try:
                 taxon = cache.get_taxon_by_tvk(
-                    self.db, row['tvk'].strip()
+                    self.db, self.env, row['tvk'].strip()
                 )
             except ValueError as e:
                 errors.append(str(e))
@@ -126,7 +126,7 @@ class DifficultyRuleRepo(RuleRepoBase):
 
             if taxon.tvk != taxon.preferred_tvk:
                 taxon = cache.get_taxon_by_tvk(
-                    self.db, taxon.preferred_tvk
+                    self.db, self.env, taxon.preferred_tvk
                 )
 
             # Check code is in limits

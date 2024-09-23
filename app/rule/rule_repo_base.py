@@ -3,11 +3,14 @@ import os
 
 from sqlmodel import Session
 
+from app.settings_env import EnvSettings
+
 
 class RuleRepoBase:
 
-    def __init__(self, db: Session):
+    def __init__(self, db: Session, env: EnvSettings):
         self.db = db
+        self.env = env
 
     def file_updated(self, dir: str, file: str | None = None):
         if file is None:

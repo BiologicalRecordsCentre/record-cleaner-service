@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends
 from app.auth import get_current_user
 from app.database import DbDependency
 from app.rule.rule_repo import RuleRepo
+from app.settings_env import EnvDependency
 import app.species.cache as cache
 from app.utility.sref.sref_factory import SrefFactory
 from app.utility.vague_date import VagueDate
@@ -24,7 +25,7 @@ router = APIRouter(
     summary="Verify records.",
     response_model=VerifiedPack,
     response_model_exclude_none=True)
-async def verify(db: DbDependency, data: VerifyPack):
+async def verify(db: DbDependency, env: EnvDependency, data: VerifyPack):
 
     start = time.time_ns()
     results = []
@@ -36,7 +37,7 @@ async def verify(db: DbDependency, data: VerifyPack):
             # 1. Get preferred TVK.
             if record.tvk is not None:
                 # Use TVK if provided as not ambiguous.
-                taxon = cache.get_taxon_by_tvk(db, record.tvk)
+                taxon = cache.get_taxon_by_tvk(db, env, record.tvk)
                 if record.name is None:
                     result.name = taxon.name
                 elif record.name != taxon.name:
@@ -45,7 +46,7 @@ async def verify(db: DbDependency, data: VerifyPack):
                         f"Name does not match TVK. Expected {taxon.name}.")
             elif record.name is not None:
                 # Otherwise use name.
-                taxon = cache.get_taxon_by_name(db, record.name)
+                taxon = cache.get_taxon_by_name(db, env, record.name)
                 if record.tvk is None:
                     result.tvk = taxon.tvk
 
@@ -64,7 +65,7 @@ async def verify(db: DbDependency, data: VerifyPack):
                 result.stage = record.stage.strip().lower()
 
             # 5. Check against rules.
-            repo = RuleRepo(db)
+            repo = RuleRepo(db, env)
             repo.run_rules(data.org_group_rules_list, result)
 
             # Accumulate results.

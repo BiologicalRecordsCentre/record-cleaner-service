@@ -127,7 +127,7 @@ class PhenologyRuleRepo(RuleRepoBase):
         )
 
         # Get the stage codes for this org_group
-        stage_repo = StageRepo(self.db)
+        stage_repo = StageRepo(self.db, self.env)
         stage_lookup = stage_repo.get_stage_lookup(org_group_id)
 
         if len(stage_lookup) == 0:
@@ -143,7 +143,7 @@ class PhenologyRuleRepo(RuleRepoBase):
             # Lookup preferred tvk.
             try:
                 taxon = cache.get_taxon_by_tvk(
-                    self.db, row['tvk'].strip()
+                    self.db, self.env, row['tvk'].strip()
                 )
             except ValueError as e:
                 errors.append(str(e))
@@ -151,7 +151,7 @@ class PhenologyRuleRepo(RuleRepoBase):
 
             if taxon.tvk != taxon.preferred_tvk:
                 taxon = cache.get_taxon_by_tvk(
-                    self.db, taxon.preferred_tvk
+                    self.db, self.env, taxon.preferred_tvk
                 )
 
             # Validate start date.

@@ -3,6 +3,7 @@ import os
 from sqlmodel import Session
 
 from app.rule.additional.additional_rule_repo import AdditionalRuleRepo
+from app.settings_env import EnvSettings
 from app.sqlmodels import OrgGroup, Taxon, AdditionalCode, AdditionalRule
 from app.utility.sref import Sref, SrefSystem
 from app.verify.verify_models import Verified
@@ -11,7 +12,7 @@ from app.verify.verify_models import Verified
 class TestAdditionalRuleRepo:
     """Tests of the repo class."""
 
-    def test_load_file(self, db: Session):
+    def test_load_file(self, db: Session, env: EnvSettings):
         # Create org_groups.
         org_group1 = OrgGroup(organisation='organisation1', group='group1')
         org_group2 = OrgGroup(organisation='organisation2', group='group2')
@@ -69,7 +70,7 @@ class TestAdditionalRuleRepo:
         dir = os.path.join(thisdir, 'testdata')
 
         # Load a file.
-        repo = AdditionalRuleRepo(db)
+        repo = AdditionalRuleRepo(db, env)
         errors = repo.load_file(
             dir, org_group1.id, 'abc123', 'additional_3.csv')
         assert (errors == [])
@@ -127,7 +128,7 @@ class TestAdditionalRuleRepo:
         assert result[0]['group'] == org_group2.group
         assert result[0]['code'] == additional_code2.code
 
-    def test_run(self, db: Session):
+    def test_run(self, db: Session, env: EnvSettings):
         # Create org_groups.
         org_group1 = OrgGroup(organisation='organisation1', group='group1')
         org_group2 = OrgGroup(organisation='organisation2', group='group2')
@@ -195,7 +196,7 @@ class TestAdditionalRuleRepo:
             preferred_tvk=taxon1.preferred_tvk
         )
 
-        repo = AdditionalRuleRepo(db)
+        repo = AdditionalRuleRepo(db, env)
 
         # Test the record against rules for org_group1.
         failures = repo.run(record, org_group1.id)

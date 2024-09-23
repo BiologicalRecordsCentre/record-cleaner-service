@@ -124,7 +124,7 @@ class PeriodRuleRepo(RuleRepoBase):
             # Lookup preferred tvk.
             try:
                 taxon = cache.get_taxon_by_tvk(
-                    self.db, row['tvk'].strip()
+                    self.db, self.env, row['tvk'].strip()
                 )
             except ValueError as e:
                 errors.append(str(e))
@@ -132,7 +132,7 @@ class PeriodRuleRepo(RuleRepoBase):
 
             if taxon.tvk != taxon.preferred_tvk:
                 taxon = cache.get_taxon_by_tvk(
-                    self.db, taxon.preferred_tvk
+                    self.db, self.env, taxon.preferred_tvk
                 )
 
             # Validate the data supplied.

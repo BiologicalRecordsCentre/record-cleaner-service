@@ -4,6 +4,7 @@ import pytest
 from sqlmodel import Session
 
 from app.rule.phenology.phenology_repo import PhenologyRuleRepo
+from app.settings_env import EnvSettings
 from app.sqlmodels import OrgGroup, Taxon, Stage, StageSynonym, PhenologyRule
 from app.utility.sref import Sref, SrefSystem
 from app.verify.verify_models import Verified
@@ -18,7 +19,7 @@ class TestPhenologyRuleRepo:
         thisdir = os.path.abspath(os.path.dirname(__file__))
         return os.path.join(thisdir, 'testdata')
 
-    def test_load_file(self, db: Session, testdatadir: str):
+    def test_load_file(self, db: Session, env: EnvSettings, testdatadir: str):
         # Create org_groups.
         org_group1 = OrgGroup(organisation='organisation1', group='group1')
         org_group2 = OrgGroup(organisation='organisation2', group='group2')
@@ -70,7 +71,7 @@ class TestPhenologyRuleRepo:
         db.commit()
 
         # Load a file.
-        repo = PhenologyRuleRepo(db)
+        repo = PhenologyRuleRepo(db, env)
         errors = repo.load_file(
             testdatadir, org_group1.id, 'abc123', 'periodwithinyear_2.csv'
         )
@@ -123,7 +124,8 @@ class TestPhenologyRuleRepo:
         assert result[1]['end_date'] == '29/11'
         assert result[1]['stage'] == 'mature'
 
-    def test_load_file_wildcard_stage(self, db: Session, testdatadir: str):
+    def test_load_file_wildcard_stage(
+            self, db: Session, env: EnvSettings, testdatadir: str):
         # Create org_groups.
         org_group1 = OrgGroup(organisation='organisation1', group='group1')
         db.add(org_group1)
@@ -142,7 +144,7 @@ class TestPhenologyRuleRepo:
         db.commit()
 
         # Load a file.
-        repo = PhenologyRuleRepo(db)
+        repo = PhenologyRuleRepo(db, env)
         errors = repo.load_file(
             testdatadir, org_group1.id, 'abc123', 'periodwithinyear_1_3.csv'
         )
@@ -157,7 +159,7 @@ class TestPhenologyRuleRepo:
         assert result[0]['end_date'] == '29/11'
         assert result[0]['stage'] == '*'
 
-    def test_run(self, db: Session):
+    def test_run(self, db: Session, env: EnvSettings):
         # Create org_groups.
         org_group1 = OrgGroup(organisation='organisation1', group='group1')
         org_group2 = OrgGroup(organisation='organisation2', group='group2')
@@ -283,7 +285,7 @@ class TestPhenologyRuleRepo:
             stage='adult'
         )
 
-        repo = PhenologyRuleRepo(db)
+        repo = PhenologyRuleRepo(db, env)
 
         # Test the record against rules for org_group1.
         failures = repo.run(record, org_group1.id)
@@ -340,7 +342,7 @@ class TestPhenologyRuleRepo:
             "organisation1:group1:phenology: There is no rule for this taxon."
         )
 
-    def test_test(self, db: Session):
+    def test_test(self, db: Session, env: EnvSettings):
 
         record = Verified(
             id=1,
@@ -361,7 +363,7 @@ class TestPhenologyRuleRepo:
             end_month=10
         )
 
-        repo = PhenologyRuleRepo(db)
+        repo = PhenologyRuleRepo(db, env)
 
         # Single date within rule
         assert repo.test(record, rule) is None

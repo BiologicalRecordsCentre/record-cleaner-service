@@ -26,10 +26,16 @@ def session_fixture(engine) -> Generator[Session, None, None]:
     Use this in tests which do not use the client-fixture."""
 
     with Session(engine) as session:
-        env_settings = mock_env_settings()
+        env = mock_env_settings()
         repo = UserRepo(session)
-        repo.create_initial_user(env_settings)
+        repo.create_initial_user(env)
         yield session
+
+
+@pytest.fixture(name="env")
+def env_fixture():
+    """Fixture which supplies the environment settings."""
+    return mock_env_settings()
 
 
 @pytest.fixture(name="client")

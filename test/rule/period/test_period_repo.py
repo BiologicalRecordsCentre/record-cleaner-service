@@ -6,6 +6,7 @@ import pytest
 from sqlmodel import Session
 
 from app.rule.period.period_repo import PeriodRuleRepo
+from app.settings_env import EnvSettings
 from app.sqlmodels import OrgGroup, Taxon, PeriodRule
 from app.utility.sref import Sref, SrefSystem
 from app.verify.verify_models import Verified
@@ -20,7 +21,7 @@ class TestPeriodRuleRepo:
         thisdir = os.path.abspath(os.path.dirname(__file__))
         return os.path.join(thisdir, 'testdata')
 
-    def test_load_file(self, db: Session, testdatadir: str):
+    def test_load_file(self, db: Session, env: EnvSettings, testdatadir: str):
         # Create org_groups.
         org_group1 = OrgGroup(organisation='organisation1', group='group1')
         org_group2 = OrgGroup(organisation='organisation2', group='group2')
@@ -54,7 +55,7 @@ class TestPeriodRuleRepo:
         db.refresh(taxon2)
 
         # Load a file.
-        repo = PeriodRuleRepo(db)
+        repo = PeriodRuleRepo(db, env)
         errors = repo.load_file(
             testdatadir, org_group1.id, 'abc123', 'period_2.csv'
         )
@@ -99,15 +100,15 @@ class TestPeriodRuleRepo:
         assert result[1]['start_date'] == '1965-11-01'
         assert result[1]['end_date'] == '2000-11-11'
 
-    def test_file_updated(self, db: Session, testdatadir: str):
-        repo = PeriodRuleRepo(db)
+    def test_file_updated(self, db: Session, env: EnvSettings, testdatadir: str):
+        repo = PeriodRuleRepo(db, env)
         time_before = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         Path(f'{testdatadir}/period_1.csv').touch()
         time_modified = repo.file_updated(testdatadir, 'period_1.csv')
 
         assert time_modified >= time_before
 
-    def test_run(self, db: Session):
+    def test_run(self, db: Session, env: EnvSettings):
         # Create org_groups.
         org_group1 = OrgGroup(organisation='organisation1', group='group1')
         org_group2 = OrgGroup(organisation='organisation2', group='group2')
@@ -153,7 +154,7 @@ class TestPeriodRuleRepo:
             preferred_tvk=taxon1.preferred_tvk
         )
 
-        repo = PeriodRuleRepo(db)
+        repo = PeriodRuleRepo(db, env)
 
         # Test the record against all rules.
         failures = repo.run(record)

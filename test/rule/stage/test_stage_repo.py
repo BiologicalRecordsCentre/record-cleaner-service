@@ -3,13 +3,14 @@ import os
 from sqlmodel import Session
 
 from app.rule.stage.stage_repo import StageRepo
+from app.settings_env import EnvSettings
 from app.sqlmodels import OrgGroup
 
 
 class TestStageRepo:
     """Tests of the repo class."""
 
-    def test_stage_repo(self, db: Session):
+    def test_stage_repo(self, db: Session, env: EnvSettings):
         # Create an org_group.
         org_group = OrgGroup(organisation='organisation1', group='group1')
         db.add(org_group)
@@ -21,7 +22,7 @@ class TestStageRepo:
         dir = os.path.join(thisdir, 'testdata')
 
         # Load a file.
-        repo = StageRepo(db)
+        repo = StageRepo(db, env)
         repo.load_file(dir, org_group.id, 'abc123', 'stage_synonyms_3.csv')
         result = repo.list(org_group.id)
 

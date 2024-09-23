@@ -2,8 +2,10 @@
 from sqlmodel import create_engine, SQLModel
 from sqlmodel.pool import StaticPool
 
+from app.settings_env import EnvSettings
 
-def mock_make_search_request(params: dict) -> dict:
+
+def mock_make_search_request(env: EnvSettings, params: dict) -> dict:
 
     if 'search_code' in params:
         match params['search_code']:
@@ -195,16 +197,18 @@ def mock_env_settings() -> object:
     # Add settings by assigning properties.
     class EnvSettings(object):
         pass
-    env_settings = EnvSettings()
-    env_settings.initial_user_name = 'root'
-    env_settings.initial_user_pass = 'pass'
-    env_settings.log_level = 'info'
-    env_settings.jwt_key = '8f4e5dc18c0bc185c71f889ece4250210cbc76517a8b7d24cd3959b42e501a50'
-    env_settings.jwt_algorithm = 'HS256'
-    env_settings.jwt_expires_minutes = 15
-    env_settings.rules_repo = 'rules_repo'
-    env_settings.rules_branch = 'rules_branch'
-    return env_settings
+    env = EnvSettings()
+    env.initial_user_name = 'root'
+    env.initial_user_pass = 'pass'
+    env.log_level = 'info'
+    env.jwt_key = '8f4e5dc18c0bc185c71f889ece4250210cbc76517a8b7d24cd3959b42e501a50'
+    env.jwt_algorithm = 'HS256'
+    env.jwt_expires_minutes = 15
+    env.rules_repo = 'rules_repo'
+    env.rules_branch = 'rules_branch'
+    env.rules_dir = 'rules_dir'
+    env.rules_subdir = 'rules_subdir'
+    return env
 
 
 def mock_create_db():

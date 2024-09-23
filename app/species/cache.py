@@ -4,6 +4,7 @@ from fastapi import APIRouter, HTTPException, status
 from sqlmodel import Session, func, select, delete
 
 from app.database import DbDependency
+from app.settings_env import EnvSettings
 from app.sqlmodels import Taxon
 import app.species.indicia as driver
 from app.utility.search import Search
@@ -84,7 +85,7 @@ async def read_taxon_by_tvk(
 
 
 @lru_cache(maxsize=1024)
-def get_taxon_by_tvk(db: Session, tvk: str) -> Taxon:
+def get_taxon_by_tvk(db: Session, env: EnvSettings, tvk: str) -> Taxon:
     """Look up the taxon with given TVK."""
 
     # First check our local database
@@ -94,17 +95,17 @@ def get_taxon_by_tvk(db: Session, tvk: str) -> Taxon:
     ).first()
     if not taxon:
         # If not found, add from the remote database.
-        taxon = add_taxon_by_tvk(db, tvk)
+        taxon = add_taxon_by_tvk(db, env, tvk)
     return taxon
 
 
-def add_taxon_by_tvk(db: Session, tvk: str) -> Taxon:
+def add_taxon_by_tvk(db: Session,  env: EnvSettings, tvk: str) -> Taxon:
     """Look up taxon with given TVK and add to cache."""
     params = {
         'search_code': tvk,
         'include': '["data"]'
     }
-    response = driver.make_search_request(params)
+    response = driver.make_search_request(env, params)
     taxa = driver.parse_response_taxa(response)
 
     if len(taxa) == 0:
@@ -118,7 +119,7 @@ def add_taxon_by_tvk(db: Session, tvk: str) -> Taxon:
 
 
 @lru_cache(maxsize=1024)
-def get_taxon_by_name(db: Session, name: str) -> Taxon:
+def get_taxon_by_name(db: Session, env: EnvSettings, name: str) -> Taxon:
     """Look up taxon with given name."""
 
     search_name = Search.get_search_name(name)
@@ -128,17 +129,17 @@ def get_taxon_by_name(db: Session, name: str) -> Taxon:
     ).first()
     if not taxon:
         # If not found, add from the remote database.
-        taxon = add_taxon_by_name(db, name)
+        taxon = add_taxon_by_name(db, env, name)
     return taxon
 
 
-def add_taxon_by_name(db: Session, name: str) -> Taxon:
+def add_taxon_by_name(db: Session, env: EnvSettings, name: str) -> Taxon:
     """Look up taxon and add to cache."""
     params = {
         'searchQuery': name,
         'include': '["data"]'
     }
-    response = driver.make_search_request(params)
+    response = driver.make_search_request(env, params)
     taxa = driver.parse_response_taxa(response)
 
     if len(taxa) == 0:

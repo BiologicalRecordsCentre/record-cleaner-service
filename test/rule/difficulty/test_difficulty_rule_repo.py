@@ -3,13 +3,14 @@ import os
 from sqlmodel import Session
 
 from app.rule.difficulty.difficulty_rule_repo import DifficultyRuleRepo
+from app.settings_env import EnvSettings
 from app.sqlmodels import OrgGroup, Taxon, DifficultyCode
 
 
 class TestDifficultyRuleRepo:
     """Tests of the repo class."""
 
-    def test_difficulty_rule_repo(self, db: Session):
+    def test_difficulty_rule_repo(self, db: Session, env: EnvSettings):
         # Create org_groups.
         org_group1 = OrgGroup(organisation='organisation1', group='group1')
         org_group2 = OrgGroup(organisation='organisation2', group='group2')
@@ -74,7 +75,7 @@ class TestDifficultyRuleRepo:
         dir = os.path.join(thisdir, 'testdata')
 
         # Load a file.
-        repo = DifficultyRuleRepo(db)
+        repo = DifficultyRuleRepo(db, env)
         errors = repo.load_file(
             dir, org_group1.id, 'abc123', 'id_difficulty_3.csv')
         assert (errors == [])

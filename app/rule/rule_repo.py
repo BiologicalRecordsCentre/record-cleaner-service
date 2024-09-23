@@ -7,9 +7,11 @@ import subprocess
 import threading
 from typing import Optional, List
 
-from app.sqlmodels import OrgGroup
-from app.verify.verify_models import OrgGroupRules, Verified
+from sqlmodel import Session
 
+from app.sqlmodels import OrgGroup
+from app.settings_env import EnvSettings
+from app.verify.verify_models import OrgGroupRules, Verified
 
 from .additional.additional_code_repo import AdditionalCodeRepo
 from .additional.additional_rule_repo import AdditionalRuleRepo
@@ -76,7 +78,7 @@ class RuleRepo:
         }
     ]
 
-    # Dictionary of ules used for verification and their repo classes.
+    # Dictionary of rules used for verification and their repo classes.
     # Difficulty is not a pass/fail and is done at validation.
     verification_rule_types = {
         'additional': AdditionalRuleRepo,
@@ -85,16 +87,13 @@ class RuleRepo:
         'tenkm': TenkmRuleRepo
     }
 
-    def __init__(self, db, env_settings=False):
+    def __init__(self, db: Session, env: EnvSettings):
         self.db = db
-        # When we instantiate the repo for running rules we don't need the
-        # settings.
-        if env_settings:
-            self.basedir = os.path.abspath(os.path.dirname(__file__))
-            self.datadir = os.path.join(self.basedir, 'data')
-            self.gitdir = os.path.join(self.datadir, env_settings.rules_dir)
-            self.rulesdir = os.path.join(
-                self.gitdir, env_settings.rules_subdir)
+        self.env = env
+        self.basedir = os.path.abspath(os.path.dirname(__file__))
+        self.datadir = os.path.join(self.basedir, 'data')
+        self.gitdir = os.path.join(self.datadir, env.rules_dir)
+        self.rulesdir = os.path.join(self.gitdir, env.rules_subdir)
 
     def update(self, settings, full: bool = False):
         """Installs and updates our copy of the rules."""
@@ -278,7 +277,7 @@ class RuleRepo:
         group = org_group.group
         groupdir = os.path.join(self.rulesdir, organisation, group)
         # Create an instance of the repository class.
-        repo = repo_class(self.db)
+        repo = repo_class(self.db, self.env)
         # Update if full = True or if the file has changed.
         if not full:
             file_updated = repo.file_updated(groupdir)
@@ -403,7 +402,7 @@ class RuleRepo:
     def run_rules_for_all(self, record: Verified):
         """Run all the rules against the record from all org_groups."""
         for rule_repo_class in self.verification_rule_types.values():
-            repo = rule_repo_class(self.db)
+            repo = rule_repo_class(self.db, self.env)
             record.messages.extend(repo.run(record))
 
     def run_rules_for_org_group(
@@ -416,7 +415,7 @@ class RuleRepo:
         if rules is None:
             # Try all the rules
             for rule_repo_class in self.verification_rule_types.values():
-                repo = rule_repo_class(self.db)
+                repo = rule_repo_class(self.db, self.env)
                 record.messages.extend(repo.run(record, org_group.id))
         else:
             # Only use rules listed.
@@ -425,5 +424,5 @@ class RuleRepo:
                     # Not a valid rule type.
                     continue
                 rule_repo_class = self.verification_rule_types[rule]
-                repo = rule_repo_class(self.db)
+                repo = rule_repo_class(self.db, self.env)
                 record.messages.extend(repo.run(record, org_group.id))

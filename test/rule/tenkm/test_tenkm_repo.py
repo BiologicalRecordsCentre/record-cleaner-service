@@ -3,6 +3,7 @@ import os
 from sqlmodel import Session
 
 from app.rule.tenkm.tenkm_repo import TenkmRuleRepo
+from app.settings_env import EnvSettings
 from app.sqlmodels import OrgGroup, Taxon, TenkmRule
 from app.utility.sref import Sref, SrefSystem
 from app.utility.sref.sref_factory import SrefFactory
@@ -12,7 +13,7 @@ from app.verify.verify_models import Verified
 class TestTenkmRuleRepo:
     """Tests of the repo class."""
 
-    def test_load_file(self, db: Session):
+    def test_load_file(self, db: Session, env: EnvSettings):
         # Create org_groups.
         org_group1 = OrgGroup(organisation='organisation1', group='group1')
         org_group2 = OrgGroup(organisation='organisation2', group='group2')
@@ -60,7 +61,7 @@ class TestTenkmRuleRepo:
         dir = os.path.join(thisdir, 'testdata')
 
         # Load a file. 3 taxa in 3 coord systems.
-        repo = TenkmRuleRepo(db)
+        repo = TenkmRuleRepo(db, env)
         errors = repo.load_file(
             dir, org_group1.id, 'abc123', 'tenkm_3_species.csv')
         assert (errors == [])
@@ -131,7 +132,7 @@ class TestTenkmRuleRepo:
         assert result[3]['km10'] == '00'
         assert result[3]['coord_system'] == 'OSGB'
 
-    def test_run(self, db: Session):
+    def test_run(self, db: Session, env: EnvSettings):
         # Create org_groups.
         org_group1 = OrgGroup(organisation='organisation1', group='group1')
         org_group2 = OrgGroup(organisation='organisation2', group='group2')
@@ -201,7 +202,7 @@ class TestTenkmRuleRepo:
             preferred_tvk=taxon1.preferred_tvk
         )
 
-        repo = TenkmRuleRepo(db)
+        repo = TenkmRuleRepo(db, env)
 
         # Test the record against org_group1 rules.
         failures = repo.run(record, org_group1.id)

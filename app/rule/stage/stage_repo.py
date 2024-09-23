@@ -2,6 +2,7 @@ import pandas as pd
 
 from sqlmodel import Session, select, func
 
+from app.settings_env import EnvSettings
 from app.sqlmodels import Stage, StageSynonym
 
 from ..rule_repo_base import RuleRepoBase
@@ -11,8 +12,8 @@ from .stage_synonym_repo import StageSynonymRepo
 class StageRepo(RuleRepoBase):
     default_file = 'stage_synonyms.csv'
 
-    def __init__(self, db: Session):
-        super().__init__(db)
+    def __init__(self, db: Session, env: EnvSettings):
+        super().__init__(db, env)
         self.stage_synonym_repo = StageSynonymRepo(db)
 
     def list(self, org_group_id: int):
