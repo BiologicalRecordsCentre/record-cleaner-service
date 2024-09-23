@@ -171,5 +171,7 @@ accessible.
 Full releases will also be deployed to staging.
 
 ## Production
-If a commit is tagged `v{semver} it will be built and deployed to 
-record-cleaner.brc.ac.uk.
+Commits tagged `v{semver} are built with the intention of deployment to 
+record-cleaner.brc.ac.uk. Automation of this is not enabled at present so 
+manual intervention by someone with access to the host is needed for deployment.
+Currently it is hosted on the CEH production cluster in Lancaster.
