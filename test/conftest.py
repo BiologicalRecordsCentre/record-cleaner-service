@@ -13,29 +13,30 @@ from app.user.user_repo import UserRepo
 from .mocks import mock_env_settings, mock_create_db
 
 
+@pytest.fixture(name="env")
+def env_fixture():
+    """Fixture which supplies the environment settings.
+
+    Use this in tests which do not use the client-fixture."""
+    return mock_env_settings()
+
+
 @pytest.fixture(name="engine")
-def engine_fixture():
+def engine_fixture(env):
     """Fixture which creates an in-memory SQLite database for testing."""
-    return mock_create_db()
+    return mock_create_db(env)
 
 
 @pytest.fixture(name="db")
-def session_fixture(engine) -> Generator[Session, None, None]:
+def session_fixture(engine, env) -> Generator[Session, None, None]:
     """Fixture which creates a session with the test database engine.
 
     Use this in tests which do not use the client-fixture."""
 
     with Session(engine) as session:
-        env = mock_env_settings()
         repo = UserRepo(session)
         repo.create_initial_user(env)
         yield session
-
-
-@pytest.fixture(name="env")
-def env_fixture():
-    """Fixture which supplies the environment settings."""
-    return mock_env_settings()
 
 
 @pytest.fixture(name="client")
@@ -43,8 +44,9 @@ def client_fixture(mocker) -> Generator[TestClient, None, None]:
     """Fixture for testing API endpoints.
 
     This starts the app and triggers the lifespan function.
+
     Use client.app.context['engine'] to access the database engine
-    in tests."""
+    in tests and client.app.context['settings'] to access the settings."""
 
     # Mock environment settings in app.main.lifespan
     mocker.patch(

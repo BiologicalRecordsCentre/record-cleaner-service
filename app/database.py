@@ -10,16 +10,15 @@ from sqlmodel import create_engine, SQLModel, Session
 
 # Importing all the sqlmodels ensures the tables are created in the database
 import app.sqlmodels as sqlmodels
-from app.settings_env import get_env_settings
+from app.settings_env import EnvSettings
 
 
 logger = logging.getLogger(f"uvicorn.{__name__}")
 
 
-def create_db():
-    env_settings = get_env_settings()
+def create_db(env: EnvSettings):
     # Locate the directory for the database.
-    basedir = env_settings.data_dir
+    basedir = env.data_dir
     if basedir[0] == '.':
         # Determine absolute path from relative path setting.
         current_dir = os.path.abspath(os.path.dirname(__file__))
@@ -33,7 +32,7 @@ def create_db():
     # Check if the database file exists.
     if not os.path.exists(sqlite_file_path):
         # If not, check if a backup exists.
-        backupdir = env_settings.backup_dir
+        backupdir = env.backup_dir
         if backupdir != '':
             sqlite_backup_path = os.path.join(backupdir, 'database.sqlite')
             if os.path.exists(sqlite_backup_path):
@@ -44,7 +43,7 @@ def create_db():
     sqlite_url = f"sqlite:///{sqlite_file_path}"
 
     # Import this engine everywhere we want to use the database
-    if env_settings.environment == 'dev':
+    if env.environment == 'dev':
         engine = create_engine(sqlite_url, echo=True)
     else:
         engine = create_engine(sqlite_url, echo=False)

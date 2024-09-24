@@ -18,14 +18,14 @@ from app.user.user_repo import UserRepo
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Perform startup tasks.
-    env_settings = get_env_settings()
+    env = get_env_settings()
 
     # Initialise logging.
     # I have an unexplained problem that, when running on the Kubernetes
     # cluster, Uvicorn could output logs but not my application. To work around
     # this, I am piggy backing on Uvicorn's logging.
     logger = logging.getLogger("uvicorn")
-    logger.setLevel(env_settings.log_level.upper())
+    logger.setLevel(env.log_level.upper())
     console_formatter = ColourizedFormatter(
         fmt="{asctime} {levelprefix:<8} {message}",
         style="{",
@@ -37,7 +37,7 @@ async def lifespan(app: FastAPI):
 
     # Make Uvicorn access logs consistent with root logger.
     access_logger = logging.getLogger("uvicorn.access")
-    access_logger.setLevel(env_settings.log_level.upper())
+    access_logger.setLevel(env.log_level.upper())
     if len(access_logger.handlers) == 0:
         access_logger.addHandler(logging.StreamHandler())
     access_logger.handlers[0].setFormatter(console_formatter)
@@ -45,7 +45,7 @@ async def lifespan(app: FastAPI):
     logger.info('Record Cleaner starting...')
 
     # Initialise database.
-    engine = create_db()
+    engine = create_db(env)
 
     # Initialise settings.
     settings = Settings(engine)
@@ -53,7 +53,7 @@ async def lifespan(app: FastAPI):
     # Create the initial user.
     with Session(engine) as session:
         repo = UserRepo(session)
-        repo.create_initial_user(env_settings)
+        repo.create_initial_user(env)
 
     # Load the county data once.
     VcChecker.load_data()

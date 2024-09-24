@@ -24,13 +24,16 @@ class EnvSettings(BaseSettings):
     backup_dir: str = ''
     log_level: str = 'WARNING'
 
-    model_config = SettingsConfigDict(env_file=".env")
+    # Making the settings frozen means they are hashable.
+    # https://github.com/fastapi/fastapi/issues/1985#issuecomment-1290899088
+    model_config = SettingsConfigDict(env_file=".env", frozen=True)
 
 
 @lru_cache
 def get_env_settings():
     # A cached function keeping settings in memory.
-    return EnvSettings()
+    env = EnvSettings()
+    return env
 
 
 # Create a type alias for brevity when defining an endpoint needing env

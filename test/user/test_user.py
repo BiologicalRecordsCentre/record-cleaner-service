@@ -1,6 +1,6 @@
 from fastapi.testclient import TestClient
 
-from ..mocks import mock_env_settings
+from app.settings_env import EnvSettings
 
 
 class TestUser:
@@ -14,7 +14,7 @@ class TestUser:
         assert len(users) == 1
 
         user = users[0]
-        env = mock_env_settings()
+        env = client.app.context['settings'].env
 
         assert user['name'] == env.initial_user_name
         assert user['email'] == 'user@example.com'
@@ -50,17 +50,22 @@ class TestUser:
         assert response.status_code == 200
 
     def test_get_user(self, client: TestClient):
-        response = client.get('/users/root')
+        env = client.app.context['settings'].env
+
+        response = client.get('/users/' + env.initial_user_name)
         assert response.status_code == 200
         user = response.json()
-        assert user['name'] == 'root'
+
+        assert user['name'] == env.initial_user_name
         assert user['email'] == 'user@example.com'
         assert user['is_admin'] is True
         assert user['is_disabled'] is False
 
     def test_update_root_user(self, client: TestClient):
+        env = client.app.context['settings'].env
+
         response = client.patch(
-            '/users/root',
+            '/users/' + env.initial_user_name,
             json={
                 'name': 'Rick',
                 'email': 'rick@example.com',
@@ -103,7 +108,9 @@ class TestUser:
         assert user['is_disabled'] is True
 
     def test_delete_root_user(self, client: TestClient):
-        response = client.delete('/users/root')
+        env = client.app.context['settings'].env
+
+        response = client.delete('/users/' + env.initial_user_name)
         assert response.status_code == 403
 
     def test_delete_user(self, client: TestClient):

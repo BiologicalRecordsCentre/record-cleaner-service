@@ -21,13 +21,13 @@ class UserRepo:
         self.db.refresh(db_user)
         return db_user
 
-    def create_initial_user(self, env_settings):
+    def create_initial_user(self, env):
         user = self.db.exec(select(User)).first()
         if user is None:
             user = User(
-                name=env_settings.initial_user_name,
+                name=env.initial_user_name,
                 email="user@example.com",
-                hash=hash_password(env_settings.initial_user_pass),
+                hash=hash_password(env.initial_user_pass),
                 is_admin=True
             )
             self.db.add(user)

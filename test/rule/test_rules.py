@@ -5,32 +5,34 @@ from sqlmodel import Session
 
 from app.rule.rule_repo import RuleRepo
 
-from ..mocks import mock_env_settings
-
 
 class TestRules:
 
-    @pytest.fixture(name='env_settings')
-    def set_rulesdir(self):
-        env_settings = mock_env_settings()
+    @pytest.fixture(name='local_env')
+    def local_env_fixture(self):
+        # Can't use the normal env fixture because it is frozen and cannot be
+        # modified.
+        class LocalEnvSettings:
+            rules_dir: str
+            rules_subdir: str
+
+        env = LocalEnvSettings()
         basedir = os.path.abspath(os.path.dirname(__file__))
-        rulesdir = os.path.join(basedir, 'testdata')
-        env_settings.rules_dir = rulesdir
-        # Following required but not used.
-        env_settings.rules_subdir = ''
+        env.rules_dir = os.path.join(basedir, 'testdata')
+        env.rules_subdir = ''
 
-        return env_settings
+        return env
 
-    def test_list_organisation_rules(self, db: Session, env_settings):
-        repo = RuleRepo(db, env_settings)
+    def test_list_organisation_rules(self, db: Session, local_env):
+        repo = RuleRepo(db, local_env)
         organisation_groups_list = repo.list_organisation_groups()
         assert organisation_groups_list == [
             {'organisation1': ['group1', 'group2']},
             {'organisation2': ['group1']}
         ]
 
-    def test_list_rules(self, db: Session, env_settings):
-        repo = RuleRepo(db, env_settings)
+    def test_list_rules(self, db: Session, local_env):
+        repo = RuleRepo(db, local_env)
         rules_list = repo.list_rules()
 
         org1group1 = rules_list[0]['organisation1']['group1']
