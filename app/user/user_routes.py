@@ -41,7 +41,7 @@ class UserPatch(BaseModel):
     is_disabled: Optional[bool] = None
 
 
-@router.get('/', summary="List users.", response_model=list[UserGet])
+@router.get('', summary="List users.", response_model=list[UserGet])
 async def read_users(db: DbDependency):
     """Get all users."""
     users = db.exec(
@@ -68,7 +68,7 @@ async def read_user(db: DbDependency, username: str):
     return user
 
 
-@router.post('/', summary="Create user.", response_model=UserGet)
+@router.post('', summary="Create user.", response_model=UserGet)
 async def create_user(db: DbDependency, user_in: UserPost):
     """Create a new user."""
     repo = UserRepo(db)

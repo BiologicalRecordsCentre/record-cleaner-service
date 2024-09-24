@@ -13,14 +13,13 @@ from app.utility.vague_date import VagueDate
 from .validate_models import Validate, Validated
 
 router = APIRouter(
-    prefix="/validate",
     tags=["Validate"],
     dependencies=[Depends(get_current_user)]
 )
 
 
 @router.post(
-    "/",
+    "/validate",
     summary="Validate records.",
     response_model=list[Validated],
     response_model_exclude_none=True)

@@ -14,14 +14,13 @@ from .verify_models import VerifyPack, Verified, VerifiedPack
 
 
 router = APIRouter(
-    prefix="/verify",
     tags=["Verify"],
     dependencies=[Depends(get_current_user)]
 )
 
 
 @router.post(
-    "/",
+    "/verify",
     summary="Verify records.",
     response_model=VerifiedPack,
     response_model_exclude_none=True)
