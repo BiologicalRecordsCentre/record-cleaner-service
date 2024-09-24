@@ -35,7 +35,7 @@ router.include_router(tenkm_router)
 @router.get("/update", summary="Updates rules.")
 async def update_rules(
     db: DbDependency,
-    env: EnvDependency,
+    settings: SettingsDependency,
     full: Annotated[
         bool,
         Query(description="Set true to force update from all files. By "
@@ -44,8 +44,8 @@ async def update_rules(
 ):
 
     try:
-        repo = RuleRepo(db, env)
-        response = repo.update(full)
+        repo = RuleRepo(db, settings.env)
+        response = repo.update(settings, full)
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
