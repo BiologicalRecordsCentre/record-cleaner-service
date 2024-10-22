@@ -110,7 +110,7 @@ class TestValidate:
         validated = response.json()[0]
         assert not validated['ok']
         assert validated['messages'][0] == "TVK or name required."
-        assert validated['messages'][1] == "Unreocognised date format."
+        assert validated['messages'][1] == "Unrecognised date format."
         assert validated['messages'][2] == "Invalid spatial reference. A gridref must be provided."
 
     def test_valid_record_accepted_tvk(self, client: TestClient, mocker):
