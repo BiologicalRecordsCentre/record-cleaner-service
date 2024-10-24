@@ -5,6 +5,10 @@ from functools import lru_cache
 import pandas as pd
 
 
+class NoVcException(Exception):
+    pass
+
+
 class VcChecker:
 
     # Private class variables.
@@ -21,7 +25,10 @@ class VcChecker:
                 f'{basedir}/vc_names.csv',
                 sep=',',
                 names=['name', 'code'],
-                converters={'name': lambda x: x.lower()}
+            )
+            # Add a simplified name for searching.
+            cls.__vc_names['search_name'] = (
+                cls.__vc_names['name'].str.lower().str.replace(' ', '')
             )
 
         # Load the list that relates grid squares to vice counties.
@@ -36,7 +43,7 @@ class VcChecker:
     @classmethod
     @lru_cache
     def prepare_code(cls, value: str | int) -> str:
-        """Takes a supplied VC value and returns a code."""
+        """Takes a supplied VC name or code and returns a clean code."""
 
         # British codes may be passes as int or str.
         try:
@@ -63,11 +70,11 @@ class VcChecker:
                 raise ValueError('Unrecognised vice county value.')
 
         # Search the VC names for a match if value was not a code.
-        seek = value.lower()
+        seek = value.lower().replace(' ', '')
         df = cls.__vc_names
         # Locate in the dataframe of __vc_names, the code where the name
         # matches the entered value.
-        series = df.loc[df['name'] == seek, 'code']
+        series = df.loc[df['search_name'] == seek, 'code']
         if series.size == 1:
             return series.iloc[0]
         else:
@@ -75,7 +82,9 @@ class VcChecker:
 
     @classmethod
     def prepare_sref(cls, value: str) -> str:
-        """Takes a supplied sref and returns a 10km, 2km, or 1km square."""
+        """Takes a supplied sref and returns a 10km, 2km, or 1km square.
+
+        The sref should already have been validated."""
 
         # Remove the 100km square indicator. Maybe 1 or 2 characters.
         if value[1].isdigit():
@@ -97,6 +106,36 @@ class VcChecker:
                 return prefix + suffix[0:2] + suffix[4:6]
             case 10:
                 return prefix + suffix[0:2] + suffix[5:7]
+            case _:
+                raise ValueError('Unrecognised gridref.')
+
+    @classmethod
+    @lru_cache
+    def get_name_from_code(cls, code: str) -> str:
+        """Takes a code and returns the name of the VC.
+
+        The code should be a value as output by prepare_code."""
+
+        df = cls.__vc_names
+        series = df.loc[df['code'] == code, 'name']
+        if series.size == 1:
+            return series.iloc[0]
+        else:
+            raise ValueError('No vice county found for code.')
+
+    @classmethod
+    @lru_cache
+    def get_code_from_sref(cls, gridref: str) -> str:
+        """Takes a gridref and returns the code of the VC.
+
+        The sref should be a value as output by prepare_sref."""
+        df = cls.__vc_squares
+        series = df.loc[df['gridref'] == gridref, 'vc_dominant']
+        if series.size == 1:
+            return str(series.iloc[0])
+        else:
+            # Raise a special exception as this is not an error.
+            raise NoVcException('No vice county found for gridref.')
 
     @classmethod
     @lru_cache

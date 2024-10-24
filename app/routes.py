@@ -7,6 +7,7 @@ from app.auth import AdminDependency, get_current_admin_user
 import app.main as app
 # from app.county.county_routes import router as county_router
 from app.auth import router as auth_router
+from app.county.county_routes import router as county_router
 from app.rule.rule_routes import router as rule_router
 from app.settings import SettingsDependency
 from app.species.species_routes import router as species_router
@@ -50,7 +51,7 @@ router.include_router(species_router)
 router.include_router(user_router)
 router.include_router(validate_router)
 router.include_router(verify_router)
-# router.include_router(county_router)
+router.include_router(county_router)
 
 
 @router.get(

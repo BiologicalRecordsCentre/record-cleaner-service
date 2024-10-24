@@ -7,7 +7,7 @@ from app.rule.difficulty.difficulty_rule_repo import DifficultyRuleRepo
 from app.settings_env import EnvDependency
 import app.species.cache as cache
 from app.utility.sref.sref_factory import SrefFactory
-from app.utility.vice_county.vc_checker import VcChecker
+from app.utility.vice_county.vc_checker import VcChecker, NoVcException
 from app.utility.vague_date import VagueDate
 
 from .validate_models import Validate, Validated
@@ -33,7 +33,7 @@ async def validate(
 
     The spatial reference can be given as a grid reference, a latitude and
     longitude or an easting and northing. In the latter two cases, an accuracy
-    is also required. The srid parameter must match the spatial reference 
+    is also required. The srid parameter must match the spatial reference
     system in which the coordinates are given.
 
     Supported systems are:
@@ -49,8 +49,8 @@ async def validate(
         # Our response begins with the input data.
         result = Validated(**record.model_dump())
 
-        # 1. Confirm TVK/name is valid.
         try:
+            # 1. Confirm TVK/name is valid.
             if record.tvk is None and record.name is None:
                 result.ok = False
                 result.messages.append("TVK or name required.")
@@ -73,13 +73,12 @@ async def validate(
                 # Get id difficulty.
                 repo = DifficultyRuleRepo(db, env)
                 result.id_difficulty = repo.run(result)
-
         except Exception as e:
             result.ok = False
             result.messages.append(str(e))
 
-        # 2. Confirm date is valid.
         try:
+            # 2. Confirm date is valid.
             vague_date = VagueDate(record.date)
             # Return date in preferred format.
             result.date = str(vague_date)
@@ -87,21 +86,28 @@ async def validate(
             result.ok = False
             result.messages.append(str(e))
 
-        # 3. Confirm sref is valid.
         try:
+            # 3. Confirm sref is valid.
             sref = SrefFactory(record.sref)
-            if record.sref.gridref is not None:
-                # Return cleaned up gridref.
-                result.sref.gridref = sref.gridref
+            # Include gridref in result.
+            result.sref.gridref = sref.gridref
 
-            # Check sref in vice county.
+            # 4a. Either check vice county...
             if record.vc is not None:
                 code = VcChecker.prepare_code(record.vc)
                 # Return code if name was supplied.
                 result.vc = code
                 gridref = VcChecker.prepare_sref(sref.gridref)
                 VcChecker.check(gridref, code)
+            # 4b. Or assign vice county.
+            else:
+                gridref = VcChecker.prepare_sref(sref.gridref)
+                result.vc = VcChecker.get_code_from_sref(gridref)
 
+        except NoVcException as e:
+            # Failure to assign is not an error.
+            result.vc = '0'
+            result.messages.append(str(e))
         except Exception as e:
             result.ok = False
             result.messages.append(str(e))
