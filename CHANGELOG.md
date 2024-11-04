@@ -10,13 +10,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - This CHANGELOG file.
-- End point county/code/{code}
-- End point county/gridref/{gridref}
-- Vice county assignment during validation.
+- End point county/code/{code}.
+- End point county/gridref/{gridref}.
 
 ### Changed
-- Validation endpoint always returns sref.gridref
-- Fixed some typos.
+- End point /validate to always returns sref.gridref.
+- End point /validate to return vc assignment if vc not provided.
+- End point /rules/update_result to have progress indicator, rules_updating_now.
+
+### Fixed
 
 ### Removed
 

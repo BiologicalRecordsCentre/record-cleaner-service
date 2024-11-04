@@ -134,7 +134,7 @@ class RuleRepo:
 
         try:
             self.rules_commit = self.git_update(settings)
-            result = self.db_update(full)
+            result = self.db_update(settings, full)
             result['commit'] = self.rules_commit
             settings.db.rules_update_result = json.dumps(result)
             logger.info("Rule update complete.")
@@ -228,7 +228,7 @@ class RuleRepo:
             e.add_note('Unknown error trying to update rules.')
             raise Exception(e)
 
-    def db_update(self, full: bool = False):
+    def db_update(self, settings, full: bool = False):
         """Loads the rule files in to the database."""
 
         ok = True
@@ -241,6 +241,10 @@ class RuleRepo:
         org_groups = org_group_repo.list()
         # Loop through all the organisation groups...
         for org_group in org_groups:
+            settings.db.rules_updating_now = (
+                org_group.organisation + ':' + org_group.group + ':' +
+                datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            )
             group_errors = []
 
             for rule_type in self.rule_file_types:
