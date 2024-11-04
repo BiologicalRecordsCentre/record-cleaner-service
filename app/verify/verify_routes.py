@@ -25,6 +25,8 @@ router = APIRouter(
     response_model=VerifiedPack,
     response_model_exclude_none=True)
 async def verify(db: DbDependency, env: EnvDependency, data: VerifyPack):
+    """ Verify an array of records against an array of rules.
+    If the array of rules is empty, all rules will be run."""
 
     start = time.time_ns()
     results = []
