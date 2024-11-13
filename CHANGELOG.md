@@ -14,9 +14,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - End point county/gridref/{gridref}.
 
 ### Changed
-- End point /validate to always returns sref.gridref.
-- End point /validate to return vc assignment if vc not provided.
-- End point /rules/update_result to have progress indicator, rules_updating_now.
+- /validate and /verify to raise errors on taxon name/tvk of ''.
+- /validate to always returns sref.gridref.
+- /validate to return vc assignment if vc not provided.
+- /rules/update_result to have progress indicator, rules_updating_now.
+
 
 ### Fixed
 

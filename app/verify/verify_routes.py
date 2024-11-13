@@ -34,22 +34,24 @@ async def verify(db: DbDependency, env: EnvDependency, data: VerifyPack):
         # Our response begins with the input data.
         result = Verified(**record.model_dump())
 
+        # Since we expect valid data, bail out at the first error
+        # to save processing time.
         try:
             # 1. Get preferred TVK.
-            if record.tvk is not None:
+            if not record.tvk and not record.name:
+                raise ValueError("TVK or name required.")
+            if record.tvk:
                 # Use TVK if provided as not ambiguous.
                 taxon = cache.get_taxon_by_tvk(db, env, record.tvk)
-                if record.name is None:
+                if not record.name:
                     result.name = taxon.name
                 elif record.name != taxon.name:
-                    result.ok = False
-                    result.messages.append(
+                    raise ValueError(
                         f"Name does not match TVK. Expected {taxon.name}.")
-            elif record.name is not None:
+            else:
                 # Otherwise use name.
                 taxon = cache.get_taxon_by_name(db, env, record.name)
-                if record.tvk is None:
-                    result.tvk = taxon.tvk
+                result.tvk = taxon.tvk
 
             result.preferred_tvk = taxon.preferred_tvk
 

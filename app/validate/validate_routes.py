@@ -49,22 +49,24 @@ async def validate(
         # Our response begins with the input data.
         result = Validated(**record.model_dump())
 
+        # As we are validating, try to return as many errors as we can find
+        # to save human time.
         try:
             # 1. Confirm TVK/name is valid.
-            if record.tvk is None and record.name is None:
+            if not record.tvk and not record.name:
                 result.ok = False
                 result.messages.append("TVK or name required.")
             else:
-                if record.tvk is not None:
+                if record.tvk:
                     # Use TVK if provided as not ambiguous.
                     taxon = cache.get_taxon_by_tvk(db, env, record.tvk)
-                    if record.name is None:
+                    if not record.name:
                         result.name = taxon.name
                     elif record.name != taxon.name:
                         result.ok = False
                         result.messages.append(
                             f"Name does not match TVK. Expected {taxon.name}.")
-                elif record.name is not None:
+                else:
                     # Otherwise use name.
                     taxon = cache.get_taxon_by_name(db, env, record.name)
                     result.tvk = taxon.tvk
