@@ -4,6 +4,7 @@ from sqlmodel import create_engine, SQLModel
 from sqlmodel.pool import StaticPool
 
 from app.settings_env import EnvSettings
+from app.settings_db import DbSettings
 
 
 def mock_make_search_request(env: EnvSettings, params: dict) -> dict:
@@ -226,3 +227,14 @@ def mock_create_db(env: EnvSettings):
     SQLModel.metadata.create_all(engine)
 
     return engine
+
+
+def mock_settings(engine, env: EnvSettings):
+    # Creates a settings object with the test database engine.
+    class MockSettings():
+        def __init__(self, engine, env):
+            self.env = env
+            self.db = DbSettings(engine)
+
+    settings = MockSettings(engine, env)
+    return settings

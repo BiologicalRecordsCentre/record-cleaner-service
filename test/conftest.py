@@ -10,7 +10,7 @@ from app.main import app
 from app.settings_env import get_env_settings
 from app.user.user_repo import UserRepo
 
-from .mocks import mock_env_settings, mock_create_db
+from .mocks import mock_env_settings, mock_create_db, mock_settings
 
 
 @pytest.fixture(name="env")
@@ -25,6 +25,14 @@ def env_fixture():
 def engine_fixture(env):
     """Fixture which creates an in-memory SQLite database for testing."""
     return mock_create_db(env)
+
+
+@pytest.fixture(name="settings")
+def settings_fixture(engine, env):
+    """Fixture which creates env and db settings.
+
+    Use this in tests which do not use the client-fixture."""
+    return mock_settings(engine, env)
 
 
 @pytest.fixture(name="db")
