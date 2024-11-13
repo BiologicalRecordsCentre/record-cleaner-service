@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.auth import get_current_user
-from app.utility.vice_county.vc_checker import VcChecker
+from app.utility.vice_county.vc_checker import VcChecker, NoVcException
 
 
 router = APIRouter()
@@ -23,9 +23,9 @@ async def read_county_by_code(code: str | int):
             "code": code,
             "name": VcChecker.get_name_from_code(code)
         }
-    except ValueError:
+    except ValueError as e:
         raise HTTPException(
-            status_code=404, detail="No county found for code.")
+            status_code=404, detail=str(e))
 
 
 @router.get(
@@ -44,6 +44,6 @@ async def read_county_by_gridref(gridref: str):
             "code": code,
             "name": VcChecker.get_name_from_code(code)
         }
-    except ValueError:
+    except NoVcException as e:
         raise HTTPException(
-            status_code=404, detail="No county found for gridref.")
+            status_code=404, detail=str(e))
