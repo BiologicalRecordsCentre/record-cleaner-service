@@ -147,8 +147,9 @@ class RuleRepo:
             settings.db.rules_update_result = json.dumps(result)
             raise
         finally:
-            # Always reset semaphore.
+            # Always reset semaphore and progress indicator.
             settings.db.rules_updating = False
+            settings.db.rules_updating_now = ''
 
     def git_update(self, settings):
         """Installs and updates our copy of the rules."""
