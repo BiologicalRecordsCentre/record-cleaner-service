@@ -13,7 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - End point county/code/{code}.
 - End point county/gridref/{gridref}.
 - id_difficulty to /verify response.
-- result to /verify response. This contains a string of ['pass'|'warn'|'fail'].
+- result to /verify and /validate response. This contains a string of
+  ['pass'|'warn'|'fail'].
 
 ### Changed
 - /validate and /verify to raise errors on taxon name/tvk of ''.
@@ -28,7 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 - id_difficulty from /validate response.
-- ok from /verify response
+- ok from /verify and /validate response
 
 ## [1.0.0]
 

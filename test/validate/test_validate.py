@@ -59,7 +59,7 @@ class TestValidate:
         )
         assert response.status_code == 200
         validated = response.json()[0]
-        assert not validated['ok']
+        assert validated['result'] == 'fail'
         assert validated['messages'][0] == "TVK or name required."
         assert validated['messages'][1] == "Unrecognised date format."
         assert validated['messages'][2] == "Invalid spatial reference. A gridref must be provided."
@@ -89,7 +89,7 @@ class TestValidate:
         assert validated['date'] == "03/04/2024"
         assert validated['sref']['gridref'] == "TL123456"
         assert validated['preferred_tvk'] == "NBNSYS0000008319"
-        assert validated['ok']
+        assert validated['result'] == 'pass'
         assert len(validated['messages']) == 0
 
     def test_valid_record_common_tvk(self, client: TestClient, mocker):
@@ -117,7 +117,7 @@ class TestValidate:
         assert validated['date'] == "03/04/2024"
         assert validated['sref']['gridref'] == "TL123456"
         assert validated['preferred_tvk'] == "NBNSYS0000008319"
-        assert validated['ok']
+        assert validated['result'] == 'pass'
         assert len(validated['messages']) == 0
 
     def test_valid_record_accepted_name(self, client: TestClient, mocker):
@@ -144,7 +144,7 @@ class TestValidate:
         assert validated['date'] == "03/04/2024"
         assert validated['sref']['gridref'] == "TL123456"
         assert validated['preferred_tvk'] == "NBNSYS0000008319"
-        assert validated['ok']
+        assert validated['result'] == 'pass'
         assert len(validated['messages']) == 0
 
     def test_valid_record_common_name(self, client: TestClient, mocker):
@@ -171,7 +171,7 @@ class TestValidate:
         assert validated['date'] == "03/04/2024"
         assert validated['sref']['gridref'] == "TL123456"
         assert validated['preferred_tvk'] == "NBNSYS0000008319"
-        assert validated['ok']
+        assert validated['result'] == 'pass'
         assert len(validated['messages']) == 0
 
     def test_invalid_vc(self, client: TestClient, mocker):
@@ -200,7 +200,8 @@ class TestValidate:
         assert validated['date'] == "03/04/2024"
         assert validated['sref']['gridref'] == "TL123456"
         assert validated['vc'] == "1"
-        assert not validated['ok']
+        assert validated['result'] == 'fail'
+        assert len(validated['messages']) == 1
         assert validated['messages'][0] == "Sref not in vice county."
 
     def test_valid_vc(self, client: TestClient, mocker):
@@ -229,7 +230,7 @@ class TestValidate:
         assert validated['date'] == "03/04/2024"
         assert validated['sref']['gridref'] == "TL123456"
         assert validated['vc'] == "30"
-        assert validated['ok']
+        assert validated['result'] == 'pass'
         assert len(validated['messages']) == 0
 
     def test_vc_assignment(self, client: TestClient, mocker):
@@ -257,7 +258,7 @@ class TestValidate:
         assert validated['date'] == "03/04/2024"
         assert validated['sref']['gridref'] == "TL123456"
         assert validated['vc'] == "30"
-        assert validated['ok']
+        assert validated['result'] == 'pass'
         assert len(validated['messages']) == 0
 
     def test_vc_no_assignment(self, client: TestClient, mocker):
@@ -284,7 +285,7 @@ class TestValidate:
         assert validated['name'] == "Adalia bipunctata"
         assert validated['date'] == "03/04/2024"
         assert validated['sref']['gridref'] == "TM999999"
-        assert validated['vc'] == '0'
-        assert validated['ok']
+        assert 'vc' not in validated
+        assert validated['result'] == 'warn'
         assert len(validated['messages']) == 1
         assert validated['messages'][0] == "No vice county found for gridref."
