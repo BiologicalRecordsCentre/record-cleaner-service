@@ -55,7 +55,7 @@ class TestVerify:
             assert 'id_difficulty' not in verified
             assert len(verified['messages']) == 1
             assert verified['messages'][0] == (
-                "*:*: No rules exist for this taxon.")
+                "No rules exist for this taxon.")
 
             # Update to test against specific org_group.
             rules = OrgGroupRules(

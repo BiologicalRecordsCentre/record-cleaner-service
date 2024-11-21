@@ -450,7 +450,7 @@ class RuleRepo:
             id_difficulty, messages = difficulty_repo.run(record)
             if id_difficulty is None:
                 record.result = 'warn'
-                messages.append("*:*: No rules exist for this taxon.")
+                messages.append("No rules exist for this taxon.")
             record.id_difficulty = id_difficulty
             record.messages.extend(messages)
         else:
