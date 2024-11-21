@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends
 
 from app.auth import get_current_user
 from app.database import DbDependency
+from app.rule.org_group.org_group_repo import OrgGroupRepo
 from app.rule.rule_repo import RuleRepo
 from app.settings_env import EnvDependency
 import app.species.cache as cache
@@ -32,7 +33,7 @@ async def verify(db: DbDependency, env: EnvDependency, data: VerifyPack):
     results = []
     for record in data.records:
         # Our response begins with the input data.
-        result = Verified(**record.model_dump())
+        verified = Verified(**record.model_dump())
 
         # Since we expect valid data, bail out at the first error
         # to save processing time.
@@ -44,41 +45,65 @@ async def verify(db: DbDependency, env: EnvDependency, data: VerifyPack):
                 # Use TVK if provided as not ambiguous.
                 taxon = cache.get_taxon_by_tvk(db, env, record.tvk)
                 if not record.name:
-                    result.name = taxon.name
+                    verified.name = taxon.name
                 elif record.name != taxon.name:
                     raise ValueError(
                         f"Name does not match TVK. Expected {taxon.name}.")
             else:
                 # Otherwise use name.
                 taxon = cache.get_taxon_by_name(db, env, record.name)
-                result.tvk = taxon.tvk
+                verified.tvk = taxon.tvk
 
-            result.preferred_tvk = taxon.preferred_tvk
+            verified.preferred_tvk = taxon.preferred_tvk
 
             # 2. Format date.
             vague_date = VagueDate(record.date)
-            result.date = str(vague_date)
+            verified.date = str(vague_date)
 
             # 3. Obtain gridref.
             functional_sref = SrefFactory(record.sref)
-            result.sref = functional_sref.value
+            verified.sref = functional_sref.value
 
             # 4. Format stage
             if record.stage is not None:
-                result.stage = record.stage.strip().lower()
+                verified.stage = record.stage.strip().lower()
 
-            # 5. Check against rules.
+            # 5. Look up org_groups and create new list of org_groups & rules.
+            new_org_group_rules_list = []
+            if data.org_group_rules_list is not None:
+                org_group_repo = OrgGroupRepo(db)
+                for org_group_rules in data.org_group_rules_list:
+                    organisation = org_group_rules.organisation
+                    group = org_group_rules.group
+                    rules = org_group_rules.rules
+                    org_group = org_group_repo.get(organisation, group)
+                    if org_group is None:
+                        raise ValueError(
+                            "Unrecognised organisation:group, "
+                            f"'{organisation}:{group}'."
+                        )
+                    new_org_group_rules_list.append({
+                        "org_group": org_group,
+                        "rules": rules
+                    })
+
+            # 6. Get id difficulty.
             repo = RuleRepo(db, env)
-            repo.run_rules(data.org_group_rules_list, result)
+            repo.run_difficulty(new_org_group_rules_list, verified)
 
-            # Accumulate results.
-            results.append(result)
+            # 7. Check against rules.
+            if verified.id_difficulty is not None:
+                repo.run_rules(new_org_group_rules_list, verified)
+
+            # Order the messages for clarity and testability.
+            verified.messages.sort()
 
         except (Exception) as e:
-            result.ok = False
-            result.messages.append(str(e))
-            results.append(result)
-            continue
+            verified.result = 'fail'
+            verified.messages.append(str(e))
+        finally:
+            # Accumulate results.
+            results.append(verified)
 
     duration = time.time_ns() - start
 

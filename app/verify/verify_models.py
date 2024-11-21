@@ -21,7 +21,8 @@ class OrgGroupRules(BaseModel):
 
 class Verified(Verify):
     preferred_tvk: Optional[str] = None
-    ok: bool = True
+    id_difficulty: Optional[int] = None
+    result: str = 'pass'
     messages: Optional[List[str]] = []
 
 

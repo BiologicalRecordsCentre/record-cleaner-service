@@ -212,90 +212,60 @@ class PhenologyRuleRepo(RuleRepoBase):
         return errors
 
     def run(self, record: Verified, org_group_id: int | None = None):
-        """Run rules against record, optionally filter rules by org_group."""
-        failures = []
+        """Run rules against record, optionally filter rules by org_group.
 
-        # Get the org_groups having rules for the taxon.
+        Returns a tuple of (ok, messages) where ok indicates test success
+        and messages is a list of details. If there are no rules, ok is None"""
+
+        ok = True
+        messages = []
+
         query = (
-            select(OrgGroup)
+            select(PhenologyRule, OrgGroup, Stage)
             .select_from(PhenologyRule)
-            .distinct()
-            .join(OrgGroup)
-            .join(Taxon)
+            .join(OrgGroup, OrgGroup.id == PhenologyRule.org_group_id)
+            .join(Taxon, Taxon.id == PhenologyRule.taxon_id)
+            .join(Stage, Stage.id == PhenologyRule.stage_id)
             .where(Taxon.preferred_tvk == record.preferred_tvk)
-            .order_by(OrgGroup.organisation, OrgGroup.group)
         )
+        rules = self.db.exec(query).all()
         if org_group_id is not None:
             query = query.where(OrgGroup.id == org_group_id)
+        rules = self.db.exec(query).all()
 
-        # Do we have any rules?
-        org_groups = self.db.exec(query).all()
-        if len(org_groups) == 0:
-            if org_group_id is None:
-                failures.append(
-                    "*:*:phenology: There is no rule for this taxon."
-                )
-            else:
-                org_group = self.db.get(OrgGroup, org_group_id)
-                failures.append(
-                    f"{org_group.organisation}:{org_group.group}:phenology: "
-                    "There is no rule for this taxon."
-                )
-            return failures
-
-        # Try the rules from each org_group.
-        for org_group in org_groups:
-
+        if record.stage is None:
+            # Use mature or 'everything' rule if no stage is specified.
+            # No need to look at synonmms.
+            query = query.where(or_(
+                Stage.stage == 'mature',
+                Stage.stage == '*'))
+        else:
+            # Use rule with matching stage synonym or 'everything' rule.
+            # Left join synonyms as 'everything' rule won't have them.
             query = (
-                select(PhenologyRule)
-                .join(Taxon)
-                .join(Stage)
-                .where(Taxon.preferred_tvk == record.preferred_tvk)
-                .where(PhenologyRule.org_group_id == org_group.id)
+                query
+                .join(StageSynonym, isouter=True)
+                .where(or_(
+                    StageSynonym.synonym == record.stage,
+                    Stage.stage == '*'))
             )
 
-            if record.stage is None:
-                # Use mature or 'everything' rule if no stage is specified.
-                # No need to look at synonmms.
-                query = query.where(or_(
-                    Stage.stage == 'mature',
-                    Stage.stage == '*'))
-            else:
-                # Use rule with matching stage synonym or 'everything' rule.
-                # Left join synonyms as 'everything' rule won't have them.
-                query = (
-                    query
-                    .join(StageSynonym, isouter=True)
-                    .where(or_(
-                        StageSynonym.synonym == record.stage,
-                        Stage.stage == '*'))
-                )
+        rules = self.db.exec(query).all()
+        # Do we have any rules?
+        if len(rules) == 0:
+            return None, []
 
-            phenology_rule = self.db.exec(query).one_or_none()
-
-            if phenology_rule is None:
-                # No rule found matching stage.
-                if record.stage is None:
-                    failures.append(
-                        f"{org_group.organisation}:{org_group.group}:"
-                        f"phenology: Could not find rule for stage 'mature'."
-                    )
-                else:
-                    failures.append(
-                        f"{org_group.organisation}:{org_group.group}:"
-                        "phenology: Could not find rule for stage "
-                        f"'{record.stage}'."
-                    )
-                continue
-
+        for phenology_rule, org_group, stage in rules:
             # Apply the rule we have found.
             result = self.test(record, phenology_rule)
             if result is not None:
-                failures.append(
-                    f"{org_group.organisation}:{org_group.group}:{result}"
+                ok = False
+                messages.append(
+                    f"{org_group.organisation}:{org_group.group}:phenology:"
+                    f"{stage.stage}:{result}"
                 )
 
-        return failures
+        return ok, messages
 
     def test(self, record: Verified, rule: PhenologyRule):
         """Test the record against the rule."""
@@ -337,7 +307,7 @@ class PhenologyRuleRepo(RuleRepoBase):
                 )
         ):
             return (
-                f"phenology: Record is outside of expected period of "
+                f"Record is outside of expected period of "
                 f"{rule.start_day}/{rule.start_month} - "
                 f"{rule.end_day}/{rule.end_month}."
             )

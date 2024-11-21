@@ -172,8 +172,13 @@ class TenkmRuleRepo(RuleRepoBase):
         return list(errors)
 
     def run(self, record: Verified, org_group_id: int | None = None):
-        """Run rules against record, optionally filter rules by org_group."""
-        failures = []
+        """Run rules against record, optionally filter rules by org_group.
+
+        Returns a tuple of (ok, messages) where ok indicates test success
+        and messages is a list of details. If there are no rules, ok is None"""
+
+        ok = True
+        messages = []
 
         km100 = record.sref.km100
         km10 = record.sref.km10
@@ -194,15 +199,7 @@ class TenkmRuleRepo(RuleRepoBase):
         # Do we have any rules?
         org_groups = self.db.exec(query).all()
         if len(org_groups) == 0:
-            if org_group_id is None:
-                failures.append("*:*:tenkm: There is no rule for this taxon.")
-            else:
-                org_group = self.db.get(OrgGroup, org_group_id)
-                failures.append(
-                    f"{org_group.organisation}:{org_group.group}:tenkm: "
-                    "There is no rule for this taxon."
-                )
-            return failures
+            return None, []
 
         # Try the rules from each org_group.
         for org_group in org_groups:
@@ -218,7 +215,8 @@ class TenkmRuleRepo(RuleRepoBase):
 
             if tenkm_rule is None:
                 # No matching km100 in the rules
-                failures.append(
+                ok = False
+                messages.append(
                     f"{org_group.organisation}:{org_group.group}:tenkm: "
                     "Record is outside known area."
                 )
@@ -226,9 +224,10 @@ class TenkmRuleRepo(RuleRepoBase):
 
             km10s = tenkm_rule.km10.split()
             if (km10 not in km10s):
-                failures.append(
+                ok = False
+                messages.append(
                     f"{org_group.organisation}:{org_group.group}:tenkm: "
                     "Record is outside known area."
                 )
 
-        return failures
+        return ok, messages

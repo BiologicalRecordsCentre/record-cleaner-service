@@ -15,6 +15,5 @@ class Validate(BaseModel):
 
 class Validated(Validate):
     preferred_tvk: Optional[str] = None
-    id_difficulty: Optional[List[str]] = []
     ok: bool = True
     messages: Optional[List[str]] = []

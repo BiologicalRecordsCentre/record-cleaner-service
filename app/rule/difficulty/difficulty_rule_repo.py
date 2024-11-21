@@ -5,7 +5,7 @@ from sqlmodel import select
 import app.species.cache as cache
 
 from app.sqlmodels import DifficultyCode, DifficultyRule, Taxon, OrgGroup
-from app.validate.validate_models import Validated
+from app.verify.verify_models import Verified
 
 from ..rule_repo_base import RuleRepoBase
 from .difficulty_code_repo import DifficultyCodeRepo
@@ -147,9 +147,14 @@ class DifficultyRuleRepo(RuleRepoBase):
 
         return errors
 
-    def run(self, record: Validated, org_group_id: int | None = None):
-        """Run rules against record, optionally filter rules by org_group."""
-        difficulties = []
+    def run(self, record: Verified, org_group_id: int | None = None):
+        """Run rules against record, optionally filter rules by org_group.
+
+        Returns a tuple of (id_difficulty, messages) where id_difficulty is the
+        maximum difficulty code found and messages is a list of difficulty
+        text. If no rules are found, id_difficulty is None."""
+        messages = []
+        id_difficulty = 0
 
         query = (
             select(OrgGroup, DifficultyCode)
@@ -163,10 +168,20 @@ class DifficultyRuleRepo(RuleRepoBase):
             query = query.where(OrgGroup.id == org_group_id)
 
         results = self.db.exec(query).all()
+
+        # Do we have any id_difficulties?
+        if len(results) == 0:
+            return None, []
+
+        # Find maximum difficulty code. The intention is to remove duplicates
+        # in future. See
+        # https://github.com/BiologicalRecordsCentre/record-cleaner-rules/issues/16
         for org_group, difficulty_code in results:
-            difficulties.append(
+            if difficulty_code.code > id_difficulty:
+                id_difficulty = difficulty_code.code
+            messages.append(
                 f"{org_group.organisation}:{org_group.group}:difficulty:"
                 f"{difficulty_code.code}: {difficulty_code.text}"
             )
 
-        return difficulties
+        return id_difficulty, messages

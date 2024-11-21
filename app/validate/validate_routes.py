@@ -3,7 +3,6 @@ from fastapi import APIRouter, Depends
 
 from app.auth import get_current_user
 from app.database import DbDependency
-from app.rule.difficulty.difficulty_rule_repo import DifficultyRuleRepo
 from app.settings_env import EnvDependency
 import app.species.cache as cache
 from app.utility.sref.sref_factory import SrefFactory
@@ -72,9 +71,7 @@ async def validate(
                     result.tvk = taxon.tvk
 
                 result.preferred_tvk = taxon.preferred_tvk
-                # Get id difficulty.
-                repo = DifficultyRuleRepo(db, env)
-                result.id_difficulty = repo.run(result)
+
         except Exception as e:
             result.ok = False
             result.messages.append(str(e))

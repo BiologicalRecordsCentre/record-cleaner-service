@@ -67,7 +67,7 @@ class RuleRepo:
             'field': 'period_rule_update'
         },
         {
-            'name': 'Period in year rule',
+            'name': 'Phenology rule',
             'class': PhenologyRuleRepo,
             'field': 'phenology_rule_update'
         },
@@ -79,7 +79,6 @@ class RuleRepo:
     ]
 
     # Dictionary of rules used for verification and their repo classes.
-    # Difficulty is not a pass/fail and is done at validation.
     verification_rule_types = {
         'additional': AdditionalRuleRepo,
         'period': PeriodRuleRepo,
@@ -378,56 +377,102 @@ class RuleRepo:
 
     def run_rules(
         self,
-        org_groups_rules_list: List[OrgGroupRules] | None,
+        org_group_rules_list: List,
         record: Verified
     ):
         """Run all the specified rules against the record."""
-        repo = OrgGroupRepo(self.db)
-        if org_groups_rules_list is None or len(org_groups_rules_list) == 0:
+        if len(org_group_rules_list) == 0:
             # Use rules from all org_groups.
-            self.run_rules_for_all(record)
+            self.run_rules_for_org_group(record)
         else:
             # Only use rules from listed org_groups.
-            for org_group_rules in org_groups_rules_list:
-                organisation = org_group_rules.organisation
-                group = org_group_rules.group
-                rules = org_group_rules.rules
-                org_group = repo.get(organisation, group)
-                if org_group is None:
-                    raise ValueError(
-                        "Unrecognised organisation:group, "
-                        f"'{organisation}:{group}'."
-                    )
-                self.run_rules_for_org_group(org_group, rules, record)
-
-        if len(record.messages) > 0:
-            record.ok = False
-            record.messages.sort()
-
-    def run_rules_for_all(self, record: Verified):
-        """Run all the rules against the record from all org_groups."""
-        for rule_repo_class in self.verification_rule_types.values():
-            repo = rule_repo_class(self.db, self.env)
-            record.messages.extend(repo.run(record))
+            for org_group_rules in org_group_rules_list:
+                org_group = org_group_rules['org_group']
+                rules = org_group_rules['rules']
+                self.run_rules_for_org_group(record, org_group.id, rules)
 
     def run_rules_for_org_group(
         self,
-        org_group: OrgGroup,
-        rules: Optional[List[str]],
-        record: Verified
+        record: Verified,
+        org_group_id: int | None = None,
+        rules: Optional[List[str]] = None,
     ):
         """Run the rules against the record from a single org_group."""
+        rules_run = []
+        ok_overall = True
+
         if rules is None:
             # Try all the rules
-            for rule_repo_class in self.verification_rule_types.values():
+            for rule, rule_repo_class in self.verification_rule_types.items():
                 repo = rule_repo_class(self.db, self.env)
-                record.messages.extend(repo.run(record, org_group.id))
+                ok, messages = repo.run(record, org_group_id)
+                if ok is not None:
+                    # Rule has run.
+                    ok_overall = ok_overall and ok
+                    rules_run.append(rule)
+                record.messages.extend(messages)
         else:
             # Only use rules listed.
             for rule in rules:
                 if rule not in self.verification_rule_types.keys():
                     # Not a valid rule type.
-                    continue
+                    raise ValueError(f"Unrecognised rule type, '{rule}'")
                 rule_repo_class = self.verification_rule_types[rule]
                 repo = rule_repo_class(self.db, self.env)
-                record.messages.extend(repo.run(record, org_group.id))
+                ok, messages = repo.run(record, org_group_id)
+                if ok is not None:
+                    # Rule has run.
+                    ok_overall = ok_overall and ok
+                    rules_run.append(rule)
+                record.messages.extend(messages)
+
+        # Summarise result now all rules have run.
+        if ok_overall:
+            if len(rules_run) == 0:
+                record.result = 'warn'
+                record.messages.append("No rules run.")
+            else:
+                record.result = 'pass'
+                record.messages.append(f"Rules run: {', '.join(rules_run)}")
+        else:
+            record.result = 'fail'
+
+    def run_difficulty(
+        self,
+        org_group_rules_list: List,
+        record: Verified
+    ):
+        """Run difficulty for the specified org_groups against the record."""
+        difficulty_repo = DifficultyRuleRepo(self.db, self.env)
+
+        if len(org_group_rules_list) == 0:
+            # Use difficulty from all org_groups.
+            id_difficulty, messages = difficulty_repo.run(record)
+            if id_difficulty is None:
+                record.result = 'warn'
+                messages.append("*:*: No rules exist for this taxon.")
+            record.id_difficulty = id_difficulty
+            record.messages.extend(messages)
+        else:
+            # Only use difficulty from listed org_groups.
+            for org_group_rules in org_group_rules_list:
+                org_group = org_group_rules['org_group']
+
+                id_difficulty, messages = difficulty_repo.run(
+                    record, org_group.id
+                )
+                if id_difficulty is None:
+                    record.result = 'warn'
+                    messages.append(
+                        f"{org_group.organisation}:{org_group.group}: "
+                        "No rules exist for this taxon."
+                    )
+                else:
+                    # Return hightest id_difficulty.
+                    if record.id_difficulty is None:
+                        record.id_difficulty = id_difficulty
+                    else:
+                        record.id_difficulty = max(
+                            record.id_difficulty, id_difficulty
+                        )
+                record.messages.extend(messages)
