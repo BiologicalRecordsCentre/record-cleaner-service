@@ -410,7 +410,7 @@ class RuleRepo:
                     # Rule has run.
                     ok_overall = ok_overall and ok
                     rules_run.append(rule)
-                record.messages.extend(messages)
+                    record.messages.extend(messages)
         else:
             # Only use rules listed.
             for rule in rules:
@@ -424,7 +424,7 @@ class RuleRepo:
                     # Rule has run.
                     ok_overall = ok_overall and ok
                     rules_run.append(rule)
-                record.messages.extend(messages)
+                    record.messages.extend(messages)
 
         # Summarise result now all rules have run.
         if ok_overall:
