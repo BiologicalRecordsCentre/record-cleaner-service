@@ -1,5 +1,3 @@
-# Record Cleaner Service
-
 The Record Cleaner service exists to validate and verify biological records
 against a set of rules.
 
