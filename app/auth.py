@@ -122,13 +122,22 @@ AdminDependency: TypeAlias = Annotated[User, Depends(get_current_admin_user)]
 
 @router.post(
     "/token",
-    tags=['Users'],
+    tags=['Service'],
     summary="Login user.")
 async def login(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     db: DbDependency,
     env: EnvDependency
 ):
+    """Submit a **username** and **password** to receive a token which will
+    authenticate requests to protected endpoints.
+    **grant_type** should be set to 'password' while **scope**, **client_id**,
+    and **client_secret** are not required.
+
+    To use the token, set the Authorization header to 'Bearer \<token\>' in
+    your http request, where \<token\> is the token valuen returned by this
+    endpoint.
+    """
     # Automatic validation ensures username and password exist.
     user = authenticate_user(db, form_data.username, form_data.password)
     if not user:

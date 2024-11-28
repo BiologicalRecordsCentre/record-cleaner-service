@@ -16,7 +16,8 @@ router = APIRouter(
     "/code/{code}",
     summary="Get county with given code.")
 async def read_county_by_code(code: str | int):
-
+    """A number in the range 1-112 returns a British vice county. A value in 
+    the range H1-H40 returns an Irish vice county."""
     try:
         code = VcChecker.prepare_code(code)
         return {
@@ -34,7 +35,8 @@ async def read_county_by_code(code: str | int):
 async def read_county_by_gridref(gridref: str):
     """Returns the primary county for the gridref but may be incorrect when the
     square straddles more than one county. The gridref must be well formed with
-    capital letters and no spaces."""
+    capital letters and no spaces. Only British grid references and vice
+    counties are supported."""
 
     try:
         gridref = VcChecker.prepare_sref(gridref)

@@ -70,7 +70,18 @@ async def read_user(db: DbDependency, username: str):
 
 @router.post('', summary="Create user.", response_model=UserGet)
 async def create_user(db: DbDependency, user_in: UserPost):
-    """Create a new user."""
+    """Add a user account for every consumer of this service.
+
+    * **name** should identify the consumer.
+    * **email** should be a valid email address for contacting the consumer.
+    * **password** should be set for the consumer.
+    * **is_admin** should be set True for the few users who will administer
+      the service.
+    * **is_disabled** should be set True to disable an account.
+
+    There is a built-in administrative user that can be configured in the 
+    host environment.
+    """
     repo = UserRepo(db)
     return repo.create_user(user_in)
 

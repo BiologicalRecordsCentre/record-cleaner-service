@@ -27,7 +27,24 @@ router = APIRouter(
     response_model_exclude_none=True)
 async def verify(db: DbDependency, env: EnvDependency, data: VerifyPack):
     """ Verify an array of records against an array of rules.
-    If the array of rules is empty, all rules will be run."""
+
+    Refer to the validation endpoint for details of the fields for a record.
+    There is no vice county field for verification but there is a **stage**
+    field as rules may be dependent on life stage. If omitted, the default life
+    stage, 'mature', will be used. Each group of rules may support different 
+    stage values and a range of synonymns for each stage.
+
+    Generally, the **org_group_rules_list** can be omitted and all rules
+    matching the taxon of the record will be used. However, if it is desired to
+    only use specific rules then specify this using the organisation and group
+    names with which the rules are associated. Use the /rules/org-groups
+    endpoint to get a list of them. The **rules** array can be omitted to use
+    all rules of the org_group org you can select from ['tenkm', 'phenology',
+    'period', 'additional'].
+
+    To avoid server timeouts and database locks,you are advised to submit
+    records in modest chunks e.g. 100 records. No limit is currently imposed
+    but this may change in future. """
 
     start = time.time_ns()
     results = []

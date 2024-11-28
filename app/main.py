@@ -125,13 +125,13 @@ the Execute button to sent the request. The response will appear below.""",
             "name": "Species Cache",
             "description": "Operations on the species cache"
         },
-        # {
-        #     "name": "Counties",
-        #     "description": "Operations on counties"
-        # },
+        {
+            "name": "Counties",
+            "description": "Operations on counties"
+        },
         {
             "name": "Users",
-            "description": "Operations on users"
+            "description": "Operations on users (admin only)"
         }
     ]
 )

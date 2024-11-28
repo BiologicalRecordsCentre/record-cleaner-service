@@ -27,8 +27,26 @@ async def validate(
     env: EnvDependency,
     records: list[Validate]
 ):
-    """You must provide a name or TVK to identify the taxon to be checked.
-    Id, date and a valid sref are also required.
+    """You must provide **name** or **tvk** (taxon version key) to identify the
+    taxon to be checked. **Id**, **date** and a valid **sref** (spatial
+    reference) are also required.
+
+    Dates can be supplied in various formats:
+    * Single dates as yyyy-mm-dd, d/m/yyyy, d.m.yyyy, d month yyyy, d mon yyyy
+    * Single months as yyyy-mm, m/yyyy, m.yyyy, month yyyy, mon yyyy
+    * Single years as yyyy
+    * Date ranges as yyyy-mm-dd - yyyy-mm-dd, d/m/yyyy - d/m/yyyy,
+      d-d/m/yyyy, d/m-d/m/yyyy
+    * Month ranges as yyyy-mm - yyyy-mm, m/yyyy - m/yyyy, m-m/yyyy
+    * Year ranges as yyyy - yyyy
+
+    They are returned in the preferred format
+    * Single dates as dd/mm/yyyy
+    * Single months as mm/yyyy
+    * Single years as yyyy
+    * Date ranges as dd/mm/yyyy - dd/mm/yyyy
+    * Month ranges as mm/yyyy - mm/yyyy
+    * Year ranges as yyyy - yyyy
 
     The spatial reference can be given as a grid reference, a latitude and
     longitude or an easting and northing. In the latter two cases, an accuracy
@@ -41,7 +59,28 @@ async def validate(
     * 23030, Channel Islands Grid (WV/WA)
     * 0, Automatically select from above 3 grids.
     * 4326, WGS84 latitude/longitude
-"""
+
+    The response will contain a grid reference.
+
+    If you supply a British vice county (vc), the sref will be checked to see
+    if it might fall within that vice county. This is done by comparing with a
+    list of 1km squares and the vice counties that overlap those squares. As
+    such, the check is not guaranteed to be correct but eliminates gross
+    errors.
+
+    If no vice county is supplied then the response will include a suggested
+    Britishvice county which will be the vice county which is predominate in
+    the 1km square that the sref falls in.
+
+    The result field in the response will be either pass, warn or fail,
+    indicating the outcome of validation. An example of a warning is when a
+    location is in the sea and thus not in any vice county. Where there are
+    warnings or failures, the message field will contain details of what has
+    been detected.
+
+    To avoid server timeouts and database locks,you are advised to submit
+    records in modest chunks e.g. 100 records. No limit is currently imposed
+    but this may change in future. """
 
     results = []
     for record in records:
