@@ -40,3 +40,42 @@ class TestIeGrid:
         sref = Sref(gridref='C 123', srid=SrefSystem.IE_GRID)
         with pytest.raises(ValueError):
             IeGrid(sref)
+
+    def test_e_n_valid(self):
+        sref = Sref(
+            easting=123456,
+            northing=234567,
+            accuracy=1,
+            srid=SrefSystem.IE_GRID
+        )
+        g = IeGrid(sref)
+        assert g.gridref == 'M2345634567'
+
+    def test_e_n_no_accuracy(self):
+        sref = Sref(
+            easting=123456,
+            northing=234567,
+            srid=SrefSystem.IE_GRID
+        )
+        with pytest.raises(ValueError):
+            IeGrid(sref)
+
+    def test_e_n_too_north(self):
+        sref = Sref(
+            easting=123456,
+            northing=567890,
+            accuracy=1,
+            srid=SrefSystem.IE_GRID
+        )
+        with pytest.raises(ValueError):
+            IeGrid(sref)
+
+    def test_e_n_too_east(self):
+        sref = Sref(
+            easting=1234567,
+            northing=234567,
+            accuracy=1,
+            srid=SrefSystem.IE_GRID
+        )
+        with pytest.raises(ValueError):
+            IeGrid(sref)

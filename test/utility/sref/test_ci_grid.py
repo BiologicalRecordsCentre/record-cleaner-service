@@ -40,3 +40,62 @@ class TestCiGrid:
         sref = Sref(gridref='WV 123', srid=SrefSystem.CI_GRID)
         with pytest.raises(ValueError):
             CiGrid(sref)
+
+    def test_e_n_valid(self):
+        sref = Sref(
+            easting=567890,
+            northing=5412345,
+            accuracy=1,
+            srid=SrefSystem.CI_GRID
+        )
+        g = CiGrid(sref)
+        assert g.gridref == 'WV6789012345'
+
+    def test_e_n_no_accuracy(self):
+        sref = Sref(
+            easting=567890,
+            northing=5412345,
+            srid=SrefSystem.CI_GRID
+        )
+        with pytest.raises(ValueError):
+            CiGrid(sref)
+
+    def test_e_n_too_north(self):
+        sref = Sref(
+            easting=567890,
+            northing=6200001,
+            accuracy=1,
+            srid=SrefSystem.CI_GRID
+        )
+        with pytest.raises(ValueError):
+            CiGrid(sref)
+
+    def test_e_n_too_south(self):
+        sref = Sref(
+            easting=567890,
+            northing=5299999,
+            accuracy=1,
+            srid=SrefSystem.CI_GRID
+        )
+        with pytest.raises(ValueError):
+            CiGrid(sref)
+
+    def test_e_n_too_east(self):
+        sref = Sref(
+            easting=900001,
+            northing=5412345,
+            accuracy=1,
+            srid=SrefSystem.CI_GRID
+        )
+        with pytest.raises(ValueError):
+            CiGrid(sref)
+
+    def test_e_n_too_west(self):
+        sref = Sref(
+            easting=99999,
+            northing=5412345,
+            accuracy=1,
+            srid=SrefSystem.CI_GRID
+        )
+        with pytest.raises(ValueError):
+            CiGrid(sref)

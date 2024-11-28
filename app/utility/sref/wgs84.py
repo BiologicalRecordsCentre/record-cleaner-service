@@ -13,24 +13,25 @@ class Wgs84(SrefBase):
 
     def __init__(self, sref: Sref):
         sref.country = None
+        # Remove any spurious data.
+        sref.easting = sref.northing = None
         sref.gridref = None
-        super().__init__(sref)
-
-    def validate(self):
 
         # Validate the input.
-        if self.latitude is None or \
-                self.longitude is None or \
-                self.accuracy is None:
+        if sref.latitude is None or \
+                sref.longitude is None or \
+                sref.accuracy is None:
             raise ValueError("""Invalid spatial reference. Latitude, longitude
                              and accuracy are required.""")
 
-        if self.latitude < 48.0 or self.latitude > 62.0:
+        if sref.latitude < 48.0 or sref.latitude > 62.0:
             raise ValueError("""Invalid spatial reference. Latitude must be
                              roughly between 48 and 62.""")
-        if self.longitude < -12.0 or self.longitude > 4.0:
+        if sref.longitude < -12.0 or sref.longitude > 4.0:
             raise ValueError("""Invalid spatial reference. Longitude must be
                              roughly between -12 and 4.""")
+
+        super().__init__(sref)
 
     def calculate_gridref(self):
         """Determines the GB, IE or CI grid reference."""

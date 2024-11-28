@@ -12,29 +12,28 @@ class GbGrid(SrefBase):
 
     def __init__(self, sref: Sref):
         sref.country = SrefCountry.GB
+
+        if sref.gridref is not None:
+            sref.gridref = self.validate_gridref(sref.gridref)
+            # Remove any spurious data.
+            sref.easting = sref.northing = None
+            sref.accuracy = None
+        elif (sref.easting is not None and
+                sref.northing is not None and
+                sref.accuracy is not None):
+            self.validate_coord(sref.easting, sref.northing)
+        else:
+            raise ValueError("Invalid spatial reference for Great Britain. "
+                             "Either a gridref or easting, northing and "
+                             "accuracy must be provided.")
+
         super().__init__(sref)
 
-    def validate(self):
-
-        if self.gridref is not None:
-            self.validate_gridref()
-            # Remove any spurious data.
-            self._value.easting = self._value.northing = None
-            self._value_accuracy = None
-        elif (self.easting is not None and
-                self.northing is not None and
-                self.accuracy is not None):
-            self.validate_coord()
-        else:
-            raise ValueError("Invalid spatial reference. Either a gridref or "
-                             "easting, northing and accuracy must be "
-                             "provided.")
-
-    def validate_gridref(self):
+    def validate_gridref(self, gridref):
         """Ensure gridref is valid."""
 
         # Ignore any spaces in the grid ref.
-        gridref = self.gridref.replace(' ', '').upper()
+        gridref = gridref.replace(' ', '').upper()
 
         # Check the first two letters are a valid combination.
         sq100 = gridref[:2]
@@ -55,16 +54,16 @@ class GbGrid(SrefBase):
         )):
             raise ValueError("Invalid grid reference for Great Britain.")
 
-        # Update the gridref with the clean value.
-        self._value.gridref = gridref
+        # Return the clean value.
+        return gridref
 
-    def validate_coord(self):
+    def validate_coord(self, easting, northing):
         """Ensure coordinates are valid."""
 
-        if self.easting < 0 or self.easting > 700000:
+        if easting < 0 or easting > 700000:
             raise ValueError("Invalid spatial reference. Easting must be "
                              "between 0 and 700000")
-        if self.northing < 0 or self.northing > 1300000:
+        if northing < 0 or northing > 1300000:
             raise ValueError("Invalid spatial reference. Northing must be "
                              "between 0 and 1300000")
 

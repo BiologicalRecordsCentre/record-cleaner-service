@@ -32,11 +32,11 @@ class TestWgs84:
         assert g.gridref == 'WV3683'
 
     def test_latitude_error(self):
+        sref = Sref(latitude=34, longitude=-2, srid=SrefSystem.WGS84)
         with pytest.raises(ValueError):
-            sref = Sref(latitude=34, longitude=-2, srid=SrefSystem.WGS84)
             Wgs84(sref)
 
     def test_longitude_error(self):
+        sref = Sref(latitude=54, longitude=-20, srid=SrefSystem.WGS84)
         with pytest.raises(ValueError):
-            sref = Sref(latitude=54, longitude=-20, srid=SrefSystem.WGS84)
             Wgs84(sref)
