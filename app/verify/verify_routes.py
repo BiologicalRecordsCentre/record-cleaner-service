@@ -42,7 +42,7 @@ async def verify(db: DbDependency, env: EnvDependency, data: VerifyPack):
     all rules of the org_group org you can select from ['tenkm', 'phenology',
     'period', 'additional'].
 
-    To avoid server timeouts and database locks,you are advised to submit
+    To avoid server timeouts and database locks, you are advised to submit
     records in modest chunks e.g. 100 records. No limit is currently imposed
     but this may change in future. """
 
