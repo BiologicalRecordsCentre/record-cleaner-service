@@ -1,4 +1,4 @@
-# Distribution Rules
+# Distribution Rule
 
 A distribution rule lists the 10km squares in which a taxon is known to be present.
 

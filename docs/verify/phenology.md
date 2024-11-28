@@ -1,4 +1,4 @@
-Phenology Rule
+# Phenology Rule
 
 The phenology rule is about the time of year in which a taxon may be observed.
 It is possible for a taxon to have multiple rules for different life stages.
