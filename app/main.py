@@ -75,7 +75,7 @@ app = FastAPI(
     title="Record Cleaner Service",
     summary="Service for checking species records against the record "
     "cleaner rules.",
-    version="1.0.0",
+    version="2.0.0",
     contact={
         "name": "Biological Records Centre at UK Centre for Ecology & Hydrology",
         "url": "https://www.ceh.ac.uk/our-science/projects/biological-records-centre",
@@ -125,13 +125,13 @@ the Execute button to sent the request. The response will appear below.""",
             "name": "Species Cache",
             "description": "Operations on the species cache"
         },
-        # {
-        #     "name": "Counties",
-        #     "description": "Operations on counties"
-        # },
+        {
+            "name": "Counties",
+            "description": "Operations on counties"
+        },
         {
             "name": "Users",
-            "description": "Operations on users"
+            "description": "Operations on users (admin only)"
         }
     ]
 )

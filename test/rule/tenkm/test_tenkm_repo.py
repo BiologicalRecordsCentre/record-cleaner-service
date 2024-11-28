@@ -205,23 +205,26 @@ class TestTenkmRuleRepo:
         repo = TenkmRuleRepo(db, env)
 
         # Test the record against org_group1 rules.
-        failures = repo.run(record, org_group1.id)
+        ok, messages = repo.run(record, org_group1.id)
         # It should pass.
-        assert len(failures) == 0
+        assert ok is True
+        assert len(messages) == 0
 
         # Test the record against org_group2 rules.
-        failures = repo.run(record, org_group2.id)
+        ok, messages = repo.run(record, org_group2.id)
         # It should fail as wrong km10.
-        assert len(failures) == 1
-        assert failures[0] == (
+        assert ok is False
+        assert len(messages) == 1
+        assert messages[0] == (
             "organisation2:group2:tenkm: Record is outside known area."
         )
 
         # Test the record against org_group3 rules.
-        failures = repo.run(record, org_group3.id)
+        ok, messages = repo.run(record, org_group3.id)
         # It should fail as wrong km100.
-        assert len(failures) == 1
-        assert failures[0] == (
+        assert ok is False
+        assert len(messages) == 1
+        assert messages[0] == (
             "organisation3:group3:tenkm: Record is outside known area."
         )
 
@@ -229,17 +232,13 @@ class TestTenkmRuleRepo:
         record.preferred_tvk = taxon2.preferred_tvk
 
         # Test the record against org_group1 rules.
-        failures = repo.run(record, org_group1.id)
-        # It should fail as no rule.
-        assert len(failures) == 1
-        assert failures[0] == (
-            "organisation1:group1:tenkm: There is no rule for this taxon."
-        )
+        ok, messages = repo.run(record, org_group1.id)
+        # It should baulk as no rule.
+        assert ok is None
+        assert len(messages) == 0
 
         # Test the record against all rules.
-        failures = repo.run(record)
-        # It should fail as no rule.
-        assert len(failures) == 1
-        assert failures[0] == (
-            "*:*:tenkm: There is no rule for this taxon."
-        )
+        ok, messages = repo.run(record)
+        # It should baulk as no rule.
+        assert ok is None
+        assert len(messages) == 0

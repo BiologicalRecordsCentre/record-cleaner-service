@@ -359,7 +359,7 @@ class VagueDate:
                         'type': '-Y',
                     }
         else:
-            raise ValueError('Unreocognised date format.')
+            raise ValueError('Unrecognised date format.')
 
         # A final check that the date is in the past.
         if self._value['end'] > datetime.now():
@@ -380,4 +380,4 @@ class VagueDate:
                     pass
 
         if not parsed_date:
-            raise ValueError('Unreocognised date format.')
+            raise ValueError('Unrecognised date format.')

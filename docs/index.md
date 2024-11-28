@@ -8,13 +8,21 @@ The API is, to a large extent, self-documenting thanks to
 interactive interface where you can exercise the API from a browser. This is 
 located at {base_url}/docs.
 
-The documentation here fills in some additional detail you will need.
+The documentation here fills in some additional detail you might want.
 
-* [Date validation](valid_date.md)
-* [Spatial reference validation](valid_sref.md)
-* [Vice county validation](valid_vc.md)
+## Validation
+
+* [Date validation](validate/date.md)
+* [Spatial reference validation](validate/sref.md)
+* [Vice county validation](validate/vc.md)
+* [Taxon validation](validate/taxon.md)
 
 
+## Verification
 
+* [Distribution rule](verify/tenkm.md)
+* [Phenology rule](verifiy/phenology.md)
+* [Period rule](verify/period.md)
+* [Additional rule](verify/additional.md)
 
 

@@ -189,8 +189,13 @@ class PeriodRuleRepo(RuleRepoBase):
         return errors
 
     def run(self, record: Verified, org_group_id: int | None = None):
-        """Run rules against record, optionally filter rules by org_group."""
-        failures = []
+        """Run rules against record, optionally filter rules by org_group.
+
+        Returns a tuple of (ok, messages) where ok indicates test success
+        and messages is a list of details. If there are no rules, ok is None"""
+
+        ok = True
+        messages = []
 
         vague_date = VagueDate(record.date).value
         start_date = vague_date['start'].strftime('%Y-%m-%d')
@@ -205,13 +210,18 @@ class PeriodRuleRepo(RuleRepoBase):
         if org_group_id is not None:
             query = query.where(OrgGroup.id == org_group_id)
 
-        results = self.db.exec(query).all()
-        for period_rule, org_group in results:
+        rules = self.db.exec(query).all()
+        # Do we have any rules?
+        if len(rules) == 0:
+            return None, []
+
+        for period_rule, org_group in rules:
             if (
                 period_rule.start_date is not None and
                 end_date < period_rule.start_date
             ):
-                failures.append(
+                ok = False
+                messages.append(
                     f"{org_group.organisation}:{org_group.group}:period: "
                     f"Record is before introduction date of "
                     f"{period_rule.start_date}"
@@ -221,10 +231,11 @@ class PeriodRuleRepo(RuleRepoBase):
                 period_rule.end_date is not None and
                 start_date > period_rule.end_date
             ):
-                failures.append(
+                ok = False
+                messages.append(
                     f"{org_group.organisation}:{org_group.group}:period: "
                     f"Record follows extinction date of "
                     f"{period_rule.end_date}"
                 )
 
-        return failures
+        return ok, messages

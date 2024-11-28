@@ -157,50 +157,55 @@ class TestPeriodRuleRepo:
         repo = PeriodRuleRepo(db, env)
 
         # Test the record against all rules.
-        failures = repo.run(record)
+        ok, messages = repo.run(record)
         # It falls within both rules.
-        assert len(failures) == 0
+        assert ok is True
+        assert len(messages) == 0
 
         # Change the date to fall before rule 2.
         record.date = '1/6/1970'
-        failures = repo.run(record)
-        assert len(failures) == 1
-        assert failures[0] == (
+        ok, messages = repo.run(record)
+        assert ok is False
+        assert len(messages) == 1
+        assert messages[0] == (
             "organisation2:group2:period: " +
             "Record is before introduction date of 1971-01-01"
         )
 
         # Change the date to fall before rule 1 and 2.
         record.date = '1/6/1969'
-        failures = repo.run(record)
-        assert len(failures) == 2
-        assert failures[0] == (
+        ok, messages = repo.run(record)
+        assert ok is False
+        assert len(messages) == 2
+        assert messages[0] == (
             "organisation1:group1:period: " +
             "Record is before introduction date of 1970-01-01"
         )
-        assert failures[1] == (
+        assert messages[1] == (
             "organisation2:group2:period: " +
             "Record is before introduction date of 1971-01-01"
         )
 
         # Change the date to fall after rule 2.
         record.date = '1/6/1979'
-        failures = repo.run(record)
-        assert len(failures) == 1
-        assert failures[0] == (
+        ok, messages = repo.run(record)
+        assert ok is False
+        assert len(messages) == 1
+        assert messages[0] == (
             "organisation2:group2:period: " +
             "Record follows extinction date of 1978-12-31"
         )
 
         # Change the date to fall after rule 1 and 2.
         record.date = '1/6/1980'
-        failures = repo.run(record)
-        assert len(failures) == 2
-        assert failures[0] == (
+        ok, messages = repo.run(record)
+        assert ok is False
+        assert len(messages) == 2
+        assert messages[0] == (
             "organisation1:group1:period: " +
             "Record follows extinction date of 1979-12-31"
         )
-        assert failures[1] == (
+        assert messages[1] == (
             "organisation2:group2:period: " +
             "Record follows extinction date of 1978-12-31"
         )

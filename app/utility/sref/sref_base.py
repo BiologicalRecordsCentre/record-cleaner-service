@@ -6,7 +6,6 @@ class SrefBase:
 
     def __init__(self, sref: Sref):
         self._value = sref
-        self.validate()
 
     @property
     def value(self) -> Sref:

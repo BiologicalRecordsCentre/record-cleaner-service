@@ -146,8 +146,13 @@ class AdditionalRuleRepo(RuleRepoBase):
         return errors
 
     def run(self, record: Verified, org_group_id: int | None = None):
-        """Run rules against record, optionally filter rules by org_group."""
-        failures = []
+        """Run rules against record, optionally filter rules by org_group.
+
+        Returns a tuple of (ok, messages) where ok indicates test success
+        and messages is a list of details. If there are no rules, ok is None"""
+
+        ok = True
+        messages = []
 
         query = (
             select(OrgGroup, AdditionalCode)
@@ -160,11 +165,16 @@ class AdditionalRuleRepo(RuleRepoBase):
         if org_group_id is not None:
             query = query.where(OrgGroup.id == org_group_id)
 
-        results = self.db.exec(query).all()
-        for org_group, additional_code in results:
-            failures.append(
+        rules = self.db.exec(query).all()
+        # Do we have any rules?
+        if len(rules) == 0:
+            return None, []
+
+        for org_group, additional_code in rules:
+            ok = False
+            messages.append(
                 f"{org_group.organisation}:{org_group.group}:additional: "
                 f"{additional_code.text}"
             )
 
-        return failures
+        return ok, messages

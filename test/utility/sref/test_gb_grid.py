@@ -40,3 +40,42 @@ class TestGbGrid:
         sref = Sref(gridref='TL 123', srid=SrefSystem.GB_GRID)
         with pytest.raises(ValueError):
             GbGrid(sref)
+
+    def test_e_n_valid(self):
+        sref = Sref(
+            easting=123456,
+            northing=678900,
+            accuracy=1,
+            srid=SrefSystem.GB_GRID
+        )
+        g = GbGrid(sref)
+        assert g.gridref == 'NR2345678900'
+
+    def test_e_n_no_accuracy(self):
+        sref = Sref(
+            easting=123456,
+            northing=678900,
+            srid=SrefSystem.GB_GRID
+        )
+        with pytest.raises(ValueError):
+            GbGrid(sref)
+
+    def test_e_n_too_north(self):
+        sref = Sref(
+            easting=123456,
+            northing=5678900,
+            accuracy=1,
+            srid=SrefSystem.GB_GRID
+        )
+        with pytest.raises(ValueError):
+            GbGrid(sref)
+
+    def test_e_n_too_east(self):
+        sref = Sref(
+            easting=1234567,
+            northing=678900,
+            accuracy=1,
+            srid=SrefSystem.GB_GRID
+        )
+        with pytest.raises(ValueError):
+            GbGrid(sref)

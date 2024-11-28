@@ -61,7 +61,8 @@ async def update_status(db: DbDependency, settings: SettingsDependency):
         return {
             'ok': False,
             'data': "Rule update in progress.",
-            'commit': settings.db.rules_commit
+            'commit': settings.db.rules_commit,
+            'updating': settings.db.rules_updating_now
         }
     else:
         return json.loads(settings.db.rules_update_result)

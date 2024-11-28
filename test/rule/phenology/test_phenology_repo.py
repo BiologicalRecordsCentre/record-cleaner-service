@@ -288,59 +288,56 @@ class TestPhenologyRuleRepo:
         repo = PhenologyRuleRepo(db, env)
 
         # Test the record against rules for org_group1.
-        failures = repo.run(record, org_group1.id)
+        ok, messages = repo.run(record, org_group1.id)
         # It should pass.
-        assert len(failures) == 0
+        assert ok is True
+        assert len(messages) == 0
 
         # Test the record against rules for all org_groups.
-        failures = repo.run(record)
-        # It should fail as org_group2 has no stage synonym for adult.
-        assert len(failures) == 1
-        assert failures[0] == (
-            "organisation2:group2:phenology: "
-            "Could not find rule for stage 'adult'."
-        )
+        ok, messages = repo.run(record)
+        # It should pass.
+        assert ok is True
+        assert len(messages) == 0
 
         # Remove the stage.
         record.stage = None
         # Test the record against rules for all org_groups.
-        failures = repo.run(record)
+        ok, messages = repo.run(record)
         # It should pass as defaults to mature.
-        assert len(failures) == 0
+        assert ok is True
+        assert len(messages) == 0
 
         # Change to larval stage.
         record.stage = 'larval'
         # Test the record against rules for org_group1.
-        failures = repo.run(record, org_group1.id)
+        ok, messages = repo.run(record, org_group1.id)
         # It should fail as date out of range.
-        assert len(failures) == 1
-        assert failures[0] == (
-            "organisation1:group1:phenology: "
+        assert ok is False
+        assert len(messages) == 1
+        assert messages[0] == (
+            "organisation1:group1:phenology:larval:"
             "Record is outside of expected period of 31/3 - 31/6."
         )
 
         # Test the record against wildcard rule of org_group3.
-        failures = repo.run(record, org_group3.id)
+        ok, messages = repo.run(record, org_group3.id)
         # It should pass.
-        assert len(failures) == 0
+        assert ok is True
+        assert len(messages) == 0
 
         # Change to taxon2 with no rules.
         record.preferred_tvk = taxon2.preferred_tvk
         # Test the record against rules for all org_groups.
-        failures = repo.run(record)
-        # It should fail.
-        assert len(failures) == 1
-        assert failures[0] == (
-            "*:*:phenology: There is no rule for this taxon."
-        )
+        ok, messages = repo.run(record)
+        # It should baulk
+        assert ok is None
+        assert len(messages) == 0
 
         # Test the record against rules for org_group1.
-        failures = repo.run(record, org_group1.id)
-        # It should fail.
-        assert len(failures) == 1
-        assert failures[0] == (
-            "organisation1:group1:phenology: There is no rule for this taxon."
-        )
+        ok, messages = repo.run(record, org_group1.id)
+        # It should baulk.
+        assert ok is None
+        assert len(messages) == 0
 
     def test_test(self, db: Session, env: EnvSettings):
 
@@ -381,19 +378,19 @@ class TestPhenologyRuleRepo:
         record.date = '1/4/1975'
         failure = repo.test(record, rule)
         assert failure == (
-            "phenology: Record is outside of expected period of 8/6 - 6/10."
+            "Record is outside of expected period of 8/6 - 6/10."
         )
         # Single date after rule
         record.date = '1/11/1975'
         failure = repo.test(record, rule)
         assert failure == (
-            "phenology: Record is outside of expected period of 8/6 - 6/10."
+            "Record is outside of expected period of 8/6 - 6/10."
         )
         # Date range outside rule
         record.date = '7/10/1975 - 7/6/1976'
         failure = repo.test(record, rule)
         assert failure == (
-            "phenology: Record is outside of expected period of 8/6 - 6/10."
+            "Record is outside of expected period of 8/6 - 6/10."
         )
 
         # Change to a winter rule.
@@ -420,17 +417,17 @@ class TestPhenologyRuleRepo:
         record.date = '1/10/1975'
         failure = repo.test(record, rule)
         assert failure == (
-            "phenology: Record is outside of expected period of 8/10 - 6/3."
+            "Record is outside of expected period of 8/10 - 6/3."
         )
         # Single date after rule
         record.date = '1/4/1975'
         failure = repo.test(record, rule)
         assert failure == (
-            "phenology: Record is outside of expected period of 8/10 - 6/3."
+            "Record is outside of expected period of 8/10 - 6/3."
         )
         # Date range outside rule
         record.date = '11/3/1975 - 5/10/1976'
         failure = repo.test(record, rule)
         assert failure == (
-            "phenology: Record is outside of expected period of 8/10 - 6/3."
+            "Record is outside of expected period of 8/10 - 6/3."
         )

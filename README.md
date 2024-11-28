@@ -83,7 +83,7 @@ All pushes or merge requests to the main branch of the repository trigger unit
 testing. Running the tests locally and not submitting until all tests pass saves
 embarrassment.
 
-###VS Code
+### VS Code
 When developing with VS Code the following two configuration files can be used
 to debug the code locally or in a container.
 
@@ -161,10 +161,12 @@ to debug the code locally or in a container.
 ```
 
 ## Testing
-If a commit is tagged `v{semver}-{type}{N} where 
+If a commit is tagged `v{semver}-{type}{N} where
+
 - {semver} is a semantic version number like 1.2.3
 - {type} is a pre-release type [alpha|beta|rc]
 - {N} is an integer
+
 it will be built and deployed to the UKCEH staging server. This is not publicly
 accessible.
 

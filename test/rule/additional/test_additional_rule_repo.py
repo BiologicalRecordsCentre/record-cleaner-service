@@ -199,17 +199,20 @@ class TestAdditionalRuleRepo:
         repo = AdditionalRuleRepo(db, env)
 
         # Test the record against rules for org_group1.
-        failures = repo.run(record, org_group1.id)
-        assert len(failures) == 1
-        assert failures[0] == 'organisation1:group1:additional: Rare'
+        ok, messages = repo.run(record, org_group1.id)
+        assert ok is False
+        assert len(messages) == 1
+        assert messages[0] == 'organisation1:group1:additional: Rare'
 
         # Test the record against rules for all org_groups.
-        failures = repo.run(record)
-        assert len(failures) == 2
-        assert failures[0] == 'organisation1:group1:additional: Rare'
-        assert failures[1] == 'organisation2:group2:additional: Scarce'
+        ok, messages = repo.run(record)
+        assert ok is False
+        assert len(messages) == 2
+        assert messages[0] == 'organisation1:group1:additional: Rare'
+        assert messages[1] == 'organisation2:group2:additional: Scarce'
 
         # Change record to taxon2 which has no additional rules.
         record.preferred_tvk = taxon2.preferred_tvk
-        failures = repo.run(record)
-        assert len(failures) == 0
+        ok, messages = repo.run(record)
+        assert ok is None
+        assert len(messages) == 0

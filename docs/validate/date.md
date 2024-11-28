@@ -24,7 +24,9 @@ dd.mm.yyyy | 20.3.2024 |
 dd month yyyy | 20 March 2024
 dd mon yyyy | 20 Mar 2024
 
-Month formats are the same as above but with the day omitted.
+Month formats are the same as above but with the day omitted. E.g. 3/2024
+
+A single year can also be used. E.g. 2024
 
 ## Date Ranges
 Date ranges consist of a start date and an end date separated by a hyphen. They 
@@ -49,6 +51,8 @@ Pattern | Example | Notes
 --- | --- | ---
 yyyy-mm - yyyy-mm | 2024-02 - 2024-03 | A space is required each side of the central hyphen. Year cannot be omitted from the start date.
 mm-mm/yyyy | 2-3/2024 | 
+
+A year range is simply yyyy - yyyy, E.g. 2022 - 2023
 
 ## Open-ended Date Ranges
 
