@@ -228,10 +228,8 @@ class PhenologyRuleRepo(RuleRepoBase):
             .join(Stage, Stage.id == PhenologyRule.stage_id)
             .where(Taxon.preferred_tvk == record.preferred_tvk)
         )
-        rules = self.db.exec(query).all()
         if org_group_id is not None:
             query = query.where(OrgGroup.id == org_group_id)
-        rules = self.db.exec(query).all()
 
         if record.stage is None:
             # Use mature or 'everything' rule if no stage is specified.
