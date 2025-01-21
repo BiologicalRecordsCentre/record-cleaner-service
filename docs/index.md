@@ -1,5 +1,3 @@
-# Record Cleaner Service
-
 The Record Cleaner service exists to validate and verify biological records
 against a set of rules.
 
@@ -21,7 +19,7 @@ The documentation here fills in some additional detail you might want.
 ## Verification
 
 * [Distribution rule](verify/tenkm.md)
-* [Phenology rule](verifiy/phenology.md)
+* [Phenology rule](verify/phenology.md)
 * [Period rule](verify/period.md)
 * [Additional rule](verify/additional.md)
 

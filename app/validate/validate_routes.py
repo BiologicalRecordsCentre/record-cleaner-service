@@ -78,7 +78,7 @@ async def validate(
     warnings or failures, the message field will contain details of what has
     been detected.
 
-    To avoid server timeouts and database locks,you are advised to submit
+    To avoid server timeouts and database locks, you are advised to submit
     records in modest chunks e.g. 100 records. No limit is currently imposed
     but this may change in future. """
 
