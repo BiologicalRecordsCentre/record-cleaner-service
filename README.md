@@ -76,6 +76,15 @@ there is one in the BACKUP_DIR, then it is copied in.
 Log level: [debug|info|warning|error|critical]. Defaults to warning.
 *   `LOG_LEVEL="info"`
 
+### Configuration for rule tolerance.
+
+Rule tolerance creates special messages for rules that are failed but by an 
+ammount that is within the tolerance value.
+
+The number of days tolerance given to phenology rules in days. Defaults to 3.
+Set to 0 to disable.
+*   `PHENOLOGY_TOLERANCE=3`
+
 ## Development
 Do development in a fork or branch of the repo.
 
