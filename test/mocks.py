@@ -209,6 +209,7 @@ def mock_env_settings() -> object:
         initial_user_name: str = 'root'
         initial_user_pass: str = 'pass'
         log_level: str = 'info'
+        phenology_tolerance: 3
 
         # Freeze the settings so that tests are consistent with runtime config.
         model_config = SettingsConfigDict(frozen=True)

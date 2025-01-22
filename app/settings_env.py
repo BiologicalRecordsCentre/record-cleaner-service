@@ -23,6 +23,7 @@ class EnvSettings(BaseSettings):
     data_dir: str = '.'
     backup_dir: str = ''
     log_level: str = 'WARNING'
+    phenology_tolerance: int = 3
 
     # Making the settings frozen means they are hashable.
     # https://github.com/fastapi/fastapi/issues/1985#issuecomment-1290899088

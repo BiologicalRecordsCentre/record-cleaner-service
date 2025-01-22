@@ -266,46 +266,65 @@ class PhenologyRuleRepo(RuleRepoBase):
         return ok, messages
 
     def test(self, record: Verified, rule: PhenologyRule):
-        """Test the record against the rule."""
+        """Test the record against the rule.
 
+        It seems to be easier to test the failure conditions.
+
+        For a rule spanning the new year, a failing record is one that falls
+        wholly between the end of the rule in spring and it starting in
+        autumn of the same year.
+
+        When the rule does not span the new year, a failing record is one that
+        falls wholly between the end of the rule in autumn and it starting
+        in spring of the next year."""
+
+        # Get record start and end as date objects.
         vague_date = VagueDate(record.date).value
-        start_day = int(vague_date['start'].strftime('%d'))
-        start_month = int(vague_date['start'].strftime('%m'))
-        end_day = int(vague_date['end'].strftime('%d'))
-        end_month = int(vague_date['end'].strftime('%m'))
+        record_start = vague_date['start'].date()
+        record_end = vague_date['end'].date()
 
-        record_ends_before_rule_starts = (
-            (end_month < rule.start_month) or
-            (end_month == rule.start_month and end_day < rule.start_day)
-        )
-
-        record_starts_after_rule_ends = (
-            (start_month > rule.end_month) or
-            (start_month == rule.end_month and start_day > rule.end_day)
-        )
-
+        # Look out for rules spanning new year.
         rule_spans_new_year = rule.start_month > rule.end_month
 
-        record_spans_new_year = start_month > end_month
+        # Get rule start and end as date objects.
+        start_year = int(record_start.strftime('%Y'))
+        rule_start = date(start_year, rule.start_month, rule.start_day)
+        rule_end = date(start_year, rule.end_month, rule.end_day)
+        if not rule_spans_new_year:
+            # For 'summer' rules, the failure period is between autumn of one
+            # year and spring of the next.
+            if record_start < rule_start:
+                rule_end = date(
+                    start_year - 1, rule.start_month, rule.start_day)
+            else:
+                rule_start = date(
+                    start_year + 1, rule.start_month, rule.start_day)
 
-        # It seems to be easier to define the failure conditions.
-        # See docs/assests/images/phenology-tests.png for explanation.
-        if (
-                (
-                    rule_spans_new_year and
-                    not record_spans_new_year and
-                    record_starts_after_rule_ends and
-                    record_ends_before_rule_starts
+        # Calculate the days of separation between the rule and the record.
+        record_end_to_rule_start = (rule_start - record_end).days
+        rule_end_to_record_start = (record_start - rule_end).days
+
+        tolerance = int(self.env.phenology_tolerance)
+
+        # Create boolean values used for testing rule.
+        record_ends_before_rule_starts = record_end_to_rule_start > 0
+        record_starts_after_rule_ends = rule_end_to_record_start > 0
+        record_ends_just_before_rule_starts = (
+            record_end_to_rule_start <= tolerance)
+        record_starts_just_after_rule_ends = (
+            rule_end_to_record_start <= tolerance)
+
+        if (record_starts_after_rule_ends and record_ends_before_rule_starts):
+            if (record_starts_just_after_rule_ends or
+                    record_ends_just_before_rule_starts):
+                return (
+                    f"Record is just outside of expected period of "
+                    f"{rule.start_day}/{rule.start_month} - "
+                    f"{rule.end_day}/{rule.end_month}."
                 )
-                or
-                (
-                    not rule_spans_new_year and (
-                        record_ends_before_rule_starts or
-                        record_starts_after_rule_ends)
+            else:
+                return (
+                    f"Record is outside of expected period of "
+                    f"{rule.start_day}/{rule.start_month} - "
+                    f"{rule.end_day}/{rule.end_month}."
                 )
-        ):
-            return (
-                f"Record is outside of expected period of "
-                f"{rule.start_day}/{rule.start_month} - "
-                f"{rule.end_day}/{rule.end_month}."
-            )
