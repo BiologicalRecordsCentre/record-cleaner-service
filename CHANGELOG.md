@@ -8,7 +8,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Env setting for phelology tolerance.
+- Env setting for tenkm tolerance.
 
+### Changed
+- Message for phenology failures within tolerance.
+- Message for tenkn failure within tolerance.
+
+### Fixed
+- Phenology test for records with long date range.
+
+### Removed
+
+## [2.0.0]
+
+### Added
 - This CHANGELOG file.
 - End point county/code/{code}.
 - End point county/gridref/{gridref}.

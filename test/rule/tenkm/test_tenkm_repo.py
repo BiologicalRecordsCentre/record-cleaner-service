@@ -171,7 +171,7 @@ class TestTenkmRuleRepo:
             km10='13',
             coord_system='OSGB'
         )
-        # Create period rule for org_group2 and taxon1.
+        # Create tenkm rule for org_group2 and taxon1.
         rule2 = TenkmRule(
             org_group_id=org_group2.id,
             taxon_id=taxon1.id,
@@ -179,7 +179,7 @@ class TestTenkmRuleRepo:
             km10='57',
             coord_system='OSGB'
         )
-        # Create period rule for org_group2 and taxon1.
+        # Create tenkm rule for org_group3 and taxon1.
         rule3 = TenkmRule(
             org_group_id=org_group3.id,
             taxon_id=taxon1.id,
@@ -228,6 +228,28 @@ class TestTenkmRuleRepo:
             "organisation3:group3:tenkm: Record is outside known area."
         )
 
+        # Change the location of the record to be in 10km TL23.
+        record.sref = SrefFactory(
+            Sref(gridref='TL2234', srid=SrefSystem.GB_GRID)
+        ).value
+
+        # Test the record against org_group1 rules.
+        ok, messages = repo.run(record, org_group1.id)
+        # It should just fail as adjacent to a valid square.
+        assert ok is False
+        assert len(messages) == 1
+        assert messages[0] == (
+            "organisation1:group1:tenkm: Record is just outside known area."
+        )
+
+        # Test the record against org_group2 rules.
+        ok, messages = repo.run(record, org_group2.id)
+        # It should fail unequivocally.
+        assert ok is False
+        assert len(messages) == 1
+        assert messages[0] == (
+            "organisation2:group2:tenkm: Record is outside known area."
+        )
         # Change the record to taxon2 for which there are no rules.
         record.preferred_tvk = taxon2.preferred_tvk
 
