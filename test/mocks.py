@@ -209,13 +209,37 @@ def mock_env_settings() -> object:
         initial_user_name: str = 'root'
         initial_user_pass: str = 'pass'
         log_level: str = 'info'
-        phenology_tolerance: int = 3
-        tenkm_tolerance: int = 1
+        phenology_tolerance: int = 0
+        tenkm_tolerance: int = 0
 
         # Freeze the settings so that tests are consistent with runtime config.
         model_config = SettingsConfigDict(frozen=True)
 
     env = MockEnvSettings()
+    return env
+
+
+def mock_env_tolerant_settings() -> object:
+    class MockEnvTolerantSettings(BaseSettings):
+        # These default settings may get overriden if already in environment.
+        # VS Code, for example, will load a .env file if it exists.
+        jwt_key: str = '8f4e5dc18c0bc185c71f889ece4250210cbc76517a8b7d24cd3959b42e501a50'
+        jwt_algorithm: str = 'HS256'
+        jwt_expires_minutes: int = 15
+        rules_repo: str = 'rules_repo'
+        rules_branch: str = 'rules_branch'
+        rules_dir: str = 'rules_dir'
+        rules_subdir: str = 'rules_subdir'
+        initial_user_name: str = 'root'
+        initial_user_pass: str = 'pass'
+        log_level: str = 'info'
+        phenology_tolerance: int = 7
+        tenkm_tolerance: int = 1
+
+        # Freeze the settings so that tests are consistent with runtime config.
+        model_config = SettingsConfigDict(frozen=True)
+
+    env = MockEnvTolerantSettings()
     return env
 
 

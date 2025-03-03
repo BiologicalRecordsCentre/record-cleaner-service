@@ -315,16 +315,16 @@ class PhenologyRuleRepo(RuleRepoBase):
             rule_end_to_record_start <= tolerance)
 
         if (record_starts_after_rule_ends and record_ends_before_rule_starts):
+            period = (
+                f"{rule.start_day}/{rule.start_month} - "
+                f"{rule.end_day}/{rule.end_month}"
+            )
+
             if (record_starts_just_after_rule_ends or
                     record_ends_just_before_rule_starts):
-                return (
-                    f"Record is just outside of expected period of "
-                    f"{rule.start_day}/{rule.start_month} - "
-                    f"{rule.end_day}/{rule.end_month}."
-                )
+                return f"Date is CLOSE TO the expected period of {period}."
             else:
-                return (
-                    f"Record is outside of expected period of "
-                    f"{rule.start_day}/{rule.start_month} - "
-                    f"{rule.end_day}/{rule.end_month}."
-                )
+                if tolerance == 0:
+                    return f"Date is outside the expected period of {period}."
+                else:
+                    return f"Date is FAR FROM the expected period of {period}."

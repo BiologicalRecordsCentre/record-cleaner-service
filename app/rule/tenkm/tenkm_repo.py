@@ -275,7 +275,7 @@ class TenkmRuleRepo(RuleRepoBase):
                     # A surrounding square passed a test.
                     messages.append(
                         f"{org_group.organisation}:{org_group.group}:tenkm: "
-                        "Record is just outside known area."
+                        "Location is CLOSE TO the known distribution."
                     )
                     # Once a square passes we can move to next org_group.
                     break
@@ -284,7 +284,7 @@ class TenkmRuleRepo(RuleRepoBase):
                 # No surrounding squares passed
                 messages.append(
                     f"{org_group.organisation}:{org_group.group}:tenkm: "
-                    "Record is outside known area."
+                    "Location is FAR FROM the known distribution."
                 )
 
         if len(messages) > 0:
@@ -331,7 +331,7 @@ class TenkmRuleRepo(RuleRepoBase):
         if not ok:
             message = (
                 f"{org_group.organisation}:{org_group.group}:tenkm: "
-                "Record is outside known area."
+                "Location is outside known distribution."
             )
 
         return ok, message

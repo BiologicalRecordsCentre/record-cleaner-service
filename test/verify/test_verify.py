@@ -200,7 +200,8 @@ class TestVerify:
             assert verified['messages'][0] == (
                 'UK Ladybird Survey:UKLS:difficulty:1: Easy')
             assert verified['messages'][1] == (
-                "UK Ladybird Survey:UKLS:tenkm: Record is outside known area.")
+                "UK Ladybird Survey:UKLS:tenkm: Location is outside known "
+                "distribution.")
 
             # Remove the rule list - should still fail.
             pack.org_group_rules_list = []
@@ -216,4 +217,5 @@ class TestVerify:
             assert verified['messages'][0] == (
                 'UK Ladybird Survey:UKLS:difficulty:1: Easy')
             assert verified['messages'][1] == (
-                "UK Ladybird Survey:UKLS:tenkm: Record is outside known area.")
+                "UK Ladybird Survey:UKLS:tenkm: Location is outside known "
+                "distribution.")
