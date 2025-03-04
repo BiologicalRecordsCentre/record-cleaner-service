@@ -202,7 +202,7 @@ class TestValidate:
         assert validated['vc'] == "1"
         assert validated['result'] == 'fail'
         assert len(validated['messages']) == 1
-        assert validated['messages'][0] == "Sref not in vice county."
+        assert validated['messages'][0] == "Location not in vice county 1."
 
     def test_valid_vc(self, client: TestClient, mocker):
         # Mock the Indicia warehouse.
@@ -288,4 +288,4 @@ class TestValidate:
         assert 'vc' not in validated
         assert validated['result'] == 'warn'
         assert len(validated['messages']) == 1
-        assert validated['messages'][0] == "No vice county found for gridref."
+        assert validated['messages'][0] == "No vice county found for location."

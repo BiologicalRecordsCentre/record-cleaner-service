@@ -1,6 +1,8 @@
 import pytest
 
-from app.utility.vice_county.vc_checker import VcChecker
+from app.utility.vice_county.vc_checker import (
+    VcChecker, NoVcFoundWarning, NoVcAllocation
+)
 
 
 class TestVcChecker:
@@ -57,6 +59,31 @@ class TestVcChecker:
     def test_valid_1m_sref(self):
         assert VcChecker.prepare_sref('HP3678902345') == 'HP3602'
 
+    def test_valid_10k_assignment(self):
+        assert VcChecker.get_code_from_sref('HP30') == '112'
+
+    def test_valid_2k_assignment(self):
+        assert VcChecker.get_code_from_sref('HP30K') == '112'
+
+    def test_valid_1k_assignment(self):
+        assert VcChecker.get_code_from_sref('HP3602') == '112'
+
+    def test_valid_dom_assignment(self):
+        assert VcChecker.get_code_from_sref('NB91') == '105'
+
+    def test_invalid_gb_assignment(self):
+        with pytest.raises(NoVcFoundWarning) as excinfo:
+            VcChecker.get_code_from_sref('TM78')
+        assert 'No vice county found for location.' == str(excinfo.value)
+
+    def test_invalid_ie_assignment(self):
+        with pytest.raises(NoVcAllocation):
+            VcChecker.get_code_from_sref('H30')
+
+    def test_invalid_ci_assignment(self):
+        with pytest.raises(NoVcAllocation):
+            VcChecker.get_code_from_sref('WV65')
+
     def test_valid_10k_check(self):
         assert VcChecker.check('HP30', '112') is None
 
@@ -67,11 +94,25 @@ class TestVcChecker:
         assert VcChecker.check('HP3602', '112') is None
 
     def test_valid_dom_check(self):
+        # 105 is the dominant VC for NB91.
         assert VcChecker.check('NB91', '105') is None
 
     def test_valid_sub_check(self):
+        # 108 is a secondary VC for NB91.
         assert VcChecker.check('NB91', '108') is None
 
-    def test_invalid_check(self):
-        with pytest.raises(ValueError):
+    def test_invalid_gb_check(self):
+        # HP3602 is in VC 112
+        with pytest.raises(ValueError) as excinfo:
             VcChecker.check('HP3602', '1')
+        assert (
+            "Location not in vice county 1."
+        ) in str(excinfo.value)
+
+    def test_random_ie_check(self):
+        with pytest.raises(ValueError) as excinfo:
+            VcChecker.check('H3602', 'H1')
+        assert (
+            "Validattion of spatial references against Irish VCs is not yet "
+            "supported."
+        ) in str(excinfo.value)

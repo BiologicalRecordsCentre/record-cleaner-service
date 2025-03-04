@@ -5,7 +5,11 @@ from functools import lru_cache
 import pandas as pd
 
 
-class NoVcException(Exception):
+class NoVcFoundWarning(Exception):
+    pass
+
+
+class NoVcAllocation(Exception):
     pass
 
 
@@ -128,14 +132,22 @@ class VcChecker:
     def get_code_from_sref(cls, gridref: str) -> str:
         """Takes a gridref and returns the code of the VC.
 
-        The sref should be a value as output by prepare_sref."""
+        The sref should be a value as output by prepare_sref
+        Irish and Channel Island gridrefs not supported."""
+
+        if (
+            gridref[1].isdigit() or
+            gridref[0:2] == 'WV' or
+            gridref[0:2] == 'WA'
+        ):
+            raise NoVcAllocation()
+
         df = cls.__vc_squares
         series = df.loc[df['gridref'] == gridref, 'vc_dominant']
         if series.size == 1:
             return str(series.iloc[0])
         else:
-            # Raise a special exception as this is not an error.
-            raise NoVcException('No vice county found for gridref.')
+            raise NoVcFoundWarning('No vice county found for location.')
 
     @classmethod
     @lru_cache
@@ -162,4 +174,4 @@ class VcChecker:
             # for example, and actually okay.
             vc_list = series.iloc[0].split('#')
             if code not in vc_list:
-                raise ValueError("Sref not in vice county.")
+                raise ValueError(f"Location not in vice county {code}.")
