@@ -233,6 +233,39 @@ class TestValidate:
         assert validated['result'] == 'pass'
         assert len(validated['messages']) == 0
 
+    def test_irish_vc(self, client: TestClient, mocker):
+        # Mock the Indicia warehouse.
+        mocker.patch(
+            'app.species.indicia.make_search_request',
+            mock_make_search_request
+        )
+
+        response = client.post(
+            "/validate",
+            json=[{
+                "id": 1,
+                "date": "3/4/2024",
+                "sref": {
+                    "srid": 0,
+                    "gridref": "T 123 456"
+                },
+                "tvk": "NBNSYS0000008319",
+                "vc": "H20"
+            }]
+        )
+        assert response.status_code == 200
+        validated = response.json()[0]
+        assert validated['name'] == "Adalia bipunctata"
+        assert validated['date'] == "03/04/2024"
+        assert validated['sref']['gridref'] == "T123456"
+        assert validated['vc'] == "H20"
+        assert validated['result'] == 'warn'
+        assert len(validated['messages']) == 1
+        assert validated['messages'][0] == (
+            "Validation of spatial references against Irish VCs is not yet "
+            "supported."
+        )
+
     def test_vc_assignment(self, client: TestClient, mocker):
         # Mock the Indicia warehouse.
         mocker.patch(

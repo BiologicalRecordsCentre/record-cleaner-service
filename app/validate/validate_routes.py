@@ -7,7 +7,7 @@ from app.settings_env import EnvDependency
 import app.species.cache as cache
 from app.utility.sref.sref_factory import SrefFactory
 from app.utility.vice_county.vc_checker import (
-    VcChecker, NoVcFoundWarning, NoVcAllocation
+    VcChecker, NoVcFoundWarning, NoVcAllocation, NoVcTestWarning
 )
 from app.utility.vague_date import VagueDate
 
@@ -146,6 +146,7 @@ async def validate(
 
         except NoVcFoundWarning as e:
             # Failure to assign is a warning but must not override a fail.
+            # (E.g. Sref could be in the sea.)
             validated.vc = None
             if validated.result == 'pass':
                 validated.result = 'warn'
@@ -153,6 +154,11 @@ async def validate(
         except NoVcAllocation:
             # Assignment to Irish vice counties is not supported yet.
             pass
+        except NoVcTestWarning as e:
+            # Attempting to test an Irish vice county is a warning.
+            if validated.result == 'pass':
+                validated.result = 'warn'
+            validated.messages.append(str(e))
         except Exception as e:
             validated.result = 'fail'
             validated.messages.append(str(e))

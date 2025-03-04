@@ -17,6 +17,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Phenology test for records with long date range.
+- Vice county assignment warning for Irish grid refs [#12](https://github.com/BiologicalRecordsCentre/record-cleaner-service/issues/12)
+- Grid refs with spaces having type mis-identified.
+- Vice county test passing any unknown grid ref.
+- Vice county test failure for Irish grid refs [#13](https://github.com/BiologicalRecordsCentre/record-cleaner-service/issues/13)
 
 ### Removed
 

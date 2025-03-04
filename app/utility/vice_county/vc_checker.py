@@ -13,6 +13,10 @@ class NoVcAllocation(Exception):
     pass
 
 
+class NoVcTestWarning(Exception):
+    pass
+
+
 class VcChecker:
 
     # Private class variables.
@@ -163,8 +167,8 @@ class VcChecker:
         """
 
         if code[0] == 'H':
-            raise ValueError("Validattion of spatial references against Irish "
-                             "VCs is not yet supported.")
+            raise NoVcTestWarning("Validation of spatial references against "
+                                  "Irish VCs is not yet supported.")
 
         df = cls.__vc_squares
         series = df.loc[df['gridref'] == gridref, 'vc_list']

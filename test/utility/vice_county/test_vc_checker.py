@@ -1,7 +1,7 @@
 import pytest
 
 from app.utility.vice_county.vc_checker import (
-    VcChecker, NoVcFoundWarning, NoVcAllocation
+    VcChecker, NoVcFoundWarning, NoVcAllocation, NoVcTestWarning
 )
 
 
@@ -105,14 +105,17 @@ class TestVcChecker:
         # HP3602 is in VC 112
         with pytest.raises(ValueError) as excinfo:
             VcChecker.check('HP3602', '1')
-        assert (
-            "Location not in vice county 1."
-        ) in str(excinfo.value)
+        assert "Location not in vice county 1." == str(excinfo.value)
 
-    def test_random_ie_check(self):
+    def test_faulty_gb_check(self):
         with pytest.raises(ValueError) as excinfo:
+            VcChecker.check('H3602', '1')
+        assert "Location not in vice county 1." == str(excinfo.value)
+
+    def test_ie_check(self):
+        with pytest.raises(NoVcTestWarning) as excinfo:
             VcChecker.check('H3602', 'H1')
         assert (
-            "Validattion of spatial references against Irish VCs is not yet "
+            "Validation of spatial references against Irish VCs is not yet "
             "supported."
-        ) in str(excinfo.value)
+        ) == str(excinfo.value)
