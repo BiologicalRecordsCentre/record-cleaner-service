@@ -170,8 +170,9 @@ class VcChecker:
         series = df.loc[df['gridref'] == gridref, 'vc_list']
         if series.size == 1:
             # The gridref is in the list so we can check it.
-            # If it is not in the list then we ignore it as it might be at sea,
-            # for example, and actually okay.
             vc_list = series.iloc[0].split('#')
             if code not in vc_list:
                 raise ValueError(f"Location not in vice county {code}.")
+        else:
+            # If it is not in the list then we raise an error.
+            raise ValueError(f"Location not in vice county {code}.")
