@@ -19,6 +19,10 @@ class SrefFactory:
                 if sref.gridref is None:
                     raise ValueError("Invalid spatial reference. A gridref "
                                      "must be provided.")
+
+                # Remove any spaces from gridref before parsing.
+                sref.gridref = sref.gridref.replace(" ", "")
+
                 if sref.gridref[:2] == "WA" or sref.gridref[:2] == "WV":
                     return CiGrid(sref)
                 elif sref.gridref[1:2].isnumeric():
