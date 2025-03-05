@@ -185,10 +185,18 @@ If a commit is tagged `v{semver}-{type}{N} where
 it will be built and deployed to the UKCEH staging server. This is not publicly
 accessible.
 
+The build is performed by .github/workflows/on-tag.yml.
+The deployment is described in the private [CEH Gitlab repo](https://gitlab.ceh.ac.uk/infrastructure/k8s-clusters/k8s-eds-staging).
+The url is https://record-cleaner.staging.ceh.ac.uk/
+
 Full releases will also be deployed to staging.
 
 ## Production
-Commits tagged `v{semver} are built with the intention of deployment to 
-record-cleaner.brc.ac.uk. Automation of this is not enabled at present so 
-manual intervention by someone with access to the host is needed for deployment.
-Currently it is hosted on the CEH production cluster in Lancaster.
+If a commit is tagged `v{semver} where
+
+- {semver} is a semantic version number like 1.2.3
+
+it will be built and deployed to the UKCEH production server. 
+The build is performed by .github/workflows/on-tag.yml.
+The deployment is described in the private [CEH Gitlab repo](https://gitlab.ceh.ac.uk/infrastructure/k8s-clusters/k8s-eds-prod).
+The url is https://record-cleaner.brc.ac.uk/
