@@ -186,7 +186,21 @@ class TestVerify:
             assert verified['messages'][1] == (
                 'UK Ladybird Survey:UKLS:difficulty:1: Easy')
 
-            # Change record location to be outside the tenkm rule - should fail.
+            # Now try again with verbose = 0.
+            response = client.post(
+                '/verify',
+                params={'verbose': '0'},
+                json=pack.model_dump(),
+            )
+            assert response.status_code == 200
+            verified = response.json()['records'][0]
+            assert verified['result'] == 'pass'
+            assert verified['id_difficulty'] == 1
+            assert len(verified['messages']) == 1
+            assert verified['messages'][0] == (
+                'Rules run: tenkm')
+
+            # Change record location to outside the tenkm rule - should fail.
             pack.records[0].sref.gridref = "TL 654 321"
             response = client.post(
                 '/verify',
@@ -200,7 +214,8 @@ class TestVerify:
             assert verified['messages'][0] == (
                 'UK Ladybird Survey:UKLS:difficulty:1: Easy')
             assert verified['messages'][1] == (
-                "UK Ladybird Survey:UKLS:tenkm: Record is outside known area.")
+                "UK Ladybird Survey:UKLS:tenkm: Location is outside known "
+                "distribution.")
 
             # Remove the rule list - should still fail.
             pack.org_group_rules_list = []
@@ -216,4 +231,5 @@ class TestVerify:
             assert verified['messages'][0] == (
                 'UK Ladybird Survey:UKLS:difficulty:1: Easy')
             assert verified['messages'][1] == (
-                "UK Ladybird Survey:UKLS:tenkm: Record is outside known area.")
+                "UK Ladybird Survey:UKLS:tenkm: Location is outside known "
+                "distribution.")

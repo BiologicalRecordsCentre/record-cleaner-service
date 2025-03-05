@@ -4,13 +4,16 @@ from sqlmodel import Session
 
 from app.rule.difficulty.difficulty_rule_repo import DifficultyRuleRepo
 from app.settings_env import EnvSettings
-from app.sqlmodels import OrgGroup, Taxon, DifficultyCode
+from app.sqlmodels import OrgGroup, Taxon, DifficultyCode, DifficultyRule
+from app.utility.sref import Sref, SrefSystem
+from app.utility.sref.sref_factory import SrefFactory
+from app.verify.verify_models import Verified
 
 
 class TestDifficultyRuleRepo:
     """Tests of the repo class."""
 
-    def test_difficulty_rule_repo(self, db: Session, env: EnvSettings):
+    def test_load_file(self, db: Session, env: EnvSettings):
         # Create org_groups.
         org_group1 = OrgGroup(organisation='organisation1', group='group1')
         org_group2 = OrgGroup(organisation='organisation2', group='group2')
@@ -132,3 +135,104 @@ class TestDifficultyRuleRepo:
         assert result[0]['organisation'] == org_group2.organisation
         assert result[0]['group'] == org_group2.group
         assert result[0]['difficulty'] == difficulty_code2.code
+
+    def test_run(self, db: Session, env: EnvSettings):
+        # Create org_groups.
+        org_group1 = OrgGroup(organisation='organisation1', group='group1')
+        org_group2 = OrgGroup(organisation='organisation2', group='group2')
+        db.add(org_group1)
+        db.add(org_group2)
+        db.commit()
+
+        # Create taxa.
+        taxon1 = Taxon(
+            name='Adalia bipunctata',
+            preferred_name='Adalia bipunctata',
+            search_name='adaliabipunctata',
+            tvk='NBNSYS0000008319',
+            preferred_tvk='NBNSYS0000008319',
+            preferred=True
+        )
+        taxon2 = Taxon(
+            name='Adalia decempunctata',
+            preferred_name='Adalia decempunctata',
+            search_name='adaliadecempunctata',
+            tvk='NBNSYS0000008320',
+            preferred_tvk='NBNSYS0000008320',
+            preferred=True
+        )
+        db.add(taxon1)
+        db.add(taxon2)
+        db.commit()
+
+        # Create difficulty codes.
+        difficulty_code1 = DifficultyCode(
+            code=1,
+            text='Easy',
+            org_group_id=org_group1.id
+        )
+        difficulty_code2 = DifficultyCode(
+            code=2,
+            text='Hard',
+            org_group_id=org_group2.id
+        )
+        db.add(difficulty_code1)
+        db.add(difficulty_code2)
+        db.commit()
+
+        # Create difficulty rules.
+        # 2 rules for the same taxon in different org_groups.
+        difficulty_rule1 = DifficultyRule(
+            org_group_id=org_group1.id,
+            taxon_id=taxon1.id,
+            difficulty_code_id=difficulty_code1.id
+        )
+        difficulty_rule2 = DifficultyRule(
+            org_group_id=org_group2.id,
+            taxon_id=taxon1.id,
+            difficulty_code_id=difficulty_code2.id
+        )
+        db.add(difficulty_rule1)
+        db.add(difficulty_rule2)
+        db.commit()
+
+        # Create record of taxon1 to test.
+        record = Verified(
+            id=1,
+            date='1/6/1975',
+            sref=SrefFactory(
+                Sref(gridref='TL1234', srid=SrefSystem.GB_GRID)
+            ).value,
+            preferred_tvk=taxon1.preferred_tvk
+        )
+
+        repo = DifficultyRuleRepo(db, env)
+
+        # Test the record against all org_group rules.
+        id_difficulty, messages = repo.run(record)
+        # It should return two messages.
+        assert id_difficulty == 2
+        assert len(messages) == 2
+        assert messages[0] == "organisation1:group1:difficulty:1: Easy"
+        assert messages[1] == "organisation2:group2:difficulty:2: Hard"
+
+        # Test the record against all org_group rules without messages.
+        id_difficulty, messages = repo.run(record, False)
+        # It should return no messages.
+        assert id_difficulty == 2
+        assert len(messages) == 0
+
+        # Test the record against org_group1 rules.
+        id_difficulty, messages = repo.run(record, True, org_group1.id)
+        # It should return a single message.
+        assert id_difficulty == 1
+        assert len(messages) == 1
+        assert messages[0] == "organisation1:group1:difficulty:1: Easy"
+
+        # Change record to taxon2.
+        record.preferred_tvk = taxon2.preferred_tvk
+        # Test the record against all org_group rules.
+        id_difficulty, messages = repo.run(record)
+        # It should return nothing as there are no rules for the taxon.
+        assert id_difficulty is None
+        assert len(messages) == 0

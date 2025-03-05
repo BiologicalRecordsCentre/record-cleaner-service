@@ -6,7 +6,9 @@ from app.database import DbDependency
 from app.settings_env import EnvDependency
 import app.species.cache as cache
 from app.utility.sref.sref_factory import SrefFactory
-from app.utility.vice_county.vc_checker import VcChecker, NoVcException
+from app.utility.vice_county.vc_checker import (
+    VcChecker, NoVcFoundWarning, NoVcAllocation, NoVcTestWarning
+)
 from app.utility.vague_date import VagueDate
 
 from .validate_models import Validate, Validated
@@ -69,7 +71,7 @@ async def validate(
     errors.
 
     If no vice county is supplied then the response will include a suggested
-    Britishvice county which will be the vice county which is predominate in
+    British vice county which will be the vice county which is predominate in
     the 1km square that the sref falls in.
 
     The result field in the response will be either pass, warn or fail,
@@ -142,9 +144,18 @@ async def validate(
                 gridref = VcChecker.prepare_sref(sref.gridref)
                 validated.vc = VcChecker.get_code_from_sref(gridref)
 
-        except NoVcException as e:
+        except NoVcFoundWarning as e:
             # Failure to assign is a warning but must not override a fail.
+            # (E.g. Sref could be in the sea.)
             validated.vc = None
+            if validated.result == 'pass':
+                validated.result = 'warn'
+            validated.messages.append(str(e))
+        except NoVcAllocation:
+            # Assignment to Irish vice counties is not supported yet.
+            pass
+        except NoVcTestWarning as e:
+            # Attempting to test an Irish vice county is a warning.
             if validated.result == 'pass':
                 validated.result = 'warn'
             validated.messages.append(str(e))

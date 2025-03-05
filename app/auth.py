@@ -134,8 +134,8 @@ async def login(
     **grant_type** should be set to 'password' while **scope**, **client_id**,
     and **client_secret** are not required.
 
-    To use the token, set the Authorization header to 'Bearer \<token\>' in
-    your http request, where \<token\> is the token valuen returned by this
+    To use the token, set the Authorization header to 'Bearer {token}' in
+    your http request, where {token} is the token value returned by this
     endpoint.
     """
     # Automatic validation ensures username and password exist.

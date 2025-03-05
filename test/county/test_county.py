@@ -29,3 +29,11 @@ class TestCounty:
         # Invalid gridref.
         response = client.get('/county/gridref/TM9999')
         assert response.status_code == 404
+
+        # Irish gridref.
+        response = client.get('/county/gridref/H30')
+        assert response.status_code == 400
+
+        # Channel Island gridref.
+        response = client.get('/county/gridref/WV65')
+        assert response.status_code == 400

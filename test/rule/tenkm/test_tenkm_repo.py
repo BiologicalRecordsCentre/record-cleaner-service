@@ -171,7 +171,7 @@ class TestTenkmRuleRepo:
             km10='13',
             coord_system='OSGB'
         )
-        # Create period rule for org_group2 and taxon1.
+        # Create tenkm rule for org_group2 and taxon1.
         rule2 = TenkmRule(
             org_group_id=org_group2.id,
             taxon_id=taxon1.id,
@@ -179,7 +179,7 @@ class TestTenkmRuleRepo:
             km10='57',
             coord_system='OSGB'
         )
-        # Create period rule for org_group2 and taxon1.
+        # Create tenkm rule for org_group3 and taxon1.
         rule3 = TenkmRule(
             org_group_id=org_group3.id,
             taxon_id=taxon1.id,
@@ -216,7 +216,7 @@ class TestTenkmRuleRepo:
         assert ok is False
         assert len(messages) == 1
         assert messages[0] == (
-            "organisation2:group2:tenkm: Record is outside known area."
+            "organisation2:group2:tenkm: Location is outside known distribution."
         )
 
         # Test the record against org_group3 rules.
@@ -225,7 +225,7 @@ class TestTenkmRuleRepo:
         assert ok is False
         assert len(messages) == 1
         assert messages[0] == (
-            "organisation3:group3:tenkm: Record is outside known area."
+            "organisation3:group3:tenkm: Location is outside known distribution."
         )
 
         # Change the record to taxon2 for which there are no rules.
@@ -242,3 +242,78 @@ class TestTenkmRuleRepo:
         # It should baulk as no rule.
         assert ok is None
         assert len(messages) == 0
+
+    def test_run_tolerant(self, db: Session, env_tolerant: EnvSettings):
+        # Create org_groups.
+        org_group1 = OrgGroup(organisation='organisation1', group='group1')
+        db.add(org_group1)
+        db.commit()
+
+        # Create taxon.
+        taxon1 = Taxon(
+            name='Adalia bipunctata',
+            preferred_name='Adalia bipunctata',
+            search_name='adaliabipunctata',
+            tvk='NBNSYS0000008319',
+            preferred_tvk='NBNSYS0000008319',
+            preferred=True
+        )
+        db.add(taxon1)
+        db.commit()
+
+        # Create tenkm rule for org_group1 and taxon1.
+        rule1 = TenkmRule(
+            org_group_id=org_group1.id,
+            taxon_id=taxon1.id,
+            km100='TL',
+            km10='13',
+            coord_system='OSGB'
+        )
+        db.add(rule1)
+        db.commit()
+
+        # Create record of taxon1 to test.
+        record = Verified(
+            id=1,
+            date='1/6/1975',
+            sref=SrefFactory(
+                Sref(gridref='TL1234', srid=SrefSystem.GB_GRID)
+            ).value,
+            preferred_tvk=taxon1.preferred_tvk
+        )
+
+        repo = TenkmRuleRepo(db, env_tolerant)
+
+        # Test the record against org_group1 rules.
+        ok, messages = repo.run(record, org_group1.id)
+        # It should pass.
+        assert ok is True
+        assert len(messages) == 0
+
+        # Change the location of the record to be in 10km TL23.
+        record.sref = SrefFactory(
+            Sref(gridref='TL2234', srid=SrefSystem.GB_GRID)
+        ).value
+
+        # Test the record against org_group1 rules.
+        ok, messages = repo.run(record, org_group1.id)
+        # It should just fail as adjacent to a valid square.
+        assert ok is False
+        assert len(messages) == 1
+        assert messages[0] == (
+            "organisation1:group1:tenkm: Location is CLOSE TO the known distribution."
+        )
+
+        # Change the location of the record to be in 10km TL33.
+        record.sref = SrefFactory(
+            Sref(gridref='TL3234', srid=SrefSystem.GB_GRID)
+        ).value
+
+        # Test the record against org_group1 rules.
+        ok, messages = repo.run(record, org_group1.id)
+        # It should fail unequivocally.
+        assert ok is False
+        assert len(messages) == 1
+        assert messages[0] == (
+            "organisation1:group1:tenkm: Location is FAR FROM the known distribution."
+        )

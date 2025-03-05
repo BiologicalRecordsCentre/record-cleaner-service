@@ -147,12 +147,18 @@ class DifficultyRuleRepo(RuleRepoBase):
 
         return errors
 
-    def run(self, record: Verified, org_group_id: int | None = None):
+    def run(
+        self,
+        record: Verified,
+        verbose: bool = True,
+        org_group_id: int | None = None,
+    ):
         """Run rules against record, optionally filter rules by org_group.
 
         Returns a tuple of (id_difficulty, messages) where id_difficulty is the
         maximum difficulty code found and messages is a list of difficulty
-        text. If no rules are found, id_difficulty is None."""
+        text. If no rules are found, id_difficulty is None. If verbose is
+        False, messages is an empty list."""
         messages = []
         id_difficulty = 0
 
@@ -179,9 +185,10 @@ class DifficultyRuleRepo(RuleRepoBase):
         for org_group, difficulty_code in results:
             if difficulty_code.code > id_difficulty:
                 id_difficulty = difficulty_code.code
-            messages.append(
-                f"{org_group.organisation}:{org_group.group}:difficulty:"
-                f"{difficulty_code.code}: {difficulty_code.text}"
-            )
+            if verbose:
+                messages.append(
+                    f"{org_group.organisation}:{org_group.group}:difficulty:"
+                    f"{difficulty_code.code}: {difficulty_code.text}"
+                )
 
         return id_difficulty, messages

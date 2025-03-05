@@ -1,6 +1,7 @@
 import os
 
 import pytest
+from datetime import date, timedelta
 from sqlmodel import Session
 
 from app.rule.phenology.phenology_repo import PhenologyRuleRepo
@@ -247,7 +248,7 @@ class TestPhenologyRuleRepo:
             stage_id=stage2.id,
             start_day=31,
             start_month=3,
-            end_day=31,
+            end_day=30,
             end_month=6
         )
         # Create phenology rule for org_group2 and mature taxon1.
@@ -316,7 +317,7 @@ class TestPhenologyRuleRepo:
         assert len(messages) == 1
         assert messages[0] == (
             "organisation1:group1:phenology:larval:"
-            "Record is outside of expected period of 31/3 - 31/6."
+            "Date is outside the expected period of 31/3 - 30/6."
         )
 
         # Test the record against wildcard rule of org_group3.
@@ -364,6 +365,12 @@ class TestPhenologyRuleRepo:
 
         # Single date within rule
         assert repo.test(record, rule) is None
+        # Single date on rule start
+        record.date = '8/6/1975'
+        assert repo.test(record, rule) is None
+        # Single date on rule end
+        record.date = '6/10/1975'
+        assert repo.test(record, rule) is None
         # Date range within rule.
         record.date = '1/8/1975 - 10/8/1975'
         assert repo.test(record, rule) is None
@@ -373,24 +380,30 @@ class TestPhenologyRuleRepo:
         # Date range overlapping end of rule.
         record.date = '1/8/1975 - 1/11/1975'
         assert repo.test(record, rule) is None
+        # Date range overlapping entire rule.
+        record.date = '1/6/1975 - 1/11/1975'
+        assert repo.test(record, rule) is None
+        # Date range in excess of a year
+        record.date = '1/10/1975 - 1/11/1976'
+        assert repo.test(record, rule) is None
 
-        # Single date before rule
-        record.date = '1/4/1975'
+        # Single date just before rule
+        record.date = '7/6/1975'
         failure = repo.test(record, rule)
         assert failure == (
-            "Record is outside of expected period of 8/6 - 6/10."
+            "Date is outside the expected period of 8/6 - 6/10."
         )
-        # Single date after rule
-        record.date = '1/11/1975'
+        # Single date just after rule
+        record.date = '7/10/1975'
         failure = repo.test(record, rule)
         assert failure == (
-            "Record is outside of expected period of 8/6 - 6/10."
+            "Date is outside the expected period of 8/6 - 6/10."
         )
         # Date range outside rule
-        record.date = '7/10/1975 - 7/6/1976'
+        record.date = '1/11/1975 - 1/2/1976'
         failure = repo.test(record, rule)
         assert failure == (
-            "Record is outside of expected period of 8/6 - 6/10."
+            "Date is outside the expected period of 8/6 - 6/10."
         )
 
         # Change to a winter rule.
@@ -403,6 +416,12 @@ class TestPhenologyRuleRepo:
         # Single date within rule after new year.
         record.date = '1/2/1975'
         assert repo.test(record, rule) is None
+        # Single date on rule start
+        record.date = '8/10/1975'
+        assert repo.test(record, rule) is None
+        # Single date on rule end
+        record.date = '6/3/1975'
+        assert repo.test(record, rule) is None
         # Date range within rule.
         record.date = '1/12/1975 - 1/2/1976'
         assert repo.test(record, rule) is None
@@ -412,22 +431,131 @@ class TestPhenologyRuleRepo:
         # Date range overlapping end of rule.
         record.date = '1/2/1975 - 1/4/1975'
         assert repo.test(record, rule) is None
+        # Date range overlapping entire rule.
+        record.date = '1/10/1975 - 1/4/1976'
+        assert repo.test(record, rule) is None
+        # Date range in excess of a year
+        record.date = '1/6/1975 - 1/7/1976'
+        assert repo.test(record, rule) is None
 
-        # Single date before rule
-        record.date = '1/10/1975'
+        # Single date just before rule
+        record.date = '7/10/1975'
         failure = repo.test(record, rule)
         assert failure == (
-            "Record is outside of expected period of 8/10 - 6/3."
+            "Date is outside the expected period of 8/10 - 6/3."
         )
-        # Single date after rule
-        record.date = '1/4/1975'
+        # Single date just after rule
+        record.date = '7/3/1975'
         failure = repo.test(record, rule)
         assert failure == (
-            "Record is outside of expected period of 8/10 - 6/3."
+            "Date is outside the expected period of 8/10 - 6/3."
         )
         # Date range outside rule
-        record.date = '11/3/1975 - 5/10/1976'
+        record.date = '1/5/1975 - 1/8/1975'
         failure = repo.test(record, rule)
         assert failure == (
-            "Record is outside of expected period of 8/10 - 6/3."
+            "Date is outside the expected period of 8/10 - 6/3."
+        )
+
+    def test_test_tolerant(self, db: Session, env_tolerant: EnvSettings):
+
+        record = Verified(
+            id=1,
+            date='1/8/1975',
+            sref=Sref(gridref='TL123456', srid=SrefSystem.GB_GRID),
+            tvk='NBNSYS0000008319',
+            stage='adult'
+        )
+
+        # Create a summer rule.
+        rule = PhenologyRule(
+            org_group_id=1,
+            taxon_id=1,
+            stage_id=1,
+            start_day=8,
+            start_month=6,
+            end_day=6,
+            end_month=10
+        )
+
+        repo = PhenologyRuleRepo(db, env_tolerant)
+        tolerance = timedelta(days=int(env_tolerant.phenology_tolerance))
+        oneday = timedelta(days=1)
+
+        # Single date just before rule
+        record.date = (date(1975, 6, 8) - tolerance).isoformat()
+        failure = repo.test(record, rule)
+        assert failure == (
+            "Date is CLOSE TO the expected period of 8/6 - 6/10."
+        )
+        # Single date significantly before rule
+        record.date = (date(1975, 6, 8) - tolerance - oneday).isoformat()
+        failure = repo.test(record, rule)
+        assert failure == (
+            "Date is FAR FROM the expected period of 8/6 - 6/10."
+        )
+        # Single date just after rule
+        record.date = (date(1975, 10, 6) + tolerance).isoformat()
+        failure = repo.test(record, rule)
+        assert failure == (
+            "Date is CLOSE TO the expected period of 8/6 - 6/10."
+        )
+        # Single date significantly after rule
+        record.date = (date(1975, 10, 6) + tolerance + oneday).isoformat()
+        failure = repo.test(record, rule)
+        assert failure == (
+            "Date is FAR FROM the expected period of 8/6 - 6/10."
+        )
+        # Date range just outside rule
+        record.date = '7/10/1975 - 7/6/1976'
+        failure = repo.test(record, rule)
+        assert failure == (
+            "Date is CLOSE TO the expected period of 8/6 - 6/10."
+        )
+        # Date range significantly outside rule
+        record.date = '1/11/1975 - 1/2/1976'
+        failure = repo.test(record, rule)
+        assert failure == (
+            "Date is FAR FROM the expected period of 8/6 - 6/10."
+        )
+
+        # Change to a winter rule.
+        rule.start_month = 10
+        rule.end_month = 3
+
+        # Single date just before rule
+        record.date = (date(1975, 10, 8) - tolerance).isoformat()
+        failure = repo.test(record, rule)
+        assert failure == (
+            "Date is CLOSE TO the expected period of 8/10 - 6/3."
+        )
+        # Single date significantly before rule
+        record.date = (date(1975, 10, 8) - tolerance - oneday).isoformat()
+        failure = repo.test(record, rule)
+        assert failure == (
+            "Date is FAR FROM the expected period of 8/10 - 6/3."
+        )
+        # Single date just after rule
+        record.date = (date(1975, 3, 6) + tolerance).isoformat()
+        failure = repo.test(record, rule)
+        assert failure == (
+            "Date is CLOSE TO the expected period of 8/10 - 6/3."
+        )
+        # Single date significantly after rule
+        record.date = (date(1975, 3, 6) + tolerance + oneday).isoformat()
+        failure = repo.test(record, rule)
+        assert failure == (
+            "Date is FAR FROM the expected period of 8/10 - 6/3."
+        )
+        # Date range just outside rule
+        record.date = '7/3/1975 - 7/10/1975'
+        failure = repo.test(record, rule)
+        assert failure == (
+            "Date is CLOSE TO the expected period of 8/10 - 6/3."
+        )
+        # Date range significantly outside rule
+        record.date = '1/5/1975 - 1/8/1975'
+        failure = repo.test(record, rule)
+        assert failure == (
+            "Date is FAR FROM the expected period of 8/10 - 6/3."
         )

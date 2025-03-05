@@ -5,9 +5,8 @@ from sqlmodel import select
 
 import app.species.cache as cache
 
-from app.utility.sref.sref_factory import SrefFactory
-
 from app.sqlmodels import TenkmRule, Taxon, OrgGroup
+from app.utility.sref.grid_utils import GridUtils
 from app.verify.verify_models import Verified
 
 from ..rule_repo_base import RuleRepoBase
@@ -174,14 +173,15 @@ class TenkmRuleRepo(RuleRepoBase):
     def run(self, record: Verified, org_group_id: int | None = None):
         """Run rules against record, optionally filter rules by org_group.
 
-        Returns a tuple of (ok, messages) where ok indicates test success
-        and messages is a list of details. If there are no rules, ok is None"""
-
-        ok = True
-        messages = []
-
-        km100 = record.sref.km100
-        km10 = record.sref.km10
+        Args:
+            record (Verified): The record being tested.
+            org_group_id (int): Optional id of org_group from which to select 
+            rules.
+        Returns
+            tuple[bool, list[str]]: of (ok, messages) where ok indicates test 
+            success and messages is a list of details. If there are no rules, 
+            ok is None.
+        """
 
         # Get the org_groups having rules for the taxon.
         query = (
@@ -199,35 +199,139 @@ class TenkmRuleRepo(RuleRepoBase):
         # Do we have any rules?
         org_groups = self.db.exec(query).all()
         if len(org_groups) == 0:
+            # No we don't.
             return None, []
+
+        # Test the record
+        ok, messages = self.test_recorded_10km(record, org_groups)
+
+        if not ok and self.env.tenkm_tolerance > 0:
+            # Test the squares in the tolerance band
+            ok, messages = self.test_surrounding_10kms(
+                record, org_groups
+            )
+
+        return ok, messages
+
+    def test_recorded_10km(self, record: Verified, org_groups: list[OrgGroup]):
+        """Run rules from org_groups against record.
+
+        Args:
+            record (Verified): The record being tested.
+            org_groups (int): List of OrgGroup from which to select rules.
+        Returns
+            tuple[bool, list[str]]: of (ok, messages) where ok indicates test 
+            success and messages is a list of details.
+        """
+        messages = []
+
+        km100 = record.sref.km100
+        km10 = record.sref.km10
+        tvk = record.preferred_tvk
+        # Try the rules from each org_group.
+        for org_group in org_groups:
+            ok, message = self.test(km100, km10, org_group, tvk)
+            if not ok:
+                messages.append(message)
+
+        # Any messages returned indicate a failure
+        if len(messages) > 0:
+            return False, messages
+        else:
+            return True, []
+
+    def test_surrounding_10kms(
+        self, record: Verified,
+        org_groups: list[OrgGroup]
+    ):
+        """Run rules from org_groups against squares around record.
+
+        Args:
+            record (Verified): The record being tested.
+            org_groups (int): List of OrgGroup from which to select rules.
+        Returns
+            tuple[bool, list[str]]: of (ok, messages) where ok indicates test 
+            success and messages is a list of details.
+        """
+        messages = []
+
+        utils = GridUtils()
+        record_km10 = record.sref.km100 + record.sref.km10
+        surrounding_km10s = utils.get_surrounding_km10s(
+            record_km10, self.env.tenkm_tolerance
+        )
+        tvk = record.preferred_tvk
 
         # Try the rules from each org_group.
         for org_group in org_groups:
+            # Try the rules for each surrounding square
+            for surrounding_km10 in surrounding_km10s:
+                l = len(surrounding_km10)
+                km10 = surrounding_km10[l-2: l]
+                km100 = surrounding_km10[0: l-2]
 
-            query = (
-                select(TenkmRule)
-                .join(Taxon)
-                .where(Taxon.preferred_tvk == record.preferred_tvk)
-                .where(TenkmRule.km100 == km100)
-                .where(TenkmRule.org_group_id == org_group.id)
-            )
-            tenkm_rule = self.db.exec(query).one_or_none()
+                ok, message = self.test(km100, km10, org_group, tvk)
+                if ok:
+                    # A surrounding square passed a test.
+                    messages.append(
+                        f"{org_group.organisation}:{org_group.group}:tenkm: "
+                        "Location is CLOSE TO the known distribution."
+                    )
+                    # Once a square passes we can move to next org_group.
+                    break
 
-            if tenkm_rule is None:
-                # No matching km100 in the rules
-                ok = False
+            if not ok:
+                # No surrounding squares passed
                 messages.append(
                     f"{org_group.organisation}:{org_group.group}:tenkm: "
-                    "Record is outside known area."
+                    "Location is FAR FROM the known distribution."
                 )
-                continue
 
+        if len(messages) > 0:
+            # Any messages indicate a pass in the tolerance band but this is
+            # still a failure (as a first draft anyway).
+            return False, messages
+        else:
+            # No messages indicates outright failure.
+            return False, []
+
+    def test(self, km100: str, km10: str, org_group: OrgGroup, tvk: str):
+        """Run org_group rules against taxon and location.
+
+        Args:
+            km100 (str): The letter(s) indicating 100km square.
+            km10 (str): The two digits indicaing 10km square within km100.
+            org_group (OrgGroup): The OrgGroup with the rules.
+            tvk (str): The taxon version key identifying the taxon.
+        Returns:
+            tuple[bool, str]: (ok, message) where ok indicates test success
+            and message has details details. If there are no rules, ok is
+            None."""
+        ok = True
+        message = ''
+
+        query = (
+            select(TenkmRule)
+            .join(Taxon)
+            .where(Taxon.preferred_tvk == tvk)
+            .where(TenkmRule.km100 == km100)
+            .where(TenkmRule.org_group_id == org_group.id)
+        )
+        tenkm_rule = self.db.exec(query).one_or_none()
+
+        if tenkm_rule is None:
+            # No matching km100 in the rules.
+            ok = False
+        else:
             km10s = tenkm_rule.km10.split()
             if (km10 not in km10s):
+                # No matching km10 in the rules.
                 ok = False
-                messages.append(
-                    f"{org_group.organisation}:{org_group.group}:tenkm: "
-                    "Record is outside known area."
-                )
 
-        return ok, messages
+        if not ok:
+            message = (
+                f"{org_group.organisation}:{org_group.group}:tenkm: "
+                "Location is outside known distribution."
+            )
+
+        return ok, message
