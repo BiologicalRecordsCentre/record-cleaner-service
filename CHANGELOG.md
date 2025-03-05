@@ -5,11 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [2.1.0 - Unreleased]
 
 ### Added
 - Env setting for phelology tolerance.
 - Env setting for tenkm tolerance.
+- Verbose parameter to /verify endpoint
 
 ### Changed
 - Message for phenology failures within tolerance.

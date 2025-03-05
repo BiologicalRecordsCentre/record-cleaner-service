@@ -440,14 +440,18 @@ class RuleRepo:
     def run_difficulty(
         self,
         org_group_rules_list: List,
-        record: Verified
+        record: Verified,
+        verbose: bool = True,
     ):
-        """Run difficulty for the specified org_groups against the record."""
+        """Run difficulty for the specified org_groups against the record.
+
+        Updates record with id_difficulty and messages. Difficulty text
+        messages are suppressed if verbose is False."""
         difficulty_repo = DifficultyRuleRepo(self.db, self.env)
 
         if len(org_group_rules_list) == 0:
             # Use difficulty from all org_groups.
-            id_difficulty, messages = difficulty_repo.run(record)
+            id_difficulty, messages = difficulty_repo.run(record, verbose)
             if id_difficulty is None:
                 record.result = 'warn'
                 messages.append("No rules exist for this taxon.")
@@ -459,7 +463,7 @@ class RuleRepo:
                 org_group = org_group_rules['org_group']
 
                 id_difficulty, messages = difficulty_repo.run(
-                    record, org_group.id
+                    record, verbose, org_group.id
                 )
                 if id_difficulty is None:
                     record.result = 'warn'

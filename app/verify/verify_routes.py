@@ -25,7 +25,12 @@ router = APIRouter(
     summary="Verify records.",
     response_model=VerifiedPack,
     response_model_exclude_none=True)
-async def verify(db: DbDependency, env: EnvDependency, data: VerifyPack):
+async def verify(
+    db: DbDependency,
+    env: EnvDependency,
+    data: VerifyPack,
+    verbose: int = 1,
+):
     """ Verify an array of records against an array of rules.
 
     Refer to the validation endpoint for details of the fields for a record.
@@ -44,7 +49,11 @@ async def verify(db: DbDependency, env: EnvDependency, data: VerifyPack):
 
     To avoid server timeouts and database locks, you are advised to submit
     records in modest chunks e.g. 100 records. No limit is currently imposed
-    but this may change in future. """
+    but this may change in future. 
+
+    Setting the verbose parameter to 0 will reduce message output."""
+    # verbose is added as a number to allow for future development when it
+    # might offer more control. For now it is used as a boolean internally.
 
     start = time.time_ns()
     results = []
@@ -106,7 +115,9 @@ async def verify(db: DbDependency, env: EnvDependency, data: VerifyPack):
 
             # 6. Get id difficulty.
             repo = RuleRepo(db, env)
-            repo.run_difficulty(new_org_group_rules_list, verified)
+            repo.run_difficulty(
+                new_org_group_rules_list, verified, bool(verbose)
+            )
 
             # 7. Check against rules.
             if verified.id_difficulty is not None:
