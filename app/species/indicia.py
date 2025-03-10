@@ -319,7 +319,7 @@ def make_search_request(env: EnvSettings, params: dict) -> dict:
         if r.status_code == requests.codes.ok:
             return r.json()
         else:
-            raise IndiciaError("Indicia API error. " + r.json())
+            raise IndiciaError("Indicia API error. " + r.json()['message'])
 
 
 def parse_response_full(response: dict) -> IndiciaResponse:
