@@ -67,8 +67,8 @@ def create_db(env: EnvSettings):
     else:
         # We run any alembic migrations outside the application as they may be
         # long running. During development, run `alembic upgrade head` at a
-        # terminal prompt. When running in a docker container this is done
-        # automatically when building the image.
+        # terminal prompt. In production, this should be automated during
+        # deployment.
         dir = alembic.script.ScriptDirectory.from_config(cfg)
         with engine.begin() as connection:
             context = alembic.migration.MigrationContext.configure(connection)
