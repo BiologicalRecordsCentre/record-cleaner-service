@@ -17,6 +17,7 @@ class Taxon(SQLModel, table=True):
     tvk: str = Field(index=True)
     preferred_tvk: str
     preferred: bool
+    organism_key: str = Field(index=True, nullable=False)
 
 
 class OrgGroup(SQLModel, table=True):

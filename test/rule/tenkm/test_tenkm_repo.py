@@ -30,7 +30,8 @@ class TestTenkmRuleRepo:
             search_name='adaliabipunctata',
             tvk='NBNSYS0000008319',
             preferred_tvk='NBNSYS0000008319',
-            preferred=True
+            preferred=True,
+            organism_key='NBNORG0000010513',
         )
         taxon2 = Taxon(
             name='Adalia decempunctata',
@@ -38,7 +39,8 @@ class TestTenkmRuleRepo:
             search_name='adaliadecempunctata',
             tvk='NBNSYS0000008320',
             preferred_tvk='NBNSYS0000008320',
-            preferred=True
+            preferred=True,
+            organism_key='NBNORG0000010514',
         )
         taxon3 = Taxon(
             name='Coccinella quinquepunctata',
@@ -46,7 +48,8 @@ class TestTenkmRuleRepo:
             search_name='coccinellacinquepunctata',
             tvk='NBNSYS0000008323',
             preferred_tvk='NBNSYS0000008323',
-            preferred=True
+            preferred=True,
+            organism_key='NBNORG0000010517'
         )
         db.add(taxon1)
         db.add(taxon2)
@@ -149,7 +152,8 @@ class TestTenkmRuleRepo:
             search_name='adaliabipunctata',
             tvk='NBNSYS0000008319',
             preferred_tvk='NBNSYS0000008319',
-            preferred=True
+            preferred=True,
+            organism_key='NBNORG0000010513',
         )
         taxon2 = Taxon(
             name='Adalia decempunctata',
@@ -157,7 +161,8 @@ class TestTenkmRuleRepo:
             search_name='adaliadecempunctata',
             tvk='NBNSYS0000008320',
             preferred_tvk='NBNSYS0000008320',
-            preferred=True
+            preferred=True,
+            organism_key='NBNORG0000010514',
         )
         db.add(taxon1)
         db.add(taxon2)
@@ -256,7 +261,8 @@ class TestTenkmRuleRepo:
             search_name='adaliabipunctata',
             tvk='NBNSYS0000008319',
             preferred_tvk='NBNSYS0000008319',
-            preferred=True
+            preferred=True,
+            organism_key='NBNORG0000010513',
         )
         db.add(taxon1)
         db.commit()

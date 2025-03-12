@@ -35,7 +35,8 @@ class TestPhenologyRuleRepo:
             search_name='adaliabipunctata',
             tvk='NBNSYS0000008319',
             preferred_tvk='NBNSYS0000008319',
-            preferred=True
+            preferred=True,
+            organism_key='NBNORG0000010513',
         )
         taxon2 = Taxon(
             name='Adalia decempunctata',
@@ -43,7 +44,8 @@ class TestPhenologyRuleRepo:
             search_name='adaliadecempunctata',
             tvk='NBNSYS0000008320',
             preferred_tvk='NBNSYS0000008320',
-            preferred=True
+            preferred=True,
+            organism_key='NBNORG0000010514',
         )
         db.add(taxon1)
         db.add(taxon2)
@@ -139,7 +141,8 @@ class TestPhenologyRuleRepo:
             search_name='adaliabipunctata',
             tvk='NBNSYS0000008319',
             preferred_tvk='NBNSYS0000008319',
-            preferred=True
+            preferred=True,
+            organism_key='NBNORG0000010513',
         )
         db.add(taxon1)
         db.commit()
@@ -177,7 +180,8 @@ class TestPhenologyRuleRepo:
             search_name='adaliabipunctata',
             tvk='NBNSYS0000008319',
             preferred_tvk='NBNSYS0000008319',
-            preferred=True
+            preferred=True,
+            organism_key='NBNORG0000010513',
         )
         taxon2 = Taxon(
             name='Adalia decempunctata',
@@ -185,7 +189,8 @@ class TestPhenologyRuleRepo:
             search_name='adaliadecempunctata',
             tvk='NBNSYS0000008320',
             preferred_tvk='NBNSYS0000008320',
-            preferred=True
+            preferred=True,
+            organism_key='NBNORG0000010514',
         )
         db.add(taxon1)
         db.add(taxon2)

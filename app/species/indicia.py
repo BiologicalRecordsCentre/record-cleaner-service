@@ -345,5 +345,6 @@ def parse_response_taxa(response: dict) -> list[Taxon]:
                 tvk=taxon['search_code'],
                 preferred_tvk=taxon['external_key'],
                 preferred=True if taxon['preferred'] == 't' else False,
+                organism_key=taxon['organism_key'],
             ))
     return taxa

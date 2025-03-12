@@ -25,7 +25,8 @@ class TestPhenologyRule:
                 search_name='adaliabipunctata',
                 tvk='NBNSYS0000008319',
                 preferred_tvk='NBNSYS0000008319',
-                preferred=True
+                preferred=True,
+                organism_key='NBNORG0000010513',
             )
             db.add(taxon)
             db.commit()
