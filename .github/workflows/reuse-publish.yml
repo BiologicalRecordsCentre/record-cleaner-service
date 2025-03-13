@@ -21,7 +21,7 @@ jobs:
     strategy:
       matrix:
         include:
-          - image: recordcleanerservice
+          - image: biologicalrecordscentre/recordcleanerservice
             dockerfile: application.Dockerfile
     # Sets the permissions granted to the `GITHUB_TOKEN` for the actions in this
     # job.
