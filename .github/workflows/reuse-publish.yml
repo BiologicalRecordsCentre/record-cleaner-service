@@ -21,8 +21,6 @@ jobs:
     strategy:
       matrix:
         include:
-          - image: recordcleanerservice-migration
-            dockerfile: migration.Dockerfile
           - image: recordcleanerservice
             dockerfile: application.Dockerfile
     # Sets the permissions granted to the `GITHUB_TOKEN` for the actions in this
