@@ -21,7 +21,9 @@ jobs:
     strategy:
       matrix:
         include:
-          - image: biologicalrecordscentre/recordcleanerservice
+          - image: ${{ github.repository }}-migration
+            dockerfile: migration.Dockerfile
+          - image: ${{ github.repository }}
             dockerfile: application.Dockerfile
     # Sets the permissions granted to the `GITHUB_TOKEN` for the actions in this
     # job.
