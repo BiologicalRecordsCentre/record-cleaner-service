@@ -99,6 +99,21 @@ All pushes or merge requests to the main branch of the repository trigger unit
 testing. Running the tests locally and not submitting until all tests pass saves
 embarrassment.
 
+Python package changes
+
+To ensure all installations of Record Cleaner are identical, Python packages are
+pinned to exact versions. During a development cycle they should be updated to 
+incorporate fixes and enhancements
+
+1. Execute `pip-review` at a command prompt in the root directory of the code
+   to see the available updates.
+2. To accept all updates execute `pip-review --auto`.
+3. To pick and choose updates, execute `pip-review --interactive`.
+4. To update requirements.txt, execute `pip freeze > requirements.txt`
+
+Conflicts may be reported after updating, in which case edit requirements.txt
+to revert versions and execute `pip install -r requirements.txt`.
+
 ### Database changes
 
 To make changes to the database design, e.g. adding a column to a table, we use
