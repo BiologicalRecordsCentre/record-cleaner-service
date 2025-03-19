@@ -38,7 +38,8 @@ class TestPeriodRule:
             # Create period rule.
             period_rule = PeriodRule(
                 org_group_id=org_group.id,
-                taxon_id=taxon.id,
+                organism_key=taxon.organism_key,
+                taxon=taxon.name,
                 start_date=date(2020, 1, 1),
                 end_date=date(2020, 12, 31)
             )
@@ -51,20 +52,26 @@ class TestPeriodRule:
                 f'/rules/period/org_group/{org_group.id}')
             assert response.status_code == 200
             result = response.json()
-            assert result == [{
-                'tvk': 'NBNSYS0000008319',
-                'taxon': 'Adalia bipunctata',
-                'start_date': '2020-01-01',
-                'end_date': '2020-12-31'
-            }]
+            assert result[0]['organism_key'] == 'NBNORG0000010513'
+            assert result[0]['taxon'] == 'Adalia bipunctata'
+            assert result[0]['start_date'] == '2020-01-01'
+            assert result[0]['end_date'] == '2020-12-31'
 
             # Request period rules for tvk.
             response = client.get(f'/rules/period/tvk/{taxon.tvk}')
             assert response.status_code == 200
             result = response.json()
-            assert result == [{
-                'organisation': 'organisation1',
-                'group': 'group1',
-                'start_date': '2020-01-01',
-                'end_date': '2020-12-31'
-            }]
+            assert result[0]['organisation'] == 'organisation1'
+            assert result[0]['group'] == 'group1'
+            assert result[0]['start_date'] == '2020-01-01'
+            assert result[0]['end_date'] == '2020-12-31'
+
+            # Request period rules for organism_key.
+            response = client.get(
+                f'/rules/period/organism_key/{taxon.organism_key}')
+            assert response.status_code == 200
+            result = response.json()
+            assert result[0]['organisation'] == 'organisation1'
+            assert result[0]['group'] == 'group1'
+            assert result[0]['start_date'] == '2020-01-01'
+            assert result[0]['end_date'] == '2020-12-31'

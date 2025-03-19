@@ -46,7 +46,8 @@ class TestAdditional:
             # Create additional rule.
             additional_rule = AdditionalRule(
                 org_group_id=org_group.id,
-                taxon_id=taxon.id,
+                organism_key=taxon.organism_key,
+                taxon=taxon.name,
                 additional_code_id=additional_code.id
             )
             db.add(additional_rule)
@@ -67,12 +68,23 @@ class TestAdditional:
             assert response.status_code == 200
             result = response.json()
             assert len(result) == 1
-            assert result[0]['tvk'] == 'NBNSYS0000008319'
+            assert result[0]['organism_key'] == 'NBNORG0000010513'
             assert result[0]['taxon'] == 'Adalia bipunctata'
             assert result[0]['code'] == 1
 
             # Request additional rules for tvk.
             response = client.get(f'/rules/additional/tvk/{taxon.tvk}')
+            assert response.status_code == 200
+            result = response.json()
+            assert len(result) == 1
+            assert result[0]['organisation'] == 'organisation1'
+            assert result[0]['group'] == 'group1'
+            assert result[0]['code'] == 1
+            assert result[0]['text'] == 'Rare'
+
+            # Request additional rules for organism key.
+            response = client.get(
+                f'/rules/additional/organism_key/{taxon.organism_key}')
             assert response.status_code == 200
             result = response.json()
             assert len(result) == 1

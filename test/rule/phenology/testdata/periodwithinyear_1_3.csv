@@ -1,2 +1,2 @@
-taxon,tvk,start_day,start_month,end_day,end_month,stage
-Adalia bipunctata,NBNSYS0000008319,2,6,29,11,*
+organism_key,taxon,start_day,start_month,end_day,end_month,stage
+NBNORG0000010513,Adalia bipunctata,2,6,29,11,*

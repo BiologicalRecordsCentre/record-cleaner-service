@@ -5,14 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.2.0 Unreleased]
+## [3.0.0 Unreleased]
 
 ### Added
- - organism_key to Taxon table and thence /species/taxon_by_tvk and 
-   /species/taxon_by_name.
+ - organism_key to Taxon table which is then included in responses from 
+   /species/taxon_by_tvk and /species/taxon_by_name.
+ - organism_key to response from /verify
+ - End point /rules/additional/organism_key/{organism_key}
+ - End point /rules/difficulty/organism_key/{organism_key}
+ - End point /rules/period/organism_key/{organism_key}
+ - End point /rules/phenology/organism_key/{organism_key}
+ - End point /rules/tenkm/organism_key/{organism_key}
 
 ### Changed
- - Upgraded requirements to latest versions.
+ - Python module requirements to latest versions.
+ - Rules to be referenced by organism key rather than taxon version key.
+   Consequently this changes the response from 
+    - /rules/additional/org_group/{org_group_id} 
+    - /rules/difficulty/org_group/{org_group_id} 
+    - /rules/period/org_group/{org_group_id} 
+    - /rules/phenology/org_group/{org_group_id} 
+    - /rules/tenkm/org_group/{org_group_id} 
 
 ### Fixed
  - Exception when Indicia API returned a JSON error.

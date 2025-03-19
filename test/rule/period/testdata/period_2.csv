@@ -1,3 +1,3 @@
-taxon,tvk,start_day,start_month,start_year,end_day,end_month,end_year
-Adalia bipunctata,NBNSYS0000008319,1,1,2001,31,12,2021
-Adalia decempunctata,NBNSYS0000008320,2,2,2002,31,12,2022
+organism_key,taxon,start_day,start_month,start_year,end_day,end_month,end_year
+NBNORG0000010513,Adalia bipunctata,1,1,2001,31,12,2021
+NBNORG0000010514,Adalia decempunctata,2,2,2002,31,12,2022

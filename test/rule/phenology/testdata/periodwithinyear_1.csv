@@ -1,2 +1,2 @@
-taxon,tvk,start_day,start_month,end_day,end_month,stage
-Adalia decempunctata,NBNSYS0000008320,1,6,30,11,mature
+organism_key,taxon,start_day,start_month,end_day,end_month,stage
+NBNORG0000010514,Adalia decempunctata,1,6,30,11,mature

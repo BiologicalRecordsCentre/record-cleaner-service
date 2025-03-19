@@ -36,7 +36,8 @@ class TestTenkmRule:
             # Create period rule.
             tenkm_rule = TenkmRule(
                 org_group_id=org_group.id,
-                taxon_id=taxon.id,
+                organism_key=taxon.organism_key,
+                taxon=taxon.name,
                 km100='NZ',
                 km10='17',
                 coord_system='OSGB'
@@ -50,7 +51,7 @@ class TestTenkmRule:
                 f'/rules/tenkm/org_group/{org_group.id}')
             assert response.status_code == 200
             result = response.json()
-            assert result[0]['tvk'] == 'NBNSYS0000008319'
+            assert result[0]['organism_key'] == 'NBNORG0000010513'
             assert result[0]['taxon'] == 'Adalia bipunctata'
             assert result[0]['km100'] == 'NZ'
             assert result[0]['km10'] == '17'
@@ -58,6 +59,17 @@ class TestTenkmRule:
 
             # Request tenkm rules for tvk.
             response = client.get(f'/rules/tenkm/tvk/{taxon.tvk}')
+            assert response.status_code == 200
+            result = response.json()
+            assert result[0]['organisation'] == 'organisation1'
+            assert result[0]['group'] == 'group1'
+            assert result[0]['km100'] == 'NZ'
+            assert result[0]['km10'] == '17'
+            assert result[0]['coord_system'] == 'OSGB'
+
+            # Request tenkm rules for organism_key.
+            response = client.get(
+                f'/rules/tenkm/organism_key/{taxon.organism_key}')
             assert response.status_code == 200
             result = response.json()
             assert result[0]['organisation'] == 'organisation1'

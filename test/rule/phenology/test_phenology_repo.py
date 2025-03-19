@@ -28,29 +28,6 @@ class TestPhenologyRuleRepo:
         db.add(org_group2)
         db.commit()
 
-        # Create taxa.
-        taxon1 = Taxon(
-            name='Adalia bipunctata',
-            preferred_name='Adalia bipunctata',
-            search_name='adaliabipunctata',
-            tvk='NBNSYS0000008319',
-            preferred_tvk='NBNSYS0000008319',
-            preferred=True,
-            organism_key='NBNORG0000010513',
-        )
-        taxon2 = Taxon(
-            name='Adalia decempunctata',
-            preferred_name='Adalia decempunctata',
-            search_name='adaliadecempunctata',
-            tvk='NBNSYS0000008320',
-            preferred_tvk='NBNSYS0000008320',
-            preferred=True,
-            organism_key='NBNORG0000010514',
-        )
-        db.add(taxon1)
-        db.add(taxon2)
-        db.commit()
-
         # Create stages.
         stage1 = Stage(
             org_group_id=org_group1.id,
@@ -83,13 +60,13 @@ class TestPhenologyRuleRepo:
         # Check the results by org_group.
         result = repo.list_by_org_group(org_group1.id)
         assert len(result) == 2
-        assert result[0]['tvk'] == taxon1.tvk
-        assert result[0]['taxon'] == taxon1.name
+        assert result[0]['organism_key'] == 'NBNORG0000010513'
+        assert result[0]['taxon'] == 'Adalia bipunctata'
         assert result[0]['start_date'] == '1/4'
         assert result[0]['end_date'] == '31/10'
         assert result[0]['stage'] == 'mature'
-        assert result[1]['tvk'] == taxon1.tvk
-        assert result[1]['taxon'] == taxon1.name
+        assert result[1]['organism_key'] == 'NBNORG0000010513'
+        assert result[1]['taxon'] == 'Adalia bipunctata'
         assert result[1]['start_date'] == '1/10'
         assert result[1]['end_date'] == '30/4'
         assert result[1]['stage'] == 'larval'
@@ -102,8 +79,8 @@ class TestPhenologyRuleRepo:
         # Check the results by org_group.
         result = repo.list_by_org_group(org_group1.id)
         assert len(result) == 1
-        assert result[0]['tvk'] == taxon2.tvk
-        assert result[0]['taxon'] == taxon2.name
+        assert result[0]['organism_key'] == 'NBNORG0000010514'
+        assert result[0]['taxon'] == 'Adalia decempunctata'
         assert result[0]['start_date'] == '1/6'
         assert result[0]['end_date'] == '30/11'
         assert result[0]['stage'] == 'mature'
@@ -113,8 +90,8 @@ class TestPhenologyRuleRepo:
             testdatadir, org_group2.id, 'pqr987', 'periodwithinyear_1_2.csv')
         assert (errors == [])
 
-        # Check the results by tvk.
-        result = repo.list_by_tvk(taxon2.tvk)
+        # Check the results by organism_key.
+        result = repo.list_by_organism_key('NBNORG0000010514')
         assert len(result) == 2
         assert result[0]['organisation'] == org_group1.organisation
         assert result[0]['group'] == org_group1.group
@@ -134,19 +111,6 @@ class TestPhenologyRuleRepo:
         db.add(org_group1)
         db.commit()
 
-        # Create taxa.
-        taxon1 = Taxon(
-            name='Adalia bipunctata',
-            preferred_name='Adalia bipunctata',
-            search_name='adaliabipunctata',
-            tvk='NBNSYS0000008319',
-            preferred_tvk='NBNSYS0000008319',
-            preferred=True,
-            organism_key='NBNORG0000010513',
-        )
-        db.add(taxon1)
-        db.commit()
-
         # Load a file.
         repo = PhenologyRuleRepo(db, env)
         errors = repo.load_file(
@@ -157,8 +121,8 @@ class TestPhenologyRuleRepo:
         # Check the results by org_group.
         result = repo.list_by_org_group(org_group1.id)
         assert len(result) == 1
-        assert result[0]['tvk'] == taxon1.tvk
-        assert result[0]['taxon'] == taxon1.name
+        assert result[0]['organism_key'] == 'NBNORG0000010513'
+        assert result[0]['taxon'] == 'Adalia bipunctata'
         assert result[0]['start_date'] == '2/6'
         assert result[0]['end_date'] == '29/11'
         assert result[0]['stage'] == '*'
@@ -239,7 +203,8 @@ class TestPhenologyRuleRepo:
         # Create phenology rule for org_group1 and mature taxon1.
         rule1 = PhenologyRule(
             org_group_id=org_group1.id,
-            taxon_id=taxon1.id,
+            organism_key=taxon1.organism_key,
+            taxon=taxon1.name,
             stage_id=stage1.id,
             start_day=8,
             start_month=6,
@@ -249,7 +214,8 @@ class TestPhenologyRuleRepo:
         # Create phenology rule for org_group1 and larval taxon1.
         rule2 = PhenologyRule(
             org_group_id=org_group1.id,
-            taxon_id=taxon1.id,
+            organism_key=taxon1.organism_key,
+            taxon=taxon1.name,
             stage_id=stage2.id,
             start_day=31,
             start_month=3,
@@ -259,7 +225,8 @@ class TestPhenologyRuleRepo:
         # Create phenology rule for org_group2 and mature taxon1.
         rule3 = PhenologyRule(
             org_group_id=org_group2.id,
-            taxon_id=taxon1.id,
+            organism_key=taxon1.organism_key,
+            taxon=taxon1.name,
             stage_id=stage3.id,
             start_day=11,
             start_month=7,
@@ -269,7 +236,8 @@ class TestPhenologyRuleRepo:
         # Create phenology rule for org_group3 and taxon1 at any stage.
         rule4 = PhenologyRule(
             org_group_id=org_group3.id,
-            taxon_id=taxon1.id,
+            organism_key=taxon1.organism_key,
+            taxon=taxon1.name,
             stage_id=stage4.id,
             start_day=1,
             start_month=2,
@@ -287,7 +255,7 @@ class TestPhenologyRuleRepo:
             id=1,
             date='1/8/1975',
             sref=Sref(gridref='TL123456', srid=SrefSystem.GB_GRID),
-            preferred_tvk=taxon1.preferred_tvk,
+            organism_key=taxon1.organism_key,
             stage='adult'
         )
 
@@ -332,7 +300,7 @@ class TestPhenologyRuleRepo:
         assert len(messages) == 0
 
         # Change to taxon2 with no rules.
-        record.preferred_tvk = taxon2.preferred_tvk
+        record.organism_key = taxon2.organism_key
         # Test the record against rules for all org_groups.
         ok, messages = repo.run(record)
         # It should baulk
@@ -358,7 +326,8 @@ class TestPhenologyRuleRepo:
         # Create a summer rule.
         rule = PhenologyRule(
             org_group_id=1,
-            taxon_id=1,
+            organism_key='NBNORG00000105131',
+            taxon='Adalia bipunctata',
             stage_id=1,
             start_day=8,
             start_month=6,

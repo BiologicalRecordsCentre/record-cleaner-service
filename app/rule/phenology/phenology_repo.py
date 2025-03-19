@@ -18,18 +18,17 @@ class PhenologyRuleRepo(RuleRepoBase):
 
     def list_by_org_group(self, org_group_id: int):
         results = self.db.exec(
-            select(PhenologyRule, Taxon, Stage)
-            .join(Taxon)
+            select(PhenologyRule, Stage)
             .join(Stage)
             .where(PhenologyRule.org_group_id == org_group_id)
-            .order_by(Taxon.tvk)
+            .order_by(PhenologyRule.organism_key)
         ).all()
 
         rules = []
-        for phenology, taxon, stage in results:
+        for phenology, stage in results:
             rules.append({
-                'tvk': taxon.tvk,
-                'taxon': taxon.name,
+                'organism_key': phenology.organism_key,
+                'taxon': phenology.taxon,
                 'start_date': f"{phenology.start_day}/{phenology.start_month}",
                 'end_date': f"{phenology.end_day}/{phenology.end_month}",
                 'stage': stage.stage
@@ -37,13 +36,13 @@ class PhenologyRuleRepo(RuleRepoBase):
 
         return rules
 
-    def list_by_tvk(self, tvk: str):
+    def list_by_organism_key(self, organism_key: str):
         query = (
             select(PhenologyRule, OrgGroup, Stage)
-            .join(Taxon)
+            .select_from(PhenologyRule)
             .join(OrgGroup)
             .join(Stage, Stage.id == PhenologyRule.stage_id)
-            .where(Taxon.tvk == tvk)
+            .where(PhenologyRule.organism_key == organism_key)
             .order_by(OrgGroup.organisation, OrgGroup.group)
         )
         results = self.db.exec(query).all()
@@ -60,13 +59,13 @@ class PhenologyRuleRepo(RuleRepoBase):
 
         return rules
 
-    def get_or_create(self, org_group_id: int, taxon_id: int, stage_id: int):
+    def get_or_create(self, org_group_id: int, organism_key: str, stage_id: int):
         """Get existing record or create a new one."""
 
         phenology_rule = self.db.exec(
             select(PhenologyRule)
             .where(PhenologyRule.org_group_id == org_group_id)
-            .where(PhenologyRule.taxon_id == taxon_id)
+            .where(PhenologyRule.organism_key == organism_key)
             .where(PhenologyRule.stage_id == stage_id)
         ).one_or_none()
 
@@ -74,7 +73,7 @@ class PhenologyRuleRepo(RuleRepoBase):
             # Create new.
             phenology_rule = PhenologyRule(
                 org_group_id=org_group_id,
-                taxon_id=taxon_id,
+                organism_key=organism_key,
                 stage_id=stage_id
             )
 
@@ -109,7 +108,8 @@ class PhenologyRuleRepo(RuleRepoBase):
         df = pd.read_csv(
             f'{dir}/{file}',
             usecols=[
-                'tvk',
+                'organism_key',
+                'taxon',
                 'start_day',
                 'start_month',
                 'end_day',
@@ -118,6 +118,7 @@ class PhenologyRuleRepo(RuleRepoBase):
             ],
             dtype={
                 'tvk': str,
+                'organism_key': str,
                 'start_day': 'Int64',
                 'start_month': 'Int64',
                 'end_day': 'Int64',
@@ -140,20 +141,6 @@ class PhenologyRuleRepo(RuleRepoBase):
             stage_lookup['*'] = stage.id
 
         for row in df.to_dict('records'):
-            # Lookup preferred tvk.
-            try:
-                taxon = cache.get_taxon_by_tvk(
-                    self.db, self.env, row['tvk'].strip()
-                )
-            except ValueError as e:
-                errors.append(str(e))
-                continue
-
-            if taxon.tvk != taxon.preferred_tvk:
-                taxon = cache.get_taxon_by_tvk(
-                    self.db, self.env, taxon.preferred_tvk
-                )
-
             # Validate start date.
             m = row['start_month']
             d = row['start_day']
@@ -196,7 +183,8 @@ class PhenologyRuleRepo(RuleRepoBase):
 
             # Add the rule to the db.
             phenology_rule = self.get_or_create(
-                org_group_id, taxon.id, stage_lookup[stage])
+                org_group_id, row['organism_key'], stage_lookup[stage])
+            phenology_rule.taxon = row['taxon']
             phenology_rule.start_day = row['start_day']
             phenology_rule.start_month = row['start_month']
             phenology_rule.end_day = row['end_day']
@@ -224,9 +212,8 @@ class PhenologyRuleRepo(RuleRepoBase):
             select(PhenologyRule, OrgGroup, Stage)
             .select_from(PhenologyRule)
             .join(OrgGroup, OrgGroup.id == PhenologyRule.org_group_id)
-            .join(Taxon, Taxon.id == PhenologyRule.taxon_id)
             .join(Stage, Stage.id == PhenologyRule.stage_id)
-            .where(Taxon.preferred_tvk == record.preferred_tvk)
+            .where(PhenologyRule.organism_key == record.organism_key)
         )
         if org_group_id is not None:
             query = query.where(OrgGroup.id == org_group_id)

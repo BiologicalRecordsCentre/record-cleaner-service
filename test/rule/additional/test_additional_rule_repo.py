@@ -20,39 +20,6 @@ class TestAdditionalRuleRepo:
         db.add(org_group2)
         db.commit()
 
-        # Create taxa.
-        taxon1 = Taxon(
-            name='Adalia bipunctata',
-            preferred_name='Adalia bipunctata',
-            search_name='adaliabipunctata',
-            tvk='NBNSYS0000008319',
-            preferred_tvk='NBNSYS0000008319',
-            preferred=True,
-            organism_key='NBNORG0000010513',
-        )
-        taxon2 = Taxon(
-            name='Adalia decempunctata',
-            preferred_name='Adalia decempunctata',
-            search_name='adaliadecempunctata',
-            tvk='NBNSYS0000008320',
-            preferred_tvk='NBNSYS0000008320',
-            preferred=True,
-            organism_key='NBNORG0000010514',
-        )
-        taxon3 = Taxon(
-            name='Coccinella quinquepunctata',
-            preferred_name='Coccinella quinquepunctata',
-            search_name='coccinellacinquepunctata',
-            tvk='NBNSYS0000008323',
-            preferred_tvk='NBNSYS0000008323',
-            preferred=True,
-            organism_key='NBNORG0000010517'
-        )
-        db.add(taxon1)
-        db.add(taxon2)
-        db.add(taxon3)
-        db.commit()
-
         # Create additional codes.
         additional_code1 = AdditionalCode(
             code=1,
@@ -81,14 +48,14 @@ class TestAdditionalRuleRepo:
         # Check the results by org_group.
         result = repo.list_by_org_group(org_group1.id)
         assert len(result) == 3
-        assert result[0]['tvk'] == taxon1.tvk
-        assert result[0]['taxon'] == taxon1.name
+        assert result[0]['organism_key'] == 'NBNORG0000010513'
+        assert result[0]['taxon'] == 'Adalia bipunctata'
         assert result[0]['code'] == 1
-        assert result[1]['tvk'] == taxon2.tvk
-        assert result[1]['taxon'] == taxon2.name
+        assert result[1]['organism_key'] == 'NBNORG0000010514'
+        assert result[1]['taxon'] == 'Adalia decempunctata'
         assert result[1]['code'] == 1
-        assert result[2]['tvk'] == taxon3.tvk
-        assert result[2]['taxon'] == taxon3.name
+        assert result[2]['organism_key'] == 'NBNORG0000010517'
+        assert result[2]['taxon'] == 'Coccinella quinquepunctata'
         assert result[2]['code'] == 1
 
         # Load a shorter file.
@@ -99,8 +66,8 @@ class TestAdditionalRuleRepo:
         # Check the results by org_group.
         result = repo.list_by_org_group(org_group1.id)
         assert len(result) == 1
-        assert result[0]['tvk'] == taxon1.tvk
-        assert result[0]['taxon'] == taxon1.name
+        assert result[0]['organism_key'] == 'NBNORG0000010513'
+        assert result[0]['taxon'] == 'Adalia bipunctata'
         assert result[0]['code'] == 1
 
         # Load another additional rule of the same taxon to another org_group.
@@ -108,8 +75,8 @@ class TestAdditionalRuleRepo:
             dir, org_group2.id, 'pqr987', 'additional_1_2.csv')
         assert (errors == [])
 
-        # Check the results by tvk.
-        result = repo.list_by_tvk(taxon1.tvk)
+        # Check the results by organism_key.
+        result = repo.list_by_organism_key('NBNORG0000010513')
         assert len(result) == 2
         assert result[0]['organisation'] == org_group1.organisation
         assert result[0]['group'] == org_group1.group
@@ -125,7 +92,7 @@ class TestAdditionalRuleRepo:
         db.commit()
 
         # Check the deletion cascades.
-        result = repo.list_by_tvk(taxon1.tvk)
+        result = repo.list_by_organism_key('NBNORG0000010513')
         assert len(result) == 1
         assert result[0]['organisation'] == org_group2.organisation
         assert result[0]['group'] == org_group2.group
@@ -180,13 +147,15 @@ class TestAdditionalRuleRepo:
         # Create additional rule for org_group1 and taxon1.
         rule1 = AdditionalRule(
             org_group_id=org_group1.id,
-            taxon_id=taxon1.id,
+            organism_key=taxon1.organism_key,
+            taxon=taxon1.organism_key,
             additional_code_id=code1.id
         )
         # Create additional rule for org_group2 and taxon1.
         rule2 = AdditionalRule(
             org_group_id=org_group2.id,
-            taxon_id=taxon1.id,
+            organism_key=taxon1.organism_key,
+            taxon=taxon1.name,
             additional_code_id=code2.id
         )
         db.add(rule1)
@@ -198,7 +167,7 @@ class TestAdditionalRuleRepo:
             id=1,
             date='23/5/2024',
             sref=Sref(gridref='TL123456', srid=SrefSystem.GB_GRID),
-            preferred_tvk=taxon1.preferred_tvk
+            organism_key=taxon1.organism_key
         )
 
         repo = AdditionalRuleRepo(db, env)
@@ -217,7 +186,7 @@ class TestAdditionalRuleRepo:
         assert messages[1] == 'organisation2:group2:additional: Scarce'
 
         # Change record to taxon2 which has no additional rules.
-        record.preferred_tvk = taxon2.preferred_tvk
+        record.organism_key = taxon2.organism_key
         ok, messages = repo.run(record)
         assert ok is None
         assert len(messages) == 0

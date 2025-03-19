@@ -77,11 +77,13 @@ class DifficultyCode(SQLModel, table=True):
 
 
 class DifficultyRule(SQLModel, table=True):
-    __table_args__ = (UniqueConstraint('org_group_id', 'taxon_id', 'stage'),)
+    __table_args__ = (UniqueConstraint(
+        'org_group_id', 'organism_key', 'stage'),)
 
     id: Optional[int] = Field(default=None, primary_key=True)
     org_group_id: int = Field(foreign_key='orggroup.id', index=True)
-    taxon_id: int = Field(foreign_key='taxon.id', index=True)
+    organism_key: str = Field(index=True, nullable=False)
+    taxon: str | None = None
     stage: str = Field(default='mature')
     difficulty_code_id: int = Field(
         foreign_key='difficultycode.id', index=True)
@@ -99,22 +101,24 @@ class AdditionalCode(SQLModel, table=True):
 
 
 class AdditionalRule(SQLModel, table=True):
-    __table_args__ = (UniqueConstraint('org_group_id', 'taxon_id'),)
+    __table_args__ = (UniqueConstraint('org_group_id', 'organism_key'),)
 
     id: Optional[int] = Field(default=None, primary_key=True)
     org_group_id: int = Field(foreign_key='orggroup.id', index=True)
-    taxon_id: int = Field(foreign_key='taxon.id', index=True)
+    organism_key: str = Field(index=True, nullable=False)
+    taxon: str | None = None
     additional_code_id: int = Field(
         foreign_key='additionalcode.id', index=True)
     commit: str | None = None
 
 
 class PeriodRule(SQLModel, table=True):
-    __table_args__ = (UniqueConstraint('org_group_id', 'taxon_id'),)
+    __table_args__ = (UniqueConstraint('org_group_id', 'organism_key'),)
 
     id: Optional[int] = Field(default=None, primary_key=True)
     org_group_id: int = Field(foreign_key='orggroup.id', index=True)
-    taxon_id: int = Field(foreign_key='taxon.id', index=True)
+    organism_key: str = Field(index=True, nullable=False)
+    taxon: str | None = None
     # Dates in yyyy-mm-dd format.
     start_date:  str | None = None
     end_date:  str | None = None
@@ -123,12 +127,13 @@ class PeriodRule(SQLModel, table=True):
 
 class PhenologyRule(SQLModel, table=True):
     __table_args__ = (
-        UniqueConstraint('org_group_id', 'taxon_id', 'stage_id'),
+        UniqueConstraint('org_group_id', 'organism_key', 'stage_id'),
     )
 
     id: Optional[int] = Field(default=None, primary_key=True)
     org_group_id: int = Field(foreign_key='orggroup.id', index=True)
-    taxon_id: int = Field(foreign_key='taxon.id', index=True)
+    organism_key: str = Field(index=True, nullable=False)
+    taxon: str | None = None
     stage_id: int = Field(foreign_key='stage.id', index=True)
     start_day:  int
     start_month:  int
@@ -138,11 +143,13 @@ class PhenologyRule(SQLModel, table=True):
 
 
 class TenkmRule(SQLModel, table=True):
-    __table_args__ = (UniqueConstraint('org_group_id', 'taxon_id', 'km100'),)
+    __table_args__ = (UniqueConstraint(
+        'org_group_id', 'organism_key', 'km100'),)
 
     id: Optional[int] = Field(default=None, primary_key=True)
     org_group_id: int = Field(foreign_key='orggroup.id', index=True)
-    taxon_id: int = Field(foreign_key='taxon.id', index=True)
+    organism_key: str = Field(index=True, nullable=False)
+    taxon: str | None = None
     km100:  str | None = None
     km10:  str | None = None
     coord_system:  str | None = None

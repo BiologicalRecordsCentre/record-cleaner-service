@@ -31,31 +31,6 @@ class TestPeriodRuleRepo:
         db.refresh(org_group1)
         db.refresh(org_group2)
 
-        # Create taxa.
-        taxon1 = Taxon(
-            name='Adalia bipunctata',
-            preferred_name='Adalia bipunctata',
-            search_name='adaliabipunctata',
-            tvk='NBNSYS0000008319',
-            preferred_tvk='NBNSYS0000008319',
-            preferred=True,
-            organism_key='NBNORG0000010513',
-        )
-        taxon2 = Taxon(
-            name='Adalia decempunctata',
-            preferred_name='Adalia decempunctata',
-            search_name='adaliadecempunctata',
-            tvk='NBNSYS0000008320',
-            preferred_tvk='NBNSYS0000008320',
-            preferred=True,
-            organism_key='NBNORG0000010514',
-        )
-        db.add(taxon1)
-        db.add(taxon2)
-        db.commit()
-        db.refresh(taxon1)
-        db.refresh(taxon2)
-
         # Load a file.
         repo = PeriodRuleRepo(db, env)
         errors = repo.load_file(
@@ -65,12 +40,12 @@ class TestPeriodRuleRepo:
 
         # Check the results by org_group.
         result = repo.list_by_org_group(org_group1.id)
-        assert result[0]['tvk'] == taxon1.tvk
-        assert result[0]['taxon'] == taxon1.name
+        assert result[0]['organism_key'] == 'NBNORG0000010513'
+        assert result[0]['taxon'] == 'Adalia bipunctata'
         assert result[0]['start_date'] == '2001-01-01'
         assert result[0]['end_date'] == '2021-12-31'
-        assert result[1]['tvk'] == taxon2.tvk
-        assert result[1]['taxon'] == taxon2.name
+        assert result[1]['organism_key'] == 'NBNORG0000010514'
+        assert result[1]['taxon'] == 'Adalia decempunctata'
         assert result[1]['start_date'] == '2002-02-02'
         assert result[1]['end_date'] == '2022-12-31'
 
@@ -81,8 +56,8 @@ class TestPeriodRuleRepo:
 
         # Check the results by org_group.
         result = repo.list_by_org_group(org_group1.id)
-        assert result[0]['tvk'] == taxon1.tvk
-        assert result[0]['taxon'] == taxon1.name
+        assert result[0]['organism_key'] == 'NBNORG0000010513'
+        assert result[0]['taxon'] == 'Adalia bipunctata'
         assert result[0]['start_date'] == '1901-01-01'
         assert result[0]['end_date'] == '2021-12-31'
 
@@ -91,8 +66,8 @@ class TestPeriodRuleRepo:
             testdatadir, org_group2.id, 'pqr987', 'period_1_2.csv')
         assert (errors == [])
 
-        # Check the results by tvk.
-        result = repo.list_by_tvk(taxon1.tvk)
+        # Check the results by organism_key.
+        result = repo.list_by_organism_key('NBNORG0000010513')
         assert result[0]['organisation'] == org_group1.organisation
         assert result[0]['group'] == org_group1.group
         assert result[0]['start_date'] == '1901-01-01'
@@ -134,14 +109,16 @@ class TestPeriodRuleRepo:
         # Create period rule for org_group1 and taxon1.
         rule1 = PeriodRule(
             org_group_id=org_group1.id,
-            taxon_id=taxon1.id,
+            organism_key=taxon1.organism_key,
+            taxon=taxon1.name,
             start_date='1970-01-01',
             end_date='1979-12-31'
         )
         # Create period rule for org_group2 and taxon1.
         rule2 = PeriodRule(
             org_group_id=org_group2.id,
-            taxon_id=taxon1.id,
+            organism_key=taxon1.organism_key,
+            taxon=taxon1.name,
             start_date='1971-01-01',
             end_date='1978-12-31'
         )
@@ -154,7 +131,7 @@ class TestPeriodRuleRepo:
             id=1,
             date='1/6/1975',
             sref=Sref(gridref='TL123456', srid=SrefSystem.GB_GRID),
-            preferred_tvk=taxon1.preferred_tvk
+            organism_key=taxon1.organism_key
         )
 
         repo = PeriodRuleRepo(db, env)
