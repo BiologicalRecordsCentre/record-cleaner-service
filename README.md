@@ -92,11 +92,29 @@ Set to 0 to disable.
 *   `TENKM_TOLERANCE=1`
 
 ## Development
+
 Do development in a fork or branch of the repo.
 
 All pushes or merge requests to the main branch of the repository trigger unit
 testing. Running the tests locally and not submitting until all tests pass saves
 embarrassment.
+
+### Database changes
+
+To make changes to the database design, e.g. adding a column to a table, we use
+[Alembic](https://alembic.sqlalchemy.org/en/latest/). This allows changes to
+be captured in code and committed to the repo. 
+
+ 1. Edit app/sqlmodels.py and save your changes. If adding a column it either
+ needs to be nullable, have a default vaule or you need to be prepared to 
+ truncate the table contents and rebuild. Moreover, in the last case, all 
+ relevant code and tests will need updating simultanously.
+ 2. Execute `alembic revision --autogenerate -m "{a short description}` at a
+ command prompt in the root directory of the code.
+ 3. Examine the update file created in the alembic/versions folder and ensure it
+ looks okay.
+ 4. To apply the update, execute `alembic upgrade head`.
+ 5. To revert to the previous version, execute `alembic downgrade -1`
 
 ### VS Code
 When developing with VS Code the following two configuration files can be used
