@@ -12,6 +12,9 @@ RUN python -m pip install -r requirements.txt
 FROM python:3.12-slim
 # The slim image allows our final image to be smaller.
 
+# Install Sqlite3 as a utility for database actions.
+RUN apt-get update && apt-get install -y sqlite3
+
 # Keeps Python from generating .pyc files in the container.
 ENV PYTHONDONTWRITEBYTECODE=1
 
