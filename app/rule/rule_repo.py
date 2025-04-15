@@ -89,8 +89,20 @@ class RuleRepo:
     def __init__(self, db: Session, env: EnvSettings):
         self.db = db
         self.env = env
-        self.basedir = os.path.abspath(os.path.dirname(__file__))
-        self.datadir = os.path.join(self.basedir, 'data')
+
+        # Determine absolute path of the data directory.
+        # The application directory is two levels above this file.
+        app_dir = os.path.abspath(
+            os.path.dirname(
+                os.path.dirname(__file__)
+            )
+        )
+        data_parent_dir = env.data_dir
+        if data_parent_dir[0] == '.':
+            # Determine absolute path from relative path setting.
+            data_parent_dir = os.path.join(app_dir, data_parent_dir[1:])
+
+        self.datadir = os.path.join(data_parent_dir, 'data')
         self.gitdir = os.path.join(self.datadir, env.rules_dir)
         self.rulesdir = os.path.join(self.gitdir, env.rules_subdir)
 
