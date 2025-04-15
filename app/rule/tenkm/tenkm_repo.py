@@ -82,7 +82,7 @@ class TenkmRuleRepo(RuleRepoBase):
         )
         for row in tenkm_rules:
             self.db.delete(row)
-        self.db.commit()
+            self.db.commit()
 
     def load_file(
             self,
@@ -148,9 +148,8 @@ class TenkmRuleRepo(RuleRepoBase):
             tenkm_rule.coord_system = coord_system
             tenkm_rule.commit = rules_commit
             self.db.add(tenkm_rule)
-
-        # Save all the changes.
-        self.db.commit()
+            # Save change immediately to avoid locks.
+            self.db.commit()
         # Delete orphan PeriodRules.
         self.purge(org_group_id, rules_commit)
 

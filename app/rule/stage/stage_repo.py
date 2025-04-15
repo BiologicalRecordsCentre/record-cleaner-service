@@ -70,7 +70,7 @@ class StageRepo(RuleRepoBase):
             # Delete all synonyms of the stage we are purging.
             self.stage_synonym_repo.purge(stage.id)
             self.db.delete(stage)
-        self.db.commit()
+            self.db.commit()
 
     def get_stage_lookup(self, org_group_id: int) -> dict:
         """Return a look up from stage to stage_id"""

@@ -78,7 +78,7 @@ class PeriodRuleRepo(RuleRepoBase):
         )
         for row in period_rules:
             self.db.delete(row)
-        self.db.commit()
+            self.db.commit()
 
     def load_file(
             self,
@@ -167,9 +167,8 @@ class PeriodRuleRepo(RuleRepoBase):
             period_rule.end_date = end_date
             period_rule.commit = rules_commit
             self.db.add(period_rule)
-
-        # Save all the changes.
-        self.db.commit()
+            # Save change immediately to avoid locks.
+            self.db.commit()
         # Delete orphan PeriodRules.
         self.purge(org_group_id, rules_commit)
 

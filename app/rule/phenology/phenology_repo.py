@@ -88,7 +88,7 @@ class PhenologyRuleRepo(RuleRepoBase):
         )
         for row in phenology_rules:
             self.db.delete(row)
-        self.db.commit()
+            self.db.commit()
 
     def load_file(
             self,
@@ -191,9 +191,8 @@ class PhenologyRuleRepo(RuleRepoBase):
             phenology_rule.end_month = row['end_month']
             phenology_rule.commit = rules_commit
             self.db.add(phenology_rule)
-
-        # Save all the changes.
-        self.db.commit()
+            # Save change immediately to avoid locks.
+            self.db.commit()
         # Delete orphan PeriodRules.
         self.purge(org_group_id, rules_commit)
 

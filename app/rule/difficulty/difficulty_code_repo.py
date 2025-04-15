@@ -52,7 +52,7 @@ class DifficultyCodeRepo(RuleRepoBase):
         )
         for row in difficulty_codes:
             self.db.delete(row)
-        self.db.commit()
+            self.db.commit()
 
     def get_code_lookup(self, org_group_id: int) -> {}:
         """Return a look up from code to code_id"""
@@ -91,9 +91,8 @@ class DifficultyCodeRepo(RuleRepoBase):
             difficulty_code.text = row['text'].strip()
             difficulty_code.commit = rules_commit
             self.db.add(difficulty_code)
-
-        # Save all the changes.
-        self.db.commit()
+            # Save change immediately to avoid locks.
+            self.db.commit()
         # Delete orphan DifficultyCodes.
         self.purge(org_group_id, rules_commit)
 
