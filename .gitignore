@@ -7,7 +7,7 @@
 __pycache__/
 
 # Data files
-data/
+/app/data/
 
 # IDE files
 .vscode

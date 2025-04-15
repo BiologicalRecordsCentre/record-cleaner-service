@@ -90,8 +90,9 @@ class RuleRepo:
         self.db = db
         self.env = env
 
-        # Determine absolute path of the data directory.
-        # The application directory is two levels above this file.
+        # Determine absolute path to the parent folder containing the data
+        # directory. It may be specified relative to the application directory
+        # which is two levels above this file.
         app_dir = os.path.abspath(
             os.path.dirname(
                 os.path.dirname(__file__)
@@ -102,8 +103,11 @@ class RuleRepo:
             # Determine absolute path from relative path setting.
             data_parent_dir = os.path.join(app_dir, data_parent_dir[1:])
 
+        # We will clone the rule repo in the data folder.
         self.datadir = os.path.join(data_parent_dir, 'data')
+        # The clone will create a directory containing the repo.
         self.gitdir = os.path.join(self.datadir, env.rules_dir)
+        # The rules may be in a sub-folder of the repo.
         self.rulesdir = os.path.join(self.gitdir, env.rules_subdir)
 
     def update(self, settings, full: bool = False):

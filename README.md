@@ -99,6 +99,9 @@ All pushes or merge requests to the main branch of the repository trigger unit
 testing. Running the tests locally and not submitting until all tests pass saves
 embarrassment.
 
+NB. When running tests locally, if you have a .env file rename it otherwise
+its contents will override the mocks.
+
 Python package changes
 
 To ensure all installations of Record Cleaner are identical, Python packages are

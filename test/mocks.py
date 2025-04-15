@@ -209,6 +209,7 @@ def mock_env_settings() -> object:
         initial_user_name: str = 'root'
         initial_user_pass: str = 'pass'
         log_level: str = 'info'
+        data_dir: str = '.'
         phenology_tolerance: int = 0
         tenkm_tolerance: int = 0
 
