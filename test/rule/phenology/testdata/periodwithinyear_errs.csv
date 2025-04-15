@@ -1,0 +1,9 @@
+organism_key,taxon,start_day,start_month,end_day,end_month,stage
+NBNORG0000010513,Adalia bipunctata,42,6,29,11,*
+NBNORG0000010518,Coccinella septempunctata,2,16,29,11,*
+NBNORG0000010517,Coccinella quinquepunctata,2,6,39,11,*
+NBNORG0000010519,Coccinella undecimpunctata,2,6,29,14,*
+NBNORG0000010513,Adalia bipunctata,,6,29,11,*
+NBNORG0000010518,Coccinella septempunctata,2,,29,11,*
+NBNORG0000010517,Coccinella quinquepunctata,2,6,,11,*
+NBNORG0000010519,Coccinella undecimpunctata,2,6,29,,*

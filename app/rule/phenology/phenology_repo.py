@@ -117,8 +117,8 @@ class PhenologyRuleRepo(RuleRepoBase):
                 'stage'
             ],
             dtype={
-                'tvk': str,
                 'organism_key': str,
+                'taxon': str,
                 'start_day': 'Int64',
                 'start_month': 'Int64',
                 'end_day': 'Int64',
@@ -146,7 +146,7 @@ class PhenologyRuleRepo(RuleRepoBase):
             d = row['start_day']
             if pd.isna(m) or pd.isna(d):
                 errors.append(
-                    f"Incomplete start date for {row['tvk']}."
+                    f"Incomplete start date for {row['organism_key']}."
                 )
                 continue
             else:
@@ -154,7 +154,7 @@ class PhenologyRuleRepo(RuleRepoBase):
                     date(2000, m, d)
                 except ValueError as e:
                     errors.append(
-                        f"Invalid start date for {row['tvk']}. {e}"
+                        f"Invalid start date for {row['organism_key']}: {e}"
                     )
                     continue
 
@@ -163,7 +163,7 @@ class PhenologyRuleRepo(RuleRepoBase):
             d = row['end_day']
             if pd.isna(m) or pd.isna(d):
                 errors.append(
-                    f"Incomplete end date for {row['tvk']}."
+                    f"Incomplete end date for {row['organism_key']}."
                 )
                 continue
             else:
@@ -171,14 +171,15 @@ class PhenologyRuleRepo(RuleRepoBase):
                     date(2000, m, d)
                 except ValueError as e:
                     errors.append(
-                        f"Invalid end date for {row['tvk']}. {e}"
+                        f"Invalid end date for {row['organism_key']}: {e}"
                     )
                     continue
 
             # Validate stage.
             stage = row['stage'].strip().lower()
             if stage not in stage_lookup.keys():
-                errors.append(f"Unknown stage '{stage}' for {row['tvk']}.")
+                errors.append(
+                    f"Unknown stage '{stage}' for {row['organism_key']}.")
                 continue
 
             # Add the rule to the db.

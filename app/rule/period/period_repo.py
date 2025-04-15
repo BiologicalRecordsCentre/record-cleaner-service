@@ -129,7 +129,7 @@ class PeriodRuleRepo(RuleRepoBase):
                 start_date = None
             elif pd.isna(y) or pd.isna(m) or pd.isna(d):
                 errors.append(
-                    f"Incomplete start date {y}-{m}-{d} for {row['tvk']}."
+                    f"Incomplete start date for {row['organism_key']}."
                 )
                 continue
             else:
@@ -137,7 +137,7 @@ class PeriodRuleRepo(RuleRepoBase):
                     start_date = date(y, m, d)
                 except ValueError as e:
                     errors.append(
-                        f"Invalid start date {y}-{m}-{d} for {row['tvk']}. {e}"
+                        f"Invalid start date for {row['organism_key']}: {e}"
                     )
                     continue
 
@@ -148,7 +148,7 @@ class PeriodRuleRepo(RuleRepoBase):
                 end_date = None
             elif pd.isna(y) or pd.isna(m) or pd.isna(d):
                 errors.append(
-                    f"Incomplete end date {y}-{m}-{d} for {row['tvk']}."
+                    f"Incomplete end date for {row['organism_key']}."
                 )
                 continue
             else:
@@ -156,7 +156,7 @@ class PeriodRuleRepo(RuleRepoBase):
                     end_date = date(y, m, d)
                 except ValueError as e:
                     errors.append(
-                        f"Invalid end date {y}-{m}-{d} for {row['tvk']}. {e}"
+                        f"Invalid end date for {row['organism_key']}: {e}"
                     )
                     continue
 

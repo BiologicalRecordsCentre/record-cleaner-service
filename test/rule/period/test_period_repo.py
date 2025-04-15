@@ -77,6 +77,37 @@ class TestPeriodRuleRepo:
         assert result[1]['start_date'] == '1965-11-01'
         assert result[1]['end_date'] == '2000-11-11'
 
+    def test_load_file_date_errors(
+            self, db: Session, env: EnvSettings, testdatadir: str
+    ):
+        # Create org_groups.
+        org_group1 = OrgGroup(organisation='organisation1', group='group1')
+        db.add(org_group1)
+        db.commit()
+
+        # Load a file.
+        repo = PeriodRuleRepo(db, env)
+        errors = repo.load_file(
+            testdatadir, org_group1.id, 'abc123', 'period_errs.csv'
+        )
+        assert (len(errors) == 10)
+        assert errors[0] == (
+            "Invalid start date for NBNORG0000010513: day is out of range for "
+            "month")
+        assert errors[1] == (
+            "Invalid start date for NBNORG0000010518: month must be in 1..12")
+        assert errors[2] == (
+            "Invalid end date for NBNORG0000010513: day is out of range for "
+            "month")
+        assert errors[3] == (
+            "Invalid end date for NBNORG0000010518: month must be in 1..12")
+        assert errors[4] == "Incomplete start date for NBNORG0000010513."
+        assert errors[5] == "Incomplete start date for NBNORG0000010518."
+        assert errors[6] == "Incomplete start date for NBNORG0000010517."
+        assert errors[7] == "Incomplete end date for NBNORG0000010513."
+        assert errors[8] == "Incomplete end date for NBNORG0000010518."
+        assert errors[9] == "Incomplete end date for NBNORG0000010517."
+
     def test_file_updated(self, db: Session, env: EnvSettings, testdatadir: str):
         repo = PeriodRuleRepo(db, env)
         time_before = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')

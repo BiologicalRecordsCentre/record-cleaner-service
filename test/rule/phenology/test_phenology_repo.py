@@ -127,6 +127,35 @@ class TestPhenologyRuleRepo:
         assert result[0]['end_date'] == '29/11'
         assert result[0]['stage'] == '*'
 
+    def test_load_file_date_errors(
+            self, db: Session, env: EnvSettings, testdatadir: str):
+        # Create org_groups.
+        org_group1 = OrgGroup(organisation='organisation1', group='group1')
+        db.add(org_group1)
+        db.commit()
+
+        # Load a file.
+        repo = PhenologyRuleRepo(db, env)
+        errors = repo.load_file(
+            testdatadir, org_group1.id, 'abc123', 'periodwithinyear_errs.csv'
+        )
+        assert (len(errors) == 8)
+        assert errors[0] == (
+            "Invalid start date for NBNORG0000010513: day is out of range for "
+            "month")
+        assert errors[1] == (
+            "Invalid start date for NBNORG0000010518: month must be in 1..12")
+        assert errors[2] == (
+            "Invalid end date for NBNORG0000010517: day is out of range for "
+            "month")
+        assert errors[3] == (
+            "Invalid end date for NBNORG0000010519: month must be in 1..12")
+        assert errors[4] == "Incomplete start date for NBNORG0000010513."
+        assert errors[5] == "Incomplete start date for NBNORG0000010518."
+        assert errors[6] == "Incomplete end date for NBNORG0000010517."
+        assert errors[7] == "Incomplete end date for NBNORG0000010519."
+        # Check the results by org_group.
+
     def test_run(self, db: Session, env: EnvSettings):
         # Create org_groups.
         org_group1 = OrgGroup(organisation='organisation1', group='group1')
