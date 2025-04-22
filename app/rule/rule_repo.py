@@ -148,7 +148,7 @@ class RuleRepo:
         logger.info("Rule update started.")
 
         try:
-            self, rules_commit = None
+            self.rules_commit = None
             self.rules_commit = self.git_update(settings)
             result = self.db_update(settings, full)
             result['commit'] = self.rules_commit
