@@ -152,7 +152,6 @@ class RuleRepo:
             self.rules_commit = self.git_update(settings)
             result = self.db_update(settings, full)
             result['commit'] = self.rules_commit
-            settings.db.rules_update_result = json.dumps(result)
             logger.info("Rule update complete.")
         except Exception as e:
             result = {
@@ -160,10 +159,9 @@ class RuleRepo:
                 'data': str(e),
                 'commit': self.rules_commit
             }
-            settings.db.rules_update_result = json.dumps(result)
-            raise
         finally:
-            # Always reset semaphore and progress indicator.
+            # Always set result and reset semaphore and progress indicator.
+            settings.db.rules_update_result = json.dumps(result)
             settings.db.rules_updating = False
             settings.db.rules_updating_now = ''
 
@@ -243,7 +241,7 @@ class RuleRepo:
             raise
         except Exception as e:
             e.add_note('Unknown error trying to update rules.')
-            raise Exception(e)
+            raise
 
     def db_update(self, settings, full: bool = False):
         """Loads the rule files in to the database."""
