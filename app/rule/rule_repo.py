@@ -215,14 +215,23 @@ class RuleRepo:
                 )
 
             else:
-                # Discard local changes (heaven forbid you'd make any).
+                # Pull latest changes.
+                # Discards local changes (heaven forbid you'd make any).
+                # Overcomes file mode issues with different file systems
+                # which cause a simple git pull to fail.
+                # (Specifically the persistent volume on our Kubernetes cluster
+                # adds execute permissions.)
                 subprocess.check_call(
-                    ['git', 'reset', '--hard', 'HEAD'],
+                    ['git', 'fetch', '--all'],
                     cwd=self.gitdir
                 )
-                # Pull latest changes.
                 subprocess.check_call(
-                    ['git', 'pull'],
+                    [
+                        'git',
+                        'reset',
+                        '--hard',
+                        'origin/' + settings.env.rules_branch
+                    ],
                     cwd=self.gitdir
                 )
 
