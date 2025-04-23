@@ -117,7 +117,7 @@ class TenkmRuleRepo(RuleRepoBase):
             km100 = row['km100'].replace(' ', '').upper()
             match coord_system:
                 case 'OSGB':
-                    pattern = r'^(H[L-Z]|J[LMQR]|N[A-HJ-Z]|O[ABFGLMQRVW]|S[A-HJ-Z]|T[ABFGLMQRVW])$'
+                    pattern = r'^(H[L-Z]|J[LMQRVW]|N[A-HJ-Z]|O[ABFGLMQRVW]|S[A-HJ-Z]|T[ABFGLMQRVW])$'
                 case 'OSNI' | 'OSIE':
                     pattern = r'^[A-HJ-Z]$'
                 case 'CI':

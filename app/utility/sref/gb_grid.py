@@ -37,7 +37,7 @@ class GbGrid(SrefBase):
 
         # Check the first two letters are a valid combination.
         sq100 = gridref[:2]
-        sq100re = r'(H[L-Z]|J[LMQR]|N[A-HJ-Z]|O[ABFGLMQRVW]|S[A-HJ-Z]|T[ABFGLMQRVW])'
+        sq100re = r'(H[L-Z]|J[LMQRVW]|N[A-HJ-Z]|O[ABFGLMQRVW]|S[A-HJ-Z]|T[ABFGLMQRVW])'
         if not re.match(sq100re, sq100):
             raise ValueError("Invalid grid reference for Great Britain.")
 
