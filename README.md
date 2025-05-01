@@ -92,11 +92,47 @@ Set to 0 to disable.
 *   `TENKM_TOLERANCE=1`
 
 ## Development
+
 Do development in a fork or branch of the repo.
 
 All pushes or merge requests to the main branch of the repository trigger unit
 testing. Running the tests locally and not submitting until all tests pass saves
 embarrassment.
+
+NB. When running tests locally, if you have a .env file rename it otherwise
+its contents will override the mocks.
+
+Python package changes
+
+To ensure all installations of Record Cleaner are identical, Python packages are
+pinned to exact versions. During a development cycle they should be updated to 
+incorporate fixes and enhancements
+
+1. Execute `pip-review` at a command prompt in the root directory of the code
+   to see the available updates.
+2. To accept all updates execute `pip-review --auto`.
+3. To pick and choose updates, execute `pip-review --interactive`.
+4. To update requirements.txt, execute `pip freeze > requirements.txt`
+
+Conflicts may be reported after updating, in which case edit requirements.txt
+to revert versions and execute `pip install -r requirements.txt`.
+
+### Database changes
+
+To make changes to the database design, e.g. adding a column to a table, we use
+[Alembic](https://alembic.sqlalchemy.org/en/latest/). This allows changes to
+be captured in code and committed to the repo. 
+
+ 1. Edit app/sqlmodels.py and save your changes. If adding a column it either
+ needs to be nullable, have a default vaule or you need to be prepared to 
+ truncate the table contents and rebuild. Moreover, in the last case, all 
+ relevant code and tests will need updating simultanously.
+ 2. Execute `alembic revision --autogenerate -m "{a short description}` at a
+ command prompt in the root directory of the code.
+ 3. Examine the update file created in the alembic/versions folder and ensure it
+ looks okay.
+ 4. To apply the update, execute `alembic upgrade head`.
+ 5. To revert to the previous version, execute `alembic downgrade -1`
 
 ### VS Code
 When developing with VS Code the following two configuration files can be used
@@ -185,10 +221,18 @@ If a commit is tagged `v{semver}-{type}{N} where
 it will be built and deployed to the UKCEH staging server. This is not publicly
 accessible.
 
+The build is performed by .github/workflows/on-tag.yml.
+The deployment is described in the private [CEH Gitlab repo](https://gitlab.ceh.ac.uk/infrastructure/k8s-clusters/k8s-eds-staging).
+The url is https://record-cleaner.staging.ceh.ac.uk/
+
 Full releases will also be deployed to staging.
 
 ## Production
-Commits tagged `v{semver} are built with the intention of deployment to 
-record-cleaner.brc.ac.uk. Automation of this is not enabled at present so 
-manual intervention by someone with access to the host is needed for deployment.
-Currently it is hosted on the CEH production cluster in Lancaster.
+If a commit is tagged `v{semver} where
+
+- {semver} is a semantic version number like 1.2.3
+
+it will be built and deployed to the UKCEH production server. 
+The build is performed by .github/workflows/on-tag.yml.
+The deployment is described in the private [CEH Gitlab repo](https://gitlab.ceh.ac.uk/infrastructure/k8s-clusters/k8s-eds-prod).
+The url is https://record-cleaner.brc.ac.uk/

@@ -25,7 +25,8 @@ class TestPhenologyRule:
                 search_name='adaliabipunctata',
                 tvk='NBNSYS0000008319',
                 preferred_tvk='NBNSYS0000008319',
-                preferred=True
+                preferred=True,
+                organism_key='NBNORG0000010513',
             )
             db.add(taxon)
             db.commit()
@@ -43,7 +44,8 @@ class TestPhenologyRule:
             # Create phenology rule.
             phenology_rule = PhenologyRule(
                 org_group_id=org_group.id,
-                taxon_id=taxon.id,
+                organism_key=taxon.organism_key,
+                taxon=taxon.name,
                 stage_id=stage.id,
                 start_day=8,
                 start_month=6,
@@ -58,22 +60,29 @@ class TestPhenologyRule:
                 f'/rules/phenology/org_group/{org_group.id}')
             assert response.status_code == 200
             result = response.json()
-            assert result == [{
-                'tvk': 'NBNSYS0000008319',
-                'taxon': 'Adalia bipunctata',
-                'stage': 'mature',
-                'start_date': '8/6',
-                'end_date': '6/10'
-            }]
+            assert result[0]['organism_key'] == 'NBNORG0000010513'
+            assert result[0]['taxon'] == 'Adalia bipunctata'
+            assert result[0]['stage'] == 'mature'
+            assert result[0]['start_date'] == '8/6'
+            assert result[0]['end_date'] == '6/10'
 
             # Request phenology rules for tvk.
             response = client.get(f'/rules/phenology/tvk/{taxon.tvk}')
             assert response.status_code == 200
             result = response.json()
-            assert result == [{
-                'organisation': 'organisation1',
-                'group': 'group1',
-                'stage': 'mature',
-                'start_date': '8/6',
-                'end_date': '6/10'
-            }]
+            assert result[0]['organisation'] == 'organisation1'
+            assert result[0]['group'] == 'group1'
+            assert result[0]['stage'] == 'mature'
+            assert result[0]['start_date'] == '8/6'
+            assert result[0]['end_date'] == '6/10'
+
+            # Request phenology rules for organism key.
+            response = client.get(
+                f'/rules/phenology/organism_key/{taxon.organism_key}')
+            assert response.status_code == 200
+            result = response.json()
+            assert result[0]['organisation'] == 'organisation1'
+            assert result[0]['group'] == 'group1'
+            assert result[0]['stage'] == 'mature'
+            assert result[0]['start_date'] == '8/6'
+            assert result[0]['end_date'] == '6/10'

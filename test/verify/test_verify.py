@@ -102,7 +102,8 @@ class TestVerify:
                 search_name='adaliabipunctata',
                 tvk='NBNSYS0000008319',
                 preferred_tvk='NBNSYS0000008319',
-                preferred=True
+                preferred=True,
+                organism_key='NBNORG0000010513',
             )
             db.add(taxon)
             db.commit()
@@ -121,7 +122,8 @@ class TestVerify:
             # Create difficulty rule.
             difficulty_rule = DifficultyRule(
                 org_group_id=org_group.id,
-                taxon_id=taxon.id,
+                organism_key=taxon.organism_key,
+                taxon=taxon.name,
                 difficulty_code_id=difficulty_code.id
             )
             db.add(difficulty_rule)
@@ -163,7 +165,8 @@ class TestVerify:
             # Create tenkm rule for org_group and taxon.
             rule1 = TenkmRule(
                 org_group_id=org_group.id,
-                taxon_id=taxon.id,
+                organism_key=taxon.organism_key,
+                taxon=taxon.name,
                 km100='TL',
                 km10='14 15 16',
                 coord_system='OSGB'

@@ -26,7 +26,8 @@ class TestDifficulty:
                 search_name='adaliabipunctata',
                 tvk='NBNSYS0000008319',
                 preferred_tvk='NBNSYS0000008319',
-                preferred=True
+                preferred=True,
+                organism_key='NBNORG0000010513',
             )
             db.add(taxon)
             db.commit()
@@ -45,7 +46,8 @@ class TestDifficulty:
             # Create difficulty rule.
             difficulty_rule = DifficultyRule(
                 org_group_id=org_group.id,
-                taxon_id=taxon.id,
+                organism_key=taxon.organism_key,
+                taxon=taxon.name,
                 difficulty_code_id=difficulty_code.id
             )
             db.add(difficulty_rule)
@@ -63,12 +65,22 @@ class TestDifficulty:
                 f'/rules/difficulty/org_group/{org_group.id}')
             assert response.status_code == 200
             result = response.json()
-            assert result[0]['tvk'] == 'NBNSYS0000008319'
+            assert result[0]['organism_key'] == 'NBNORG0000010513'
             assert result[0]['taxon'] == 'Adalia bipunctata'
             assert result[0]['difficulty'] == 1
 
             # Request difficulty rules for tvk.
             response = client.get(f'/rules/difficulty/tvk/{taxon.tvk}')
+            assert response.status_code == 200
+            result = response.json()
+            assert result[0]['organisation'] == 'organisation1'
+            assert result[0]['group'] == 'group1'
+            assert result[0]['difficulty'] == 1
+            assert result[0]['text'] == 'Easy'
+
+            # Request difficulty rules for organism_key.
+            response = client.get(
+                f'/rules/difficulty/organism_key/{taxon.organism_key}')
             assert response.status_code == 200
             result = response.json()
             assert result[0]['organisation'] == 'organisation1'

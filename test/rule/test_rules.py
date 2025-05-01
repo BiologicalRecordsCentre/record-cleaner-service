@@ -13,12 +13,13 @@ class TestRules:
         # Can't use the normal env fixture because it is frozen and cannot be
         # modified.
         class LocalEnvSettings:
+            data_dir: str
             rules_dir: str
             rules_subdir: str
 
         env = LocalEnvSettings()
-        basedir = os.path.abspath(os.path.dirname(__file__))
-        env.rules_dir = os.path.join(basedir, 'testdata')
+        env.data_dir = os.path.abspath(os.path.dirname(__file__))
+        env.rules_dir = ''
         env.rules_subdir = ''
 
         return env

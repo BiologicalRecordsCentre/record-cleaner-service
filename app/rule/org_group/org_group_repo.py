@@ -53,7 +53,7 @@ class OrgGroupRepo:
         for row in org_groups:
             # Testing indicates that deletion cascades.
             self.db.delete(row)
-        self.db.commit()
+            self.db.commit()
 
     def load_dir_structure(self, dir: str, rules_commit: str):
         """Scan the directory structure and save to database."""

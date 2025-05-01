@@ -81,6 +81,7 @@ async def verify(
                 verified.tvk = taxon.tvk
 
             verified.preferred_tvk = taxon.preferred_tvk
+            verified.organism_key = taxon.organism_key
 
             # 2. Format date.
             vague_date = VagueDate(record.date)

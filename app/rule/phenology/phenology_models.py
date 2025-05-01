@@ -2,14 +2,14 @@ from pydantic import BaseModel
 
 
 class PhenologyRuleResponse(BaseModel):
-    tvk: str
+    organism_key: str
     taxon: str
     stage: str
     start_date: str
     end_date: str
 
 
-class PhenologyRuleResponseTvk(BaseModel):
+class PhenologyRuleResponseOrganism(BaseModel):
     organisation: str
     group: str
     stage: str

@@ -319,7 +319,7 @@ def make_search_request(env: EnvSettings, params: dict) -> dict:
         if r.status_code == requests.codes.ok:
             return r.json()
         else:
-            raise IndiciaError("Indicia API error. " + r.json())
+            raise IndiciaError("Indicia API error. " + r.json()['message'])
 
 
 def parse_response_full(response: dict) -> IndiciaResponse:
@@ -345,5 +345,6 @@ def parse_response_taxa(response: dict) -> list[Taxon]:
                 tvk=taxon['search_code'],
                 preferred_tvk=taxon['external_key'],
                 preferred=True if taxon['preferred'] == 't' else False,
+                organism_key=taxon['organism_key'],
             ))
     return taxa

@@ -7,12 +7,12 @@ class AdditionalCodeResponse(BaseModel):
 
 
 class AdditionalRuleResponse(BaseModel):
-    tvk: str
+    organism_key: str
     taxon: str
     code: int
 
 
-class AdditionalRuleResponseTvk(BaseModel):
+class AdditionalRuleResponseOrganism(BaseModel):
     organisation: str
     group: str
     code: int

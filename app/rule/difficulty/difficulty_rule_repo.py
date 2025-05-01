@@ -16,35 +16,34 @@ class DifficultyRuleRepo(RuleRepoBase):
 
     def list_by_org_group(self, org_group_id: int):
         results = self.db.exec(
-            select(DifficultyRule, Taxon, DifficultyCode)
-            .join(Taxon)
+            select(DifficultyRule, DifficultyCode)
             .join(DifficultyCode)
             .where(DifficultyRule.org_group_id == org_group_id)
-            .order_by(Taxon.tvk)
+            .order_by(DifficultyRule.organism_key)
         ).all()
 
         rules = []
-        for difficulty_rule, taxon, difficulty_code in results:
+        for difficulty_rule, difficulty_code in results:
             rules.append({
-                'tvk': taxon.tvk,
-                'taxon': taxon.name,
+                'organism_key': difficulty_rule.organism_key,
+                'taxon': difficulty_rule.taxon,
                 'difficulty': difficulty_code.code
             })
 
         return rules
 
-    def list_by_tvk(self, tvk: str):
+    def list_by_organism_key(self, organism_key: str):
         results = self.db.exec(
-            select(DifficultyRule, Taxon, DifficultyCode, OrgGroup)
-            .join(Taxon)
+            select(DifficultyRule, DifficultyCode, OrgGroup)
+            .select_from(DifficultyRule)
             .join(DifficultyCode)
             .join(OrgGroup)
-            .where(Taxon.tvk == tvk)
+            .where(DifficultyRule.organism_key == organism_key)
             .order_by(OrgGroup.organisation, OrgGroup.group)
         ).all()
 
         rules = []
-        for difficulty_rule, taxon, difficulty_code, org_group in results:
+        for difficulty_rule, difficulty_code, org_group in results:
             rules.append({
                 'organisation': org_group.organisation,
                 'group': org_group.group,
@@ -55,13 +54,13 @@ class DifficultyRuleRepo(RuleRepoBase):
         return rules
 
     def get_or_create(
-        self, org_group_id: int, taxon_id: int, stage: str = 'mature'
+        self, org_group_id: int, organism_key: str, stage: str = 'mature'
     ):
         """Get existing record or create a new one."""
         difficulty_rule = self.db.exec(
             select(DifficultyRule)
             .where(DifficultyRule.org_group_id == org_group_id)
-            .where(DifficultyRule.taxon_id == taxon_id)
+            .where(DifficultyRule.organism_key == organism_key)
             .where(DifficultyRule.stage == stage)
         ).one_or_none()
 
@@ -69,7 +68,7 @@ class DifficultyRuleRepo(RuleRepoBase):
             # Create new.
             difficulty_rule = DifficultyRule(
                 org_group_id=org_group_id,
-                taxon_id=taxon_id,
+                organism_key=organism_key,
                 stage=stage
             )
 
@@ -103,8 +102,8 @@ class DifficultyRuleRepo(RuleRepoBase):
         # Read the id difficulty file into a dataframe.
         difficulties = pd.read_csv(
             f'{dir}/{file}',
-            usecols=['tvk', 'code'],
-            dtype={'tvk': str, 'code': 'Int64'}
+            usecols=['organism_key', 'taxon', 'code'],
+            dtype={'organism_key': str, 'taxon': str, 'code': 'Int64'}
         )
 
         # Get the difficulty codes for this org_group
@@ -115,27 +114,16 @@ class DifficultyRuleRepo(RuleRepoBase):
             return errors
 
         for row in difficulties.to_dict('records'):
-            # Lookup preferred tvk.
-            try:
-                taxon = cache.get_taxon_by_tvk(
-                    self.db, self.env, row['tvk'].strip()
-                )
-            except ValueError as e:
-                errors.append(str(e))
-                continue
-
-            if taxon.tvk != taxon.preferred_tvk:
-                taxon = cache.get_taxon_by_tvk(
-                    self.db, self.env, taxon.preferred_tvk
-                )
-
             # Check code is in limits
             if row['code'] not in code_lookup.keys():
-                errors.append(f"Unknown code {row['code']} for {row['tvk']}.")
+                errors.append(
+                    f"Unknown code {row['code']} for {row['organism_key']}.")
                 continue
 
             # Add the rule to the db.
-            difficulty_rule = self.get_or_create(org_group_id, taxon.id)
+            difficulty_rule = self.get_or_create(
+                org_group_id, row['organism_key'])
+            difficulty_rule.taxon = row['taxon']
             difficulty_rule.difficulty_code_id = code_lookup[row['code']]
             difficulty_rule.commit = rules_commit
             self.db.add(difficulty_rule)
@@ -167,8 +155,7 @@ class DifficultyRuleRepo(RuleRepoBase):
             .select_from(DifficultyRule)
             .join(DifficultyCode)
             .join(OrgGroup)
-            .join(Taxon)
-            .where(Taxon.preferred_tvk == record.preferred_tvk)
+            .where(DifficultyRule.organism_key == record.organism_key)
         )
         if org_group_id is not None:
             query = query.where(OrgGroup.id == org_group_id)

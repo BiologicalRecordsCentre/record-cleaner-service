@@ -138,7 +138,7 @@ async def read_settings(settings: SettingsDependency):
 )
 async def patch_settings(settings: SettingsDependency, new_settings: dict):
     """Submit a dictionary of settings to change. E.g.
-    **{rules_updating: false}** may be useful if a problem occurs during rule
+    **{"rules_updating": false}** may be useful if a problem occurs during rule
     updates."""
     for name, value in new_settings.items():
         setattr(settings.db, name, value)

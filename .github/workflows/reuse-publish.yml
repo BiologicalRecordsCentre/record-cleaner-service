@@ -6,18 +6,25 @@ on:
   workflow_call
 
 
-# Defines two custom environment variables for the workflow. These are used for
-# the Container registry domain, and a name for the Docker image that this
-# workflow builds.
+# Defines custom environment variables for the workflow. These are used for
+#  - the Container registry domain, 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
 
 # There is a single job in this workflow. It's configured to run on the latest
 # available version of Ubuntu.
 jobs:
   build-and-push-image:
     runs-on: ubuntu-latest
+    # Create a strategy to build two images, one for database migrations, the
+    # other for the application.
+    strategy:
+      matrix:
+        include:
+          - image: ${{ github.repository }}-migration
+            dockerfile: migration.Dockerfile
+          - image: ${{ github.repository }}
+            dockerfile: application.Dockerfile
     # Sets the permissions granted to the `GITHUB_TOKEN` for the actions in this
     # job.
     permissions:
@@ -47,7 +54,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          images: ${{ env.REGISTRY }}/${{ matrix.image }}
           tags: type=semver,pattern={{version}}
       # This step uses the `docker/build-push-action` action to build the image,
       # based on your repository's `Dockerfile`. If the build succeeds, it
@@ -60,6 +67,7 @@ jobs:
         uses: docker/build-push-action@f2a1d5e99d037542a71f64918e516c093c6f3fc4
         with:
           context: .
+          file: ${{ matrix.dockerfile }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -70,7 +78,7 @@ jobs:
       - name: Generate artifact attestation
         uses: actions/attest-build-provenance@v1
         with:
-          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME}}
+          subject-name: ${{ env.REGISTRY }}/${{ matrix.image }}
           subject-digest: ${{ steps.push.outputs.digest }}
           push-to-registry: true
       

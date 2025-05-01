@@ -3,10 +3,11 @@ from fastapi import APIRouter
 
 from app.database import DbDependency
 from app.settings_env import EnvDependency
+from app.species.cache import get_taxon_by_tvk
 
 from .difficulty_code_repo import DifficultyCodeRepo
 from .difficulty_rule_repo import DifficultyRuleRepo
-from .difficulty_models import DifficultyCodeResponse, DifficultyRuleResponse, DifficultyRuleResponseTvk
+from .difficulty_models import DifficultyCodeResponse, DifficultyRuleResponse, DifficultyRuleResponseOrganism
 
 
 router = APIRouter()
@@ -41,9 +42,23 @@ async def read_rules_by_org_group(
 @router.get(
     "/difficulty/tvk/{tvk}",
     summary="List difficulty rules for TVK.",
-    response_model=list[DifficultyRuleResponseTvk]
+    response_model=list[DifficultyRuleResponseOrganism]
 )
 async def read_rules_by_tvk(db: DbDependency, env: EnvDependency, tvk: str):
+    taxon = get_taxon_by_tvk(db, env, tvk)
     repo = DifficultyRuleRepo(db, env)
-    rules = repo.list_by_tvk(tvk)
+    rules = repo.list_by_organism_key(taxon.organism_key)
+    return rules
+
+
+@router.get(
+    "/difficulty/organism_key/{organism_key}",
+    summary="List difficulty rules for organism key.",
+    response_model=list[DifficultyRuleResponseOrganism]
+)
+async def read_rules_by_organism_key(
+    db: DbDependency, env: EnvDependency, organism_key: str
+):
+    repo = DifficultyRuleRepo(db, env)
+    rules = repo.list_by_organism_key(organism_key)
     return rules

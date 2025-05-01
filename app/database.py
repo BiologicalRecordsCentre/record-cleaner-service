@@ -5,6 +5,10 @@ import shutil
 import sqlite3
 from typing import TypeAlias, Annotated
 
+import alembic.command
+import alembic.config
+import alembic.migration
+import alembic.script
 from fastapi import Request, Depends, HTTPException, status
 from sqlmodel import create_engine, SQLModel, Session
 
@@ -18,13 +22,13 @@ logger = logging.getLogger(f"uvicorn.{__name__}")
 
 def create_db(env: EnvSettings):
     # Locate the directory for the database.
-    basedir = env.data_dir
-    if basedir[0] == '.':
+    app_dir = os.path.abspath(os.path.dirname(__file__))
+    data_dir = env.data_dir
+    if data_dir[0] == '.':
         # Determine absolute path from relative path setting.
-        current_dir = os.path.abspath(os.path.dirname(__file__))
-        basedir = os.path.join(current_dir, basedir[1:])
+        data_dir = os.path.join(app_dir, data_dir[1:])
 
-    datadir = os.path.join(basedir, 'data')
+    datadir = os.path.join(data_dir, 'data')
     if not os.path.exists(datadir):
         os.mkdir(datadir)
     sqlite_file_path = os.path.join(datadir, 'database.sqlite')
@@ -48,8 +52,30 @@ def create_db(env: EnvSettings):
     else:
         engine = create_engine(sqlite_url, echo=False)
 
-    # Create tables if they don't exist.
-    SQLModel.metadata.create_all(engine)
+    # Get config for alembic database migrations.
+    base_dir = os.path.dirname(app_dir)
+    ini_file_path = os.path.join(base_dir, 'alembic.ini')
+    cfg = alembic.config.Config(ini_file_path)
+
+    if not os.path.exists(sqlite_file_path):
+        # Create tables if they don't exist.
+        SQLModel.metadata.create_all(engine)
+        # Generate the alembic version table, "stamping" it with the most
+        # recent rev
+        alembic.command.stamp(cfg, "head")
+        logger.info("New database created.")
+    else:
+        # We run any alembic migrations outside the application as they may be
+        # long running. During development, run `alembic upgrade head` at a
+        # terminal prompt. In production, this should be automated during
+        # deployment.
+        dir = alembic.script.ScriptDirectory.from_config(cfg)
+        with engine.begin() as connection:
+            context = alembic.migration.MigrationContext.configure(connection)
+            if set(context.get_current_heads()) != set(dir.get_heads()):
+                logger.error("Database is out of sync with code.")
+                raise Exception("Database is out of sync with code. "
+                                "Please run `alembic upgrade head`.")
 
     return engine
 

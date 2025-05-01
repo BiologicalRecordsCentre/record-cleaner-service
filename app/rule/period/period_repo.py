@@ -17,34 +17,32 @@ class PeriodRuleRepo(RuleRepoBase):
 
     def list_by_org_group(self, org_group_id: int):
         results = self.db.exec(
-            select(PeriodRule, Taxon)
-            .join(Taxon)
+            select(PeriodRule)
             .where(PeriodRule.org_group_id == org_group_id)
-            .order_by(Taxon.tvk)
+            .order_by(PeriodRule.organism_key)
         ).all()
 
         rules = []
-        for period_rule, taxon in results:
+        for period_rule in results:
             rules.append({
-                'tvk': taxon.tvk,
-                'taxon': taxon.name,
+                'organism_key': period_rule.organism_key,
+                'taxon': period_rule.taxon,
                 'start_date': period_rule.start_date,
                 'end_date': period_rule.end_date
             })
 
         return rules
 
-    def list_by_tvk(self, tvk: str):
+    def list_by_organism_key(self, organism_key: str):
         results = self.db.exec(
-            select(PeriodRule, Taxon, OrgGroup)
-            .join(Taxon)
+            select(PeriodRule, OrgGroup)
             .join(OrgGroup)
-            .where(Taxon.tvk == tvk)
+            .where(PeriodRule.organism_key == organism_key)
             .order_by(OrgGroup.organisation, OrgGroup.group)
         ).all()
 
         rules = []
-        for period_rule, taxon, org_group in results:
+        for period_rule, org_group in results:
             rules.append({
                 'organisation': org_group.organisation,
                 'group': org_group.group,
@@ -54,19 +52,19 @@ class PeriodRuleRepo(RuleRepoBase):
 
         return rules
 
-    def get_or_create(self, org_group_id: int, taxon_id: int):
+    def get_or_create(self, org_group_id: int, organism_key: str):
         """Get existing record or create a new one."""
         period_rule = self.db.exec(
             select(PeriodRule)
             .where(PeriodRule.org_group_id == org_group_id)
-            .where(PeriodRule.taxon_id == taxon_id)
+            .where(PeriodRule.organism_key == organism_key)
         ).one_or_none()
 
         if period_rule is None:
             # Create new.
             period_rule = PeriodRule(
                 org_group_id=org_group_id,
-                taxon_id=taxon_id
+                organism_key=organism_key
             )
 
         return period_rule
@@ -80,7 +78,7 @@ class PeriodRuleRepo(RuleRepoBase):
         )
         for row in period_rules:
             self.db.delete(row)
-        self.db.commit()
+            self.db.commit()
 
     def load_file(
             self,
@@ -101,7 +99,8 @@ class PeriodRuleRepo(RuleRepoBase):
         periods = pd.read_csv(
             f'{dir}/{file}',
             usecols=[
-                'tvk',
+                'organism_key',
+                'taxon',
                 'start_year',
                 'start_month',
                 'start_day',
@@ -110,7 +109,8 @@ class PeriodRuleRepo(RuleRepoBase):
                 'end_day'
             ],
             dtype={
-                'tvk': str,
+                'organism_key': str,
+                'taxon': str,
                 'start_year': 'Int64',
                 'start_month': 'Int64',
                 'start_day': 'Int64',
@@ -121,20 +121,6 @@ class PeriodRuleRepo(RuleRepoBase):
         )
 
         for row in periods.to_dict('records'):
-            # Lookup preferred tvk.
-            try:
-                taxon = cache.get_taxon_by_tvk(
-                    self.db, self.env, row['tvk'].strip()
-                )
-            except ValueError as e:
-                errors.append(str(e))
-                continue
-
-            if taxon.tvk != taxon.preferred_tvk:
-                taxon = cache.get_taxon_by_tvk(
-                    self.db, self.env, taxon.preferred_tvk
-                )
-
             # Validate the data supplied.
             y = row['start_year']
             m = row['start_month']
@@ -143,7 +129,7 @@ class PeriodRuleRepo(RuleRepoBase):
                 start_date = None
             elif pd.isna(y) or pd.isna(m) or pd.isna(d):
                 errors.append(
-                    f"Incomplete start date {y}-{m}-{d} for {row['tvk']}."
+                    f"Incomplete start date for {row['organism_key']}."
                 )
                 continue
             else:
@@ -151,7 +137,7 @@ class PeriodRuleRepo(RuleRepoBase):
                     start_date = date(y, m, d)
                 except ValueError as e:
                     errors.append(
-                        f"Invalid start date {y}-{m}-{d} for {row['tvk']}. {e}"
+                        f"Invalid start date for {row['organism_key']}: {e}"
                     )
                     continue
 
@@ -162,7 +148,7 @@ class PeriodRuleRepo(RuleRepoBase):
                 end_date = None
             elif pd.isna(y) or pd.isna(m) or pd.isna(d):
                 errors.append(
-                    f"Incomplete end date {y}-{m}-{d} for {row['tvk']}."
+                    f"Incomplete end date for {row['organism_key']}."
                 )
                 continue
             else:
@@ -170,19 +156,19 @@ class PeriodRuleRepo(RuleRepoBase):
                     end_date = date(y, m, d)
                 except ValueError as e:
                     errors.append(
-                        f"Invalid end date {y}-{m}-{d} for {row['tvk']}. {e}"
+                        f"Invalid end date for {row['organism_key']}: {e}"
                     )
                     continue
 
             # Add the rule to the db.
-            period_rule = self.get_or_create(org_group_id, taxon.id)
+            period_rule = self.get_or_create(org_group_id, row['organism_key'])
+            period_rule.taxon = row['taxon']
             period_rule.start_date = start_date
             period_rule.end_date = end_date
             period_rule.commit = rules_commit
             self.db.add(period_rule)
-
-        # Save all the changes.
-        self.db.commit()
+            # Save change immediately to avoid locks.
+            self.db.commit()
         # Delete orphan PeriodRules.
         self.purge(org_group_id, rules_commit)
 
@@ -204,8 +190,7 @@ class PeriodRuleRepo(RuleRepoBase):
         query = (
             select(PeriodRule, OrgGroup)
             .join(OrgGroup)
-            .join(Taxon)
-            .where(Taxon.preferred_tvk == record.preferred_tvk)
+            .where(PeriodRule.organism_key == record.organism_key)
         )
         if org_group_id is not None:
             query = query.where(OrgGroup.id == org_group_id)

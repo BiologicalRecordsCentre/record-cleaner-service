@@ -17,17 +17,16 @@ class TenkmRuleRepo(RuleRepoBase):
 
     def list_by_org_group(self, org_group_id: int):
         results = self.db.exec(
-            select(TenkmRule, Taxon)
-            .join(Taxon)
+            select(TenkmRule)
             .where(TenkmRule.org_group_id == org_group_id)
-            .order_by(Taxon.tvk)
+            .order_by(TenkmRule.organism_key)
         ).all()
 
         rules = []
-        for tenkm_rule, taxon in results:
+        for tenkm_rule in results:
             rules.append({
-                'tvk': taxon.tvk,
-                'taxon': taxon.name,
+                'organism_key': tenkm_rule.organism_key,
+                'taxon': tenkm_rule.taxon,
                 'km100': tenkm_rule.km100,
                 'km10': tenkm_rule.km10,
                 'coord_system': tenkm_rule.coord_system
@@ -35,17 +34,16 @@ class TenkmRuleRepo(RuleRepoBase):
 
         return rules
 
-    def list_by_tvk(self, tvk: str):
+    def list_by_organism_key(self, organism_key: str):
         results = self.db.exec(
-            select(TenkmRule, Taxon, OrgGroup)
-            .join(Taxon)
+            select(TenkmRule, OrgGroup)
             .join(OrgGroup)
-            .where(Taxon.tvk == tvk)
+            .where(TenkmRule.organism_key == organism_key)
             .order_by(OrgGroup.organisation, OrgGroup.group, TenkmRule.km100)
         ).all()
 
         rules = []
-        for tenkm_rule, taxon, org_group in results:
+        for tenkm_rule, org_group in results:
             rules.append({
                 'organisation': org_group.organisation,
                 'group': org_group.group,
@@ -56,12 +54,12 @@ class TenkmRuleRepo(RuleRepoBase):
 
         return rules
 
-    def get_or_create(self, org_group_id: int, taxon_id: int, km100: str):
+    def get_or_create(self, org_group_id: int, organism_key: str, km100: str):
         """Get existing record or create a new one."""
         tenkm_rule = self.db.exec(
             select(TenkmRule)
             .where(TenkmRule.org_group_id == org_group_id)
-            .where(TenkmRule.taxon_id == taxon_id)
+            .where(TenkmRule.organism_key == organism_key)
             .where(TenkmRule.km100 == km100)
         ).one_or_none()
 
@@ -69,7 +67,7 @@ class TenkmRuleRepo(RuleRepoBase):
             # Create new.
             tenkm_rule = TenkmRule(
                 org_group_id=org_group_id,
-                taxon_id=taxon_id,
+                organism_key=organism_key,
                 km100=km100
             )
 
@@ -84,7 +82,7 @@ class TenkmRuleRepo(RuleRepoBase):
         )
         for row in tenkm_rules:
             self.db.delete(row)
-        self.db.commit()
+            self.db.commit()
 
     def load_file(
             self,
@@ -107,33 +105,19 @@ class TenkmRuleRepo(RuleRepoBase):
         )
 
         for row in tenkms.to_dict('records'):
-            # Lookup preferred tvk.
-            try:
-                taxon = cache.get_taxon_by_tvk(
-                    self.db, self.env, row['tvk'].strip()
-                )
-            except ValueError as e:
-                errors.add(str(e))
-                continue
-
-            if taxon.tvk != taxon.preferred_tvk:
-                taxon = cache.get_taxon_by_tvk(
-                    self.db, self.env, taxon.preferred_tvk
-                )
-
             # Validate the data supplied.
             coord_system = row['coord_system'].strip().upper()
             if coord_system not in ['OSGB', 'OSNI', 'OSIE', 'CI']:
                 errors.add(
                     f"Invalid coord_system {coord_system} "
-                    f"for {row['tvk']}"
+                    f"for {row['organism_key']}"
                 )
                 continue
 
             km100 = row['km100'].replace(' ', '').upper()
             match coord_system:
                 case 'OSGB':
-                    pattern = r'^(H[L-Z]|J[LMQR]|N[A-HJ-Z]|O[ABFGLMQRVW]|S[A-HJ-Z]|T[ABFGLMQRVW])$'
+                    pattern = r'^(H[L-Z]|J[LMQRVW]|N[A-HJ-Z]|O[ABFGLMQRVW]|S[A-HJ-Z]|T[ABFGLMQRVW])$'
                 case 'OSNI' | 'OSIE':
                     pattern = r'^[A-HJ-Z]$'
                 case 'CI':
@@ -141,7 +125,7 @@ class TenkmRuleRepo(RuleRepoBase):
             if not re.match(pattern, km100):
                 errors.add(
                     f"Invalid km100 {km100} in {coord_system} "
-                    f"for {row['tvk']}"
+                    f"for {row['organism_key']}"
                 )
                 continue
 
@@ -152,19 +136,20 @@ class TenkmRuleRepo(RuleRepoBase):
                 if not re.match(pattern, km10):
                     errors.add(
                         f"Invalid km10 {km10} in {coord_system} "
-                        f"for {row['tvk']}"
+                        f"for {row['organism_key']}"
                     )
                     continue
 
             # Add the rule to the db.
-            tenkm_rule = self.get_or_create(org_group_id, taxon.id, km100)
+            tenkm_rule = self.get_or_create(
+                org_group_id, row['organism_key'], km100)
+            tenkm_rule.taxon = row['taxon']
             tenkm_rule.km10 = km10str
             tenkm_rule.coord_system = coord_system
             tenkm_rule.commit = rules_commit
             self.db.add(tenkm_rule)
-
-        # Save all the changes.
-        self.db.commit()
+            # Save change immediately to avoid locks.
+            self.db.commit()
         # Delete orphan PeriodRules.
         self.purge(org_group_id, rules_commit)
 
@@ -189,8 +174,7 @@ class TenkmRuleRepo(RuleRepoBase):
             .select_from(TenkmRule)
             .distinct()
             .join(OrgGroup)
-            .join(Taxon)
-            .where(Taxon.preferred_tvk == record.preferred_tvk)
+            .where(TenkmRule.organism_key == record.organism_key)
             .order_by(OrgGroup.organisation, OrgGroup.group)
         )
         if org_group_id is not None:
@@ -227,10 +211,10 @@ class TenkmRuleRepo(RuleRepoBase):
 
         km100 = record.sref.km100
         km10 = record.sref.km10
-        tvk = record.preferred_tvk
+        organism_key = record.organism_key
         # Try the rules from each org_group.
         for org_group in org_groups:
-            ok, message = self.test(km100, km10, org_group, tvk)
+            ok, message = self.test(km100, km10, org_group, organism_key)
             if not ok:
                 messages.append(message)
 
@@ -260,7 +244,7 @@ class TenkmRuleRepo(RuleRepoBase):
         surrounding_km10s = utils.get_surrounding_km10s(
             record_km10, self.env.tenkm_tolerance
         )
-        tvk = record.preferred_tvk
+        organism_key = record.organism_key
 
         # Try the rules from each org_group.
         for org_group in org_groups:
@@ -270,7 +254,7 @@ class TenkmRuleRepo(RuleRepoBase):
                 km10 = surrounding_km10[l-2: l]
                 km100 = surrounding_km10[0: l-2]
 
-                ok, message = self.test(km100, km10, org_group, tvk)
+                ok, message = self.test(km100, km10, org_group, organism_key)
                 if ok:
                     # A surrounding square passed a test.
                     messages.append(
@@ -295,14 +279,14 @@ class TenkmRuleRepo(RuleRepoBase):
             # No messages indicates outright failure.
             return False, []
 
-    def test(self, km100: str, km10: str, org_group: OrgGroup, tvk: str):
+    def test(self, km100: str, km10: str, org_group: OrgGroup, organism_key: str):
         """Run org_group rules against taxon and location.
 
         Args:
             km100 (str): The letter(s) indicating 100km square.
             km10 (str): The two digits indicaing 10km square within km100.
             org_group (OrgGroup): The OrgGroup with the rules.
-            tvk (str): The taxon version key identifying the taxon.
+            organism_key (str): The organism_key identifying the taxon.
         Returns:
             tuple[bool, str]: (ok, message) where ok indicates test success
             and message has details details. If there are no rules, ok is
@@ -312,8 +296,7 @@ class TenkmRuleRepo(RuleRepoBase):
 
         query = (
             select(TenkmRule)
-            .join(Taxon)
-            .where(Taxon.preferred_tvk == tvk)
+            .where(TenkmRule.organism_key == organism_key)
             .where(TenkmRule.km100 == km100)
             .where(TenkmRule.org_group_id == org_group.id)
         )

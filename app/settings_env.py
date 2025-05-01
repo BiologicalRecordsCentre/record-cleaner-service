@@ -6,19 +6,19 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class EnvSettings(BaseSettings):
-    jwt_key: str
-    jwt_algorithm: str
-    jwt_expires_minutes: int
-    indicia_url: str
-    indicia_rest_user: str
-    indicia_rest_password: str
-    indicia_taxon_list_id: int
-    rules_repo: str
-    rules_branch: str
-    rules_dir: str
-    rules_subdir: str
-    initial_user_name: str
-    initial_user_pass: str
+    jwt_key: str = ''
+    jwt_algorithm: str = ''
+    jwt_expires_minutes: int = 0
+    indicia_url: str = ''
+    indicia_rest_user: str = ''
+    indicia_rest_password: str = ''
+    indicia_taxon_list_id: int = 0
+    rules_repo: str = ''
+    rules_branch: str = ''
+    rules_dir: str = ''
+    rules_subdir: str = ''
+    initial_user_name: str = ''
+    initial_user_pass: str = ''
     environment: str = 'prod'  # ['dev'|'test'|'prod']
     data_dir: str = '.'
     backup_dir: str = ''

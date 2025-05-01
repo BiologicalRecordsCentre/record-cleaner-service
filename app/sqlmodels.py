@@ -3,6 +3,17 @@ from typing import Optional
 from sqlmodel import Field, SQLModel, UniqueConstraint
 
 
+# Create a naming convention. Without this objects may get created without
+# a name in SQLite, preventing them from being updated by Alembic.
+SQLModel.metadata.naming_convention = {
+    "ix": "ix_%(column_0_label)s",
+    "uq": "uq_%(table_name)s_%(column_0_name)s",
+    "ck": "ck_%(table_name)s_%(constraint_name)s",
+    "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
+    "pk": "pk_%(table_name)s",
+}
+
+
 class System(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     key: str = Field(index=True, unique=True)
@@ -17,6 +28,7 @@ class Taxon(SQLModel, table=True):
     tvk: str = Field(index=True)
     preferred_tvk: str
     preferred: bool
+    organism_key: str = Field(index=True, nullable=False)
 
 
 class OrgGroup(SQLModel, table=True):
@@ -65,11 +77,13 @@ class DifficultyCode(SQLModel, table=True):
 
 
 class DifficultyRule(SQLModel, table=True):
-    __table_args__ = (UniqueConstraint('org_group_id', 'taxon_id', 'stage'),)
+    __table_args__ = (UniqueConstraint(
+        'org_group_id', 'organism_key', 'stage'),)
 
     id: Optional[int] = Field(default=None, primary_key=True)
     org_group_id: int = Field(foreign_key='orggroup.id', index=True)
-    taxon_id: int = Field(foreign_key='taxon.id', index=True)
+    organism_key: str = Field(index=True, nullable=False)
+    taxon: str | None = None
     stage: str = Field(default='mature')
     difficulty_code_id: int = Field(
         foreign_key='difficultycode.id', index=True)
@@ -87,22 +101,24 @@ class AdditionalCode(SQLModel, table=True):
 
 
 class AdditionalRule(SQLModel, table=True):
-    __table_args__ = (UniqueConstraint('org_group_id', 'taxon_id'),)
+    __table_args__ = (UniqueConstraint('org_group_id', 'organism_key'),)
 
     id: Optional[int] = Field(default=None, primary_key=True)
     org_group_id: int = Field(foreign_key='orggroup.id', index=True)
-    taxon_id: int = Field(foreign_key='taxon.id', index=True)
+    organism_key: str = Field(index=True, nullable=False)
+    taxon: str | None = None
     additional_code_id: int = Field(
         foreign_key='additionalcode.id', index=True)
     commit: str | None = None
 
 
 class PeriodRule(SQLModel, table=True):
-    __table_args__ = (UniqueConstraint('org_group_id', 'taxon_id'),)
+    __table_args__ = (UniqueConstraint('org_group_id', 'organism_key'),)
 
     id: Optional[int] = Field(default=None, primary_key=True)
     org_group_id: int = Field(foreign_key='orggroup.id', index=True)
-    taxon_id: int = Field(foreign_key='taxon.id', index=True)
+    organism_key: str = Field(index=True, nullable=False)
+    taxon: str | None = None
     # Dates in yyyy-mm-dd format.
     start_date:  str | None = None
     end_date:  str | None = None
@@ -111,12 +127,13 @@ class PeriodRule(SQLModel, table=True):
 
 class PhenologyRule(SQLModel, table=True):
     __table_args__ = (
-        UniqueConstraint('org_group_id', 'taxon_id', 'stage_id'),
+        UniqueConstraint('org_group_id', 'organism_key', 'stage_id'),
     )
 
     id: Optional[int] = Field(default=None, primary_key=True)
     org_group_id: int = Field(foreign_key='orggroup.id', index=True)
-    taxon_id: int = Field(foreign_key='taxon.id', index=True)
+    organism_key: str = Field(index=True, nullable=False)
+    taxon: str | None = None
     stage_id: int = Field(foreign_key='stage.id', index=True)
     start_day:  int
     start_month:  int
@@ -126,11 +143,13 @@ class PhenologyRule(SQLModel, table=True):
 
 
 class TenkmRule(SQLModel, table=True):
-    __table_args__ = (UniqueConstraint('org_group_id', 'taxon_id', 'km100'),)
+    __table_args__ = (UniqueConstraint(
+        'org_group_id', 'organism_key', 'km100'),)
 
     id: Optional[int] = Field(default=None, primary_key=True)
     org_group_id: int = Field(foreign_key='orggroup.id', index=True)
-    taxon_id: int = Field(foreign_key='taxon.id', index=True)
+    organism_key: str = Field(index=True, nullable=False)
+    taxon: str | None = None
     km100:  str | None = None
     km10:  str | None = None
     coord_system:  str | None = None

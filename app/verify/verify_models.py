@@ -20,6 +20,7 @@ class OrgGroupRules(BaseModel):
 
 
 class Verified(Verify):
+    organism_key: Optional[str] = None
     preferred_tvk: Optional[str] = None
     id_difficulty: Optional[int] = None
     result: str = 'pass'

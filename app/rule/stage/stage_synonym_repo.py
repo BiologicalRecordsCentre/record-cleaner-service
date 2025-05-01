@@ -34,7 +34,7 @@ class StageSynonymRepo:
 
         for synonym in synonyms:
             self.db.delete(synonym)
-        self.db.commit()
+            self.db.commit()
 
     def load(self, stage_id: int, synonyms: str, rules_commit: str):
         for synonym in synonyms.split(','):
@@ -45,9 +45,8 @@ class StageSynonymRepo:
                 )
                 stage_synonym.commit = rules_commit
                 self.db.add(stage_synonym)
-
-        # Commit all the synonyms
-        self.db.commit()
+                # Save change immediately to avoid locks.
+                self.db.commit()
 
         # Delete out of date synonyms.
         self.purge(stage_id, rules_commit)

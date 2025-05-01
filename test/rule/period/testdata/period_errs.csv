@@ -1,0 +1,11 @@
+organism_key,taxon,start_day,start_month,start_year,end_day,end_month,end_year
+NBNORG0000010513,Adalia bipunctata,42,6,2021,,,
+NBNORG0000010518,Coccinella septempunctata,2,16,2021,,,
+NBNORG0000010513,Adalia bipunctata,,,,42,6,2021
+NBNORG0000010518,Coccinella septempunctata,,,,2,16,2021
+NBNORG0000010513,Adalia bipunctata,,6,2021,,,
+NBNORG0000010518,Coccinella septempunctata,2,,2021,,,
+NBNORG0000010517,Coccinella quinquepunctata,2,6,,,,,
+NBNORG0000010513,Adalia bipunctata,,,,,6,2021
+NBNORG0000010518,Coccinella septempunctata,,,,2,,2021
+NBNORG0000010517,Coccinella quinquepunctata,,,,2,6,

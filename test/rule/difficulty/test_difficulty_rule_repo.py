@@ -23,39 +23,6 @@ class TestDifficultyRuleRepo:
         db.refresh(org_group1)
         db.refresh(org_group2)
 
-        # Create taxa.
-        taxon1 = Taxon(
-            name='Adalia bipunctata',
-            preferred_name='Adalia bipunctata',
-            search_name='adaliabipunctata',
-            tvk='NBNSYS0000008319',
-            preferred_tvk='NBNSYS0000008319',
-            preferred=True
-        )
-        taxon2 = Taxon(
-            name='Adalia decempunctata',
-            preferred_name='Adalia decempunctata',
-            search_name='adaliadecempunctata',
-            tvk='NBNSYS0000008320',
-            preferred_tvk='NBNSYS0000008320',
-            preferred=True
-        )
-        taxon3 = Taxon(
-            name='Coccinella quinquepunctata',
-            preferred_name='Coccinella quinquepunctata',
-            search_name='coccinellacinquepunctata',
-            tvk='NBNSYS0000008323',
-            preferred_tvk='NBNSYS0000008323',
-            preferred=True
-        )
-        db.add(taxon1)
-        db.add(taxon2)
-        db.add(taxon3)
-        db.commit()
-        db.refresh(taxon1)
-        db.refresh(taxon2)
-        db.refresh(taxon3)
-
         # Create difficulty codes.
         difficulty_code1 = DifficultyCode(
             code=1,
@@ -86,14 +53,14 @@ class TestDifficultyRuleRepo:
         # Check the results by org_group.
         result = repo.list_by_org_group(org_group1.id)
         assert len(result) == 3
-        assert result[0]['tvk'] == taxon1.tvk
-        assert result[0]['taxon'] == taxon1.name
+        assert result[0]['organism_key'] == 'NBNORG0000010513'
+        assert result[0]['taxon'] == 'Adalia bipunctata'
         assert result[0]['difficulty'] == 1
-        assert result[1]['tvk'] == taxon2.tvk
-        assert result[1]['taxon'] == taxon2.name
+        assert result[1]['organism_key'] == 'NBNORG0000010514'
+        assert result[1]['taxon'] == 'Adalia decempunctata'
         assert result[1]['difficulty'] == 1
-        assert result[2]['tvk'] == taxon3.tvk
-        assert result[2]['taxon'] == taxon3.name
+        assert result[2]['organism_key'] == 'NBNORG0000010517'
+        assert result[2]['taxon'] == 'Coccinella quinquepunctata'
         assert result[2]['difficulty'] == 1
 
         # Load a shorter file.
@@ -104,8 +71,8 @@ class TestDifficultyRuleRepo:
         # Check the results by org_group.
         result = repo.list_by_org_group(org_group1.id)
         assert len(result) == 1
-        assert result[0]['tvk'] == taxon1.tvk
-        assert result[0]['taxon'] == taxon1.name
+        assert result[0]['organism_key'] == 'NBNORG0000010513'
+        assert result[0]['taxon'] == 'Adalia bipunctata'
         assert result[0]['difficulty'] == 1
 
         # Load a difficulty rule of the same taxon to another org_group.
@@ -114,7 +81,7 @@ class TestDifficultyRuleRepo:
         assert (errors == [])
 
         # Check the results by tvk.
-        result = repo.list_by_tvk(taxon1.tvk)
+        result = repo.list_by_organism_key('NBNORG0000010513')
         assert len(result) == 2
         assert result[0]['organisation'] == org_group1.organisation
         assert result[0]['group'] == org_group1.group
@@ -130,7 +97,7 @@ class TestDifficultyRuleRepo:
         db.commit()
 
         # Check the deletion cascades.
-        result = repo.list_by_tvk(taxon1.tvk)
+        result = repo.list_by_organism_key('NBNORG0000010513')
         assert len(result) == 1
         assert result[0]['organisation'] == org_group2.organisation
         assert result[0]['group'] == org_group2.group
@@ -151,7 +118,8 @@ class TestDifficultyRuleRepo:
             search_name='adaliabipunctata',
             tvk='NBNSYS0000008319',
             preferred_tvk='NBNSYS0000008319',
-            preferred=True
+            preferred=True,
+            organism_key='NBNORG0000010513',
         )
         taxon2 = Taxon(
             name='Adalia decempunctata',
@@ -159,7 +127,8 @@ class TestDifficultyRuleRepo:
             search_name='adaliadecempunctata',
             tvk='NBNSYS0000008320',
             preferred_tvk='NBNSYS0000008320',
-            preferred=True
+            preferred=True,
+            organism_key='NBNORG0000010514',
         )
         db.add(taxon1)
         db.add(taxon2)
@@ -184,12 +153,14 @@ class TestDifficultyRuleRepo:
         # 2 rules for the same taxon in different org_groups.
         difficulty_rule1 = DifficultyRule(
             org_group_id=org_group1.id,
-            taxon_id=taxon1.id,
+            organism_key=taxon1.organism_key,
+            taxon=taxon1.name,
             difficulty_code_id=difficulty_code1.id
         )
         difficulty_rule2 = DifficultyRule(
             org_group_id=org_group2.id,
-            taxon_id=taxon1.id,
+            organism_key=taxon1.organism_key,
+            taxon=taxon1.name,
             difficulty_code_id=difficulty_code2.id
         )
         db.add(difficulty_rule1)
@@ -203,7 +174,7 @@ class TestDifficultyRuleRepo:
             sref=SrefFactory(
                 Sref(gridref='TL1234', srid=SrefSystem.GB_GRID)
             ).value,
-            preferred_tvk=taxon1.preferred_tvk
+            organism_key=taxon1.organism_key
         )
 
         repo = DifficultyRuleRepo(db, env)
@@ -230,7 +201,7 @@ class TestDifficultyRuleRepo:
         assert messages[0] == "organisation1:group1:difficulty:1: Easy"
 
         # Change record to taxon2.
-        record.preferred_tvk = taxon2.preferred_tvk
+        record.organism_key = taxon2.organism_key
         # Test the record against all org_group rules.
         id_difficulty, messages = repo.run(record)
         # It should return nothing as there are no rules for the taxon.

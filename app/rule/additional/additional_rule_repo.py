@@ -16,35 +16,34 @@ class AdditionalRuleRepo(RuleRepoBase):
 
     def list_by_org_group(self, org_group_id: int):
         results = self.db.exec(
-            select(AdditionalRule, Taxon, AdditionalCode)
-            .join(Taxon)
+            select(AdditionalRule, AdditionalCode)
             .join(AdditionalCode)
             .where(AdditionalRule.org_group_id == org_group_id)
-            .order_by(Taxon.tvk)
+            .order_by(AdditionalRule.organism_key)
         ).all()
 
         rules = []
-        for additional_rule, taxon, additional_code in results:
+        for additional_rule, additional_code in results:
             rules.append({
-                'tvk': taxon.tvk,
-                'taxon': taxon.name,
+                'organism_key': additional_rule.organism_key,
+                'taxon': additional_rule.taxon,
                 'code': additional_code.code
             })
 
         return rules
 
-    def list_by_tvk(self, tvk: str):
+    def list_by_organism_key(self, organism_key: str):
         results = self.db.exec(
-            select(AdditionalRule, Taxon, AdditionalCode, OrgGroup)
-            .join(Taxon)
+            select(AdditionalRule, AdditionalCode, OrgGroup)
+            .select_from(AdditionalRule)
             .join(AdditionalCode)
             .join(OrgGroup)
-            .where(Taxon.tvk == tvk)
+            .where(AdditionalRule.organism_key == organism_key)
             .order_by(OrgGroup.organisation, OrgGroup.group)
         ).all()
 
         rules = []
-        for additional_rule, taxon, additional_code, org_group in results:
+        for additional_rule, additional_code, org_group in results:
             rules.append({
                 'organisation': org_group.organisation,
                 'group': org_group.group,
@@ -55,20 +54,20 @@ class AdditionalRuleRepo(RuleRepoBase):
         return rules
 
     def get_or_create(
-        self, org_group_id: int, taxon_id: int
+        self, org_group_id: int, organism_key: str
     ):
         """Get existing record or create a new one."""
         additional_rule = self.db.exec(
             select(AdditionalRule)
             .where(AdditionalRule.org_group_id == org_group_id)
-            .where(AdditionalRule.taxon_id == taxon_id)
+            .where(AdditionalRule.organism_key == organism_key)
         ).one_or_none()
 
         if additional_rule is None:
             # Create new.
             additional_rule = AdditionalRule(
                 org_group_id=org_group_id,
-                taxon_id=taxon_id,
+                organism_key=organism_key,
             )
 
         return additional_rule
@@ -101,8 +100,8 @@ class AdditionalRuleRepo(RuleRepoBase):
         # Read the additional file into a dataframe.
         df = pd.read_csv(
             f'{dir}/{file}',
-            usecols=['tvk', 'code'],
-            dtype={'tvk': str, 'code': 'Int64'}
+            usecols=['organism_key', 'taxon', 'code'],
+            dtype={'organism_key': str, 'taxon': str, 'code': 'Int64'}
         )
 
         # Get the additional codes for this org_group
@@ -113,27 +112,16 @@ class AdditionalRuleRepo(RuleRepoBase):
             return errors
 
         for row in df.to_dict('records'):
-            # Lookup preferred tvk.
-            try:
-                taxon = cache.get_taxon_by_tvk(
-                    self.db, self.env, row['tvk'].strip()
-                )
-            except ValueError as e:
-                errors.append(str(e))
-                continue
-
-            if taxon.tvk != taxon.preferred_tvk:
-                taxon = cache.get_taxon_by_tvk(
-                    self.db, self.env, taxon.preferred_tvk
-                )
-
             # Check code is in limits
             if row['code'] not in code_lookup.keys():
-                errors.append(f"Unknown code {row['code']} for {row['tvk']}.")
+                errors.append(
+                    f"Unknown code {row['code']} for {row['organism_key']}.")
                 continue
 
             # Add the rule to the db.
-            additional_rule = self.get_or_create(org_group_id, taxon.id)
+            additional_rule = self.get_or_create(
+                org_group_id, row['organism_key'])
+            additional_rule.taxon = row['taxon']
             additional_rule.additional_code_id = code_lookup[row['code']]
             additional_rule.commit = rules_commit
             self.db.add(additional_rule)
@@ -159,8 +147,7 @@ class AdditionalRuleRepo(RuleRepoBase):
             .select_from(AdditionalRule)
             .join(AdditionalCode)
             .join(OrgGroup)
-            .join(Taxon)
-            .where(Taxon.preferred_tvk == record.preferred_tvk)
+            .where(AdditionalRule.organism_key == record.organism_key)
         )
         if org_group_id is not None:
             query = query.where(OrgGroup.id == org_group_id)

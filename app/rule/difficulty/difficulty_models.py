@@ -7,12 +7,12 @@ class DifficultyCodeResponse(BaseModel):
 
 
 class DifficultyRuleResponse(BaseModel):
-    tvk: str
+    organism_key: str
     taxon: str
     difficulty: int
 
 
-class DifficultyRuleResponseTvk(BaseModel):
+class DifficultyRuleResponseOrganism(BaseModel):
     organisation: str
     group: str
     difficulty: int
