@@ -189,7 +189,6 @@ class RuleRepo:
                         'git',
                         'clone',
                         '--no-checkout',
-                        '--branch=' + settings.env.rules_branch,
                         '--depth=1',
                         '--filter=tree:0',
                         settings.env.rules_repo
@@ -215,23 +214,26 @@ class RuleRepo:
                 )
 
             else:
-                # Pull latest changes.
-                # Discards local changes (heaven forbid you'd make any).
+                # Fetch latest changes.
+                subprocess.check_call(
+                    ['git', 'fetch', '--all',  '--depth=1', '--prune'],
+                    cwd=self.gitdir
+                )
+
+                # Checkout branch in case it has changed,discarding local
+                # changes.
+                subprocess.check_call(
+                    ['git', 'switch', '-f', settings.env.rules_branch],
+                    cwd=self.gitdir
+                )
+
+                # Update to latest commit of branch.
                 # Overcomes file mode issues with different file systems
                 # which cause a simple git pull to fail.
                 # (Specifically the persistent volume on our Kubernetes cluster
                 # adds execute permissions.)
                 subprocess.check_call(
-                    ['git', 'fetch', '--all'],
-                    cwd=self.gitdir
-                )
-                subprocess.check_call(
-                    [
-                        'git',
-                        'reset',
-                        '--hard',
-                        'origin/' + settings.env.rules_branch
-                    ],
+                    ['git', 'reset', '--hard', 'HEAD'],
                     cwd=self.gitdir
                 )
 
