@@ -147,6 +147,8 @@ async def maintenance_middleware(request: Request, call_next):
         request['path'] != '/' and
         request['path'] != '/token' and
         request['path'] != '/maintenance' and
+        request['path'] != '/rules/update' and
+        request['path'] != '/rules/update_result' and
         request['path'] != '/docs' and
         request['path'] != '/openapi.json'
     ):
