@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
  - Unable to update rules from new branch.
  - Unable to update rules in maintenance mode.
+ - Server error listing period rules with no end date.
 
 ## [3.0.0]
 
