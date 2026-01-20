@@ -189,7 +189,6 @@ class RuleRepo:
                         'git',
                         'clone',
                         '--no-checkout',
-                        '--depth=1',
                         '--filter=tree:0',
                         settings.env.rules_repo
                     ],
@@ -216,7 +215,7 @@ class RuleRepo:
             else:
                 # Fetch latest changes.
                 subprocess.check_call(
-                    ['git', 'fetch', '--all',  '--depth=1', '--prune'],
+                    ['git', 'fetch', '--all', '--prune'],
                     cwd=self.gitdir
                 )
 
@@ -233,7 +232,7 @@ class RuleRepo:
                 # (Specifically the persistent volume on our Kubernetes cluster
                 # adds execute permissions.)
                 subprocess.check_call(
-                    ['git', 'reset', '--hard', 'HEAD'],
+                    ['git', '-c', 'core.fileMode=false', 'pull'],
                     cwd=self.gitdir
                 )
 
