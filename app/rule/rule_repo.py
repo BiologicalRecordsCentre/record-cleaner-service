@@ -219,18 +219,32 @@ class RuleRepo:
                     cwd=self.gitdir
                 )
 
-                # Checkout branch in case it has changed,discarding local
-                # changes.
+                # Checkout branch in case it has changed.
+
+                # It is taken for granted that no local changes have been made.
+                # They would prevent a switch or a pull. Adding a 'git reset'
+                # would remove local changes but modifies all files, preventing
+                # the optimisation of only updating the database from changed
+                # files from having any benefit.
+
+                # The option, '-c core.fileMode=false', causes the state of the
+                # execute permission on files to be ignored. The persistent
+                # volume on our Kubernetes cluster adds execute permissions
+                # which would be seen as a modification and prevent switch and
+                # pull if it is omitted.
+
                 subprocess.check_call(
-                    ['git', 'switch', '-f', settings.env.rules_branch],
+                    [
+                        'git',
+                        '-c',
+                        'core.fileMode=false',
+                        'switch',
+                        settings.env.rules_branch
+                    ],
                     cwd=self.gitdir
                 )
 
                 # Update to latest commit of branch.
-                # Overcomes file mode issues with different file systems
-                # which cause a simple git pull to fail.
-                # (Specifically the persistent volume on our Kubernetes cluster
-                # adds execute permissions.)
                 subprocess.check_call(
                     ['git', '-c', 'core.fileMode=false', 'pull'],
                     cwd=self.gitdir
