@@ -316,6 +316,8 @@ class RuleRepo:
             rules_updated = getattr(org_group, update_field_name)
             if rules_updated and rules_updated >= file_updated:
                 # File has not been updated since last run.
+                logger.debug(
+                    f"Skipping {organisation} {group} {rule_type['name']}.")
                 return []
 
         try:
@@ -323,6 +325,8 @@ class RuleRepo:
             errors = repo.load_file(
                 groupdir, org_group.id, self.rules_commit
             )
+            logger.info(
+                f"Updated {organisation} {group} {rule_type['name']}.")
             # Save the update time.
             setattr(org_group, update_field_name, self.loading_time)
             self.db.add(org_group)
