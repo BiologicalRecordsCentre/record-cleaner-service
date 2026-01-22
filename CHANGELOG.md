@@ -10,6 +10,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
  - Failure updating rules.
 
+### Changed
+ - Rule updates to not git reset. This ensures only modified files are loaded.
+ - Logging of rule files loaded.
+
 ## [3.0.1]
 
 ### Fixed
