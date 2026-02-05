@@ -81,15 +81,16 @@ Log level: [debug|info|warning|error|critical]. Defaults to warning.
 Rule tolerance creates special messages for rules that are failed but by an 
 ammount that is within the tolerance value.
 
+*   `PHENOLOGY_TOLERANCE=3`
 The number of days tolerance given to phenology rules in days. Defaults to 3.
 Set to 0 to disable.
-*   `PHENOLOGY_TOLERANCE=3`
+
+*   `TENKM_TOLERANCE=1`
 The number of 10km squares tolerance given to tenkm rules. A value of 1 tests if
 any of the the 8 10km squares adjacent to the recorded 10km square are valid, 
 i.e.a 30km x 30km square centred on the record. A value of 2 expands this to a
 50km x 50km square centred on the record and so on. Defaults to 1.
 Set to 0 to disable.
-*   `TENKM_TOLERANCE=1`
 
 ## Development
 
