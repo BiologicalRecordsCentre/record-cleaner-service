@@ -37,3 +37,4 @@ class VerifiedPack(BaseModel):
     records: List[Verified]
     duration_ns: int
     rules_commit: str
+    rules_update_time: str

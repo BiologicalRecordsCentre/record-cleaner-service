@@ -19,8 +19,10 @@ class TestVerify:
         pack = VerifyPack(
             records=[],
         )
-        # Use settings from client context to set rules_commit.
-        client.app.context['settings'].db.rules_commit = 'test123'
+        # Use settings from client context to set rule metadata.
+        settings = client.app.context['settings']
+        settings.db.rules_commit = 'test123'
+        settings.db.rules_update_time = '2026-02-23 16:59:59'
 
         response = client.post(
             '/verify',
@@ -30,10 +32,13 @@ class TestVerify:
         verified = response.json()
         assert verified['records'] == []
         assert verified['rules_commit'] == 'test123'
+        assert verified['rules_update_time'] == '2026-02-23 16:59:59'
 
     def test_valid_record(self, client: TestClient, mocker):
-        # Use settings from client context to set rules_commit.
-        client.app.context['settings'].db.rules_commit = 'test123'
+        # Use settings from client context to set rule metadata.
+        settings = client.app.context['settings']
+        settings.db.rules_commit = 'test123'
+        settings.db.rules_update_time = '2026-02-23 16:59:59'
         # Get database connection from client.
         engine = client.app.context['engine']
         with Session(engine) as db:
@@ -70,6 +75,7 @@ class TestVerify:
             assert record['messages'][0] == (
                 "No rules exist for this taxon.")
             assert verified['rules_commit'] == 'test123'
+            assert verified['rules_update_time'] == '2026-02-23 16:59:59'
 
             # Update to test against specific org_group.
             rules = OrgGroupRules(
@@ -90,6 +96,7 @@ class TestVerify:
             assert record['messages'][0] == (
                 "Unrecognised organisation:group, 'UK Ladybird Survey:UKLS'.")
             assert verified['rules_commit'] == 'test123'
+            assert verified['rules_update_time'] == '2026-02-23 16:59:59'
 
             # Create the missing org_group.
             org_group = OrgGroup(
@@ -111,6 +118,7 @@ class TestVerify:
             assert record['messages'][0] == (
                 "UK Ladybird Survey:UKLS: No rules exist for this taxon.")
             assert verified['rules_commit'] == 'test123'
+            assert verified['rules_update_time'] == '2026-02-23 16:59:59'
 
             # Create the missing difficulty rule.
             # Create taxa.
@@ -163,6 +171,7 @@ class TestVerify:
             assert record['messages'][1] == (
                 "UK Ladybird Survey:UKLS:difficulty:1: Easy")
             assert verified['rules_commit'] == 'test123'
+            assert verified['rules_update_time'] == '2026-02-23 16:59:59'
 
             # Update to test against specific rule.
             pack.org_group_rules_list[0].rules = ['tenkm']
@@ -182,6 +191,7 @@ class TestVerify:
             assert record['messages'][1] == (
                 "UK Ladybird Survey:UKLS:difficulty:1: Easy")
             assert verified['rules_commit'] == 'test123'
+            assert verified['rules_update_time'] == '2026-02-23 16:59:59'
 
             # Create a tenkm to test against.
             # Create tenkm rule for org_group and taxon.
@@ -212,6 +222,7 @@ class TestVerify:
             assert record['messages'][1] == (
                 'UK Ladybird Survey:UKLS:difficulty:1: Easy')
             assert verified['rules_commit'] == 'test123'
+            assert verified['rules_update_time'] == '2026-02-23 16:59:59'
 
             # Now try again with verbose = 0.
             response = client.post(
@@ -228,6 +239,7 @@ class TestVerify:
             assert record['messages'][0] == (
                 'Rules run: tenkm')
             assert verified['rules_commit'] == 'test123'
+            assert verified['rules_update_time'] == '2026-02-23 16:59:59'
 
             # Change record location to outside the tenkm rule - should fail.
             pack.records[0].sref.gridref = "TL 654 321"
@@ -247,6 +259,7 @@ class TestVerify:
                 "UK Ladybird Survey:UKLS:tenkm: Location is outside known "
                 "distribution.")
             assert verified['rules_commit'] == 'test123'
+            assert verified['rules_update_time'] == '2026-02-23 16:59:59'
 
             # Remove the rule list - should still fail.
             pack.org_group_rules_list = []
@@ -266,3 +279,4 @@ class TestVerify:
                 "UK Ladybird Survey:UKLS:tenkm: Location is outside known "
                 "distribution.")
             assert verified['rules_commit'] == 'test123'
+            assert verified['rules_update_time'] == '2026-02-23 16:59:59'

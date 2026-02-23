@@ -141,5 +141,6 @@ async def verify(
         org_group_rules_list=data.org_group_rules_list,
         records=results,
         duration_ns=duration,
-        rules_commit=settings.db.rules_commit
+        rules_commit=settings.db.rules_commit,
+        rules_update_time=settings.db.rules_update_time
     )
