@@ -10,7 +10,12 @@ from app.main import app
 from app.settings_env import get_env_settings
 from app.user.user_repo import UserRepo
 
-from .mocks import mock_env_settings, mock_env_tolerant_settings, mock_create_db, mock_settings
+from .mocks import (
+    mock_env_settings,
+    mock_env_tolerant_settings,
+    mock_create_db,
+    mock_settings
+)
 
 
 @pytest.fixture(name="env")

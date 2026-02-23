@@ -6,7 +6,7 @@ from app.auth import get_current_user
 from app.database import DbDependency
 from app.rule.org_group.org_group_repo import OrgGroupRepo
 from app.rule.rule_repo import RuleRepo
-from app.settings_env import EnvDependency
+from app.settings import SettingsDependency
 import app.species.cache as cache
 from app.utility.sref.sref_factory import SrefFactory
 from app.utility.vague_date import VagueDate
@@ -27,7 +27,7 @@ router = APIRouter(
     response_model_exclude_none=True)
 async def verify(
     db: DbDependency,
-    env: EnvDependency,
+    settings: SettingsDependency,
     data: VerifyPack,
     verbose: int = 1,
 ):
@@ -56,6 +56,7 @@ async def verify(
     # might offer more control. For now it is used as a boolean internally.
 
     start = time.time_ns()
+    env = settings.env
     results = []
     for record in data.records:
         # Our response begins with the input data.
@@ -139,5 +140,6 @@ async def verify(
     return VerifiedPack(
         org_group_rules_list=data.org_group_rules_list,
         records=results,
-        duration_ns=duration
+        duration_ns=duration,
+        rules_commit=settings.db.rules_commit
     )
