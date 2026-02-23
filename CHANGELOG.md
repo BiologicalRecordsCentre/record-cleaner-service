@@ -5,7 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [3.0.0 Unreleased]
+## [3.0.2]
+
+### Fixed
+ - Failure updating rules.
+
+### Changed
+ - Rule updates to not git reset. This ensures only modified files are loaded.
+ - Logging of rule files loaded.
+
+## [3.0.1]
+
+### Fixed
+ - Unable to update rules from new branch.
+ - Unable to update rules in maintenance mode.
+ - Server error listing period rules with no end date.
+
+## [3.0.0]
 
 ### Added
  - organism_key to Taxon table which is then included in responses from 
@@ -30,8 +46,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
  - Exception when Indicia API returned a JSON error.
 
-### Removed
-
 
 ## [2.1.0]
 
@@ -51,7 +65,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Vice county test passing any unknown grid ref.
 - Vice county test failure for Irish grid refs [#13](https://github.com/BiologicalRecordsCentre/record-cleaner-service/issues/13)
 
-### Removed
 
 ## [2.0.0]
 
@@ -71,8 +84,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - /verify id_difficulty to be an integer rather than a list. The highest value 
   rather than all values.
 - /verify messages to include list of tests run.
-
-### Fixed
 
 ### Removed
 - id_difficulty from /validate response.

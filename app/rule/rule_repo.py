@@ -189,8 +189,6 @@ class RuleRepo:
                         'git',
                         'clone',
                         '--no-checkout',
-                        '--branch=' + settings.env.rules_branch,
-                        '--depth=1',
                         '--filter=tree:0',
                         settings.env.rules_repo
                     ],
@@ -215,23 +213,40 @@ class RuleRepo:
                 )
 
             else:
-                # Pull latest changes.
-                # Discards local changes (heaven forbid you'd make any).
-                # Overcomes file mode issues with different file systems
-                # which cause a simple git pull to fail.
-                # (Specifically the persistent volume on our Kubernetes cluster
-                # adds execute permissions.)
+                # Fetch latest changes.
                 subprocess.check_call(
-                    ['git', 'fetch', '--all'],
+                    ['git', 'fetch', '--all', '--prune'],
                     cwd=self.gitdir
                 )
+
+                # Checkout branch in case it has changed.
+
+                # It is taken for granted that no local changes have been made.
+                # They would prevent a switch or a pull. Adding a 'git reset'
+                # would remove local changes but modifies all files, preventing
+                # the optimisation of only updating the database from changed
+                # files from having any benefit.
+
+                # The option, '-c core.fileMode=false', causes the state of the
+                # execute permission on files to be ignored. The persistent
+                # volume on our Kubernetes cluster adds execute permissions
+                # which would be seen as a modification and prevent switch and
+                # pull if it is omitted.
+
                 subprocess.check_call(
                     [
                         'git',
-                        'reset',
-                        '--hard',
-                        'origin/' + settings.env.rules_branch
+                        '-c',
+                        'core.fileMode=false',
+                        'switch',
+                        settings.env.rules_branch
                     ],
+                    cwd=self.gitdir
+                )
+
+                # Update to latest commit of branch.
+                subprocess.check_call(
+                    ['git', '-c', 'core.fileMode=false', 'pull'],
                     cwd=self.gitdir
                 )
 
@@ -315,6 +330,8 @@ class RuleRepo:
             rules_updated = getattr(org_group, update_field_name)
             if rules_updated and rules_updated >= file_updated:
                 # File has not been updated since last run.
+                logger.debug(
+                    f"Skipping {organisation} {group} {rule_type['name']}.")
                 return []
 
         try:
@@ -322,6 +339,8 @@ class RuleRepo:
             errors = repo.load_file(
                 groupdir, org_group.id, self.rules_commit
             )
+            logger.info(
+                f"Updated {organisation} {group} {rule_type['name']}.")
             # Save the update time.
             setattr(org_group, update_field_name, self.loading_time)
             self.db.add(org_group)

@@ -75,7 +75,7 @@ app = FastAPI(
     title="Record Cleaner Service",
     summary="Service for checking species records against the record "
     "cleaner rules.",
-    version="3.0.0",
+    version="3.0.2",
     contact={
         "name": "Biological Records Centre at UK Centre for Ecology & Hydrology",
         "url": "https://www.ceh.ac.uk/our-science/projects/biological-records-centre",
@@ -147,6 +147,8 @@ async def maintenance_middleware(request: Request, call_next):
         request['path'] != '/' and
         request['path'] != '/token' and
         request['path'] != '/maintenance' and
+        request['path'] != '/rules/update' and
+        request['path'] != '/rules/update_result' and
         request['path'] != '/docs' and
         request['path'] != '/openapi.json'
     ):
