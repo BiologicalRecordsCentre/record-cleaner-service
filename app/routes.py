@@ -118,7 +118,7 @@ async def set_maintenance(
     dependencies=[Depends(get_current_admin_user)]
 )
 async def read_settings(settings: SettingsDependency):
-    """The current settings include
+    """The settings include
     - **maintenance_mode**, true if the service is under maintenance.
     - **maintenance_message** explains the cause and extent of maintenance.
     - **rules_commit** is the commit hash of the rules currently in use.
@@ -127,7 +127,8 @@ async def read_settings(settings: SettingsDependency):
       will be in maintenance mode while a rule update happens.
     - **rules_updating_now** is an indication of progress during rule updates.
     - **rules_update_result** is a list of messages arising from the last rule
-      update. This can indicate errors in rule files, for example."""
+      update. This can indicate errors in rule files, for example.
+    - **rules_update_time** is the time the rules were last updated."""
     return settings.db.list()
 
 
