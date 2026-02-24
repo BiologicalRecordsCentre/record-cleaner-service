@@ -29,6 +29,7 @@ class Service(BaseModel):
     rules_repo: str
     rules_branch: str
     rules_commit: str
+    rules_update_time: str
     maintenance_mode: bool
     maintenance_message: str
 
@@ -82,6 +83,7 @@ async def read_service(request: Request, settings: SettingsDependency):
         rules_repo=settings.env.rules_repo,
         rules_branch=settings.env.rules_branch,
         rules_commit=settings.db.rules_commit,
+        rules_update_time=settings.db.rules_update_time,
         maintenance_mode=settings.db.maintenance_mode,
         maintenance_message=settings.db.maintenance_message,
     )
