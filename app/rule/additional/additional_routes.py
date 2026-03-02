@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException, status
 
 from app.database import DbDependency
 from app.settings_env import EnvDependency
@@ -45,10 +45,19 @@ async def read_rules_by_org_group(
     response_model=list[AdditionalRuleResponseOrganism]
 )
 async def read_rules_by_tvk(db: DbDependency, env: EnvDependency, tvk: str):
-    taxon = get_taxon_by_tvk(db, env, tvk)
-    repo = AdditionalRuleRepo(db, env)
-    rules = repo.list_by_organism_key(taxon.organism_key)
-    return rules
+    try:
+        taxon = get_taxon_by_tvk(db, env, tvk)
+        repo = AdditionalRuleRepo(db, env)
+        rules = repo.list_by_organism_key(taxon.organism_key)
+        return rules
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e))
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e))
 
 
 @router.get(

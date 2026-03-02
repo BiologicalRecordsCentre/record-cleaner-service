@@ -1,9 +1,12 @@
 from datetime import date
+import json
 
 from fastapi.testclient import TestClient
 from sqlmodel import Session
 
 from app.sqlmodels import OrgGroup, Taxon, PeriodRule
+
+from ...mocks import mock_make_search_request
 
 
 class TestPeriodRule:
@@ -11,7 +14,13 @@ class TestPeriodRule:
 
     Fixtures for database and authentication come from ../conftest.py"""
 
-    def test_period_rule(self, client: TestClient):
+    def test_period_rule(self, client: TestClient, mocker):
+        # Mock the Indicia warehouse.
+        mocker.patch(
+            'app.species.indicia.make_search_request',
+            mock_make_search_request
+        )
+
         # Get database connection from client.
         engine = client.app.context['engine']
         with Session(engine) as db:
@@ -66,6 +75,12 @@ class TestPeriodRule:
             assert result[0]['start_date'] == '2020-01-01'
             assert result[0]['end_date'] == '2020-12-31'
 
+            # Request period rules for invlaid tvk.
+            response = client.get('/rules/period/tvk/ABC123')
+            assert response.status_code == 404
+            result = json.loads(response.text)
+            assert result['detail'] == 'TVK ABC123 not recognised.'
+
             # Request period rules for organism_key.
             response = client.get(
                 f'/rules/period/organism_key/{taxon.organism_key}')
@@ -75,6 +90,12 @@ class TestPeriodRule:
             assert result[0]['group'] == 'group1'
             assert result[0]['start_date'] == '2020-01-01'
             assert result[0]['end_date'] == '2020-12-31'
+
+            # Request period rules for invalid organism_key.
+            response = client.get('/rules/period/organism_key/ABC123')
+            assert response.status_code == 200
+            result = response.json()
+            assert len(result) == 0
 
     def test_period_rule_no_start_date(self, client: TestClient):
         # Get database connection from client.

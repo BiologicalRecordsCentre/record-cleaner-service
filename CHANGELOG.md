@@ -11,9 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
  - rules_commit to verify response.
  - rules_update_time to verify response.
 
- ### Changed
+### Changed
  - Python modules to latest versions.
 
+### Fixed
+ - Server error on requesting rules by TVK
 
 ## [3.0.2]
 
