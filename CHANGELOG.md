@@ -15,7 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
  - Python modules to latest versions.
 
 ### Fixed
- - Server error on requesting rules by TVK
+ - Server error on requesting rules by TVK.
+ - Server error on requesting species/cache/taxon_by_tvk.
 
 ## [3.0.2]
 

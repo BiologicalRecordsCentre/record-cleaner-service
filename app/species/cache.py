@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException, status
 from sqlmodel import Session, func, select, delete
 
 from app.database import DbDependency
-from app.settings_env import EnvSettings
+from app.settings_env import EnvDependency, EnvSettings
 from app.sqlmodels import Taxon
 import app.species.indicia as driver
 from app.utility.search import Search
@@ -80,8 +80,20 @@ async def delete_cache_item(
     response_model=Taxon)
 async def read_taxon_by_tvk(
         db: DbDependency,
+        env: EnvDependency,
         tvk: str):
-    return get_taxon_by_tvk(db, tvk)
+    # This endpoint is different from /species/taxon_by_tvk as it returns
+    # additional information, including the cache id.
+    try:
+        return get_taxon_by_tvk(db, env, tvk)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e))
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e))
 
 
 @lru_cache(maxsize=1024)
