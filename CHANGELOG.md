@@ -15,8 +15,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
  - Python modules to latest versions.
 
 ### Fixed
- - Server error on requesting rules by TVK.
- - Server error on requesting species/cache/taxon_by_tvk.
+ - Server error on requesting rules by unknown TVK.
+ - Server error on requesting species/cache/taxon_by_tvk with unknown TVK.
+ - Server error on requesting species/taxon_by_name with unknown name.
+ - Error when searching for taxon with malformed response from Indicia.
+   [#34](https://github.com/BiologicalRecordsCentre/record-cleaner-ui/issues/34)
 
 ## [3.0.2]
 

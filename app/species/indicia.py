@@ -338,13 +338,17 @@ def parse_response_taxa(response: dict) -> list[Taxon]:
     taxa = []
     if 'data' in response:
         for taxon in response['data']:
-            taxa.append(Taxon(
-                name=taxon['taxon'],
-                preferred_name=taxon['preferred_taxon'],
-                search_name=Search.get_search_name(taxon['taxon']),
-                tvk=taxon['search_code'],
-                preferred_tvk=taxon['external_key'],
-                preferred=True if taxon['preferred'] == 't' else False,
-                organism_key=taxon['organism_key'],
-            ))
+            try:
+                taxa.append(Taxon(
+                    name=taxon['taxon'],
+                    preferred_name=taxon['preferred_taxon'],
+                    search_name=Search.get_search_name(taxon['taxon']),
+                    tvk=taxon['search_code'],
+                    preferred_tvk=taxon['external_key'],
+                    preferred=True if taxon['preferred'] == 't' else False,
+                    organism_key=taxon['organism_key'],
+                ))
+            except Exception:
+                # If the taxon data is malformed, skip it.
+                pass
     return taxa
