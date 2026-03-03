@@ -50,10 +50,10 @@ class TestSpecies:
         response = client.get("/species/taxon_by_name/Bidalia adpunctata")
         assert response.status_code == 404
         result = json.loads(response.text)
-        assert result['detail'] == 'Name Bidalia adpunctata not recognised.'
+        assert result['detail'] == "Name 'Bidalia adpunctata' not recognised."
 
         # Request mal-formed species by name.
         response = client.get("/species/taxon_by_name/Argynnis aglaja")
         assert response.status_code == 404
         result = json.loads(response.text)
-        assert result['detail'] == 'Name Argynnis aglaja not recognised.'
+        assert result['detail'] == "Name 'Argynnis aglaja' not recognised."

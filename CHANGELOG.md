@@ -20,7 +20,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
  - Server error on requesting species/taxon_by_name with unknown name.
  - Error when searching for taxon with malformed response from Indicia.
    [#34](https://github.com/BiologicalRecordsCentre/record-cleaner-ui/issues/34)
-
+ - Error when searching for taxon by common name
+   [#35](https://github.com/BiologicalRecordsCentre/record-cleaner-ui/issues/35)
+ 
 ## [3.0.2]
 
 ### Fixed

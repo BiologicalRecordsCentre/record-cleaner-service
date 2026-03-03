@@ -156,9 +156,22 @@ def add_taxon_by_name(db: Session, env: EnvSettings, name: str) -> Taxon:
     taxa = driver.parse_response_taxa(response)
 
     if len(taxa) == 0:
-        raise ValueError(f"Name {name} not recognised.")
+        raise ValueError(f"Name '{name}' not recognised.")
     else:
+        # Use the first suggestion. This may be naive but Indicia does seem to
+        # sort the results in a helpful way.
         taxon = taxa[0]
+        # The name returned is not always the same as the one supplied.
+        # E.g. A search for 'Tern' returns 'Tern species'.
+        request_search_name = Search.get_search_name(name)
+        response_search_name = Search.get_search_name(taxon.name)
+        if request_search_name != response_search_name:
+            error = f"Name '{name}' not recognised. "
+            suggestions = ', '.join(taxon.name for taxon in taxa)
+            error += f"Suggestions: {suggestions}"
+            raise ValueError(error)
+
+        # Add the new taxon to the cache.
         db.add(taxon)
         db.commit()
         db.refresh(taxon)
