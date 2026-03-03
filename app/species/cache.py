@@ -149,7 +149,8 @@ def add_taxon_by_name(db: Session, env: EnvSettings, name: str) -> Taxon:
     """Look up taxon and add to cache."""
     params = {
         'searchQuery': name,
-        'include': '["data"]'
+        'include': '["data"]',
+        'wholeWords': 'true',
     }
     response = driver.make_search_request(env, params)
     taxa = driver.parse_response_taxa(response)
