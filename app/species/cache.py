@@ -155,7 +155,7 @@ def add_taxon_by_name(db: Session, env: EnvSettings, name: str) -> Taxon:
     taxa = driver.parse_response_taxa(response)
 
     if len(taxa) == 0:
-        raise ValueError("Name not recognised.")
+        raise ValueError(f"Name {name} not recognised.")
     else:
         taxon = taxa[0]
         db.add(taxon)
