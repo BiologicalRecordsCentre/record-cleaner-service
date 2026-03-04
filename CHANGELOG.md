@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
  - Python modules to latest versions.
+ - Caching of taxa so that:
+   - Exception responses are cached,
+   - Database session is not part of key.
 
 ### Fixed
  - Server error on requesting rules by unknown TVK.

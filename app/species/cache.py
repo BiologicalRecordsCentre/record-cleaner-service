@@ -1,4 +1,5 @@
-from functools import lru_cache
+from cachetools import cached, LRUCache
+from cachetools.keys import hashkey
 
 from fastapi import APIRouter, HTTPException, status
 from sqlmodel import Session, func, select, delete
@@ -96,8 +97,21 @@ async def read_taxon_by_tvk(
             detail=str(e))
 
 
-@lru_cache(maxsize=1024)
 def get_taxon_by_tvk(db: Session, env: EnvSettings, tvk: str) -> Taxon:
+    """Look up the taxon with given TVK.
+
+    Wrapper for _get_taxon_by_tvk_wrapped so that exceptions can be cached.
+    """
+
+    taxon = _get_taxon_by_tvk_wrapped(db, env, tvk)
+    if isinstance(taxon, Exception):
+        raise taxon
+    else:
+        return taxon
+
+
+@cached(cache=LRUCache(maxsize=1024), key=lambda db, env, tvk: hashkey(tvk))
+def _get_taxon_by_tvk_wrapped(db: Session, env: EnvSettings, tvk: str) -> Taxon:
     """Look up the taxon with given TVK."""
 
     # First check our local database
@@ -107,12 +121,15 @@ def get_taxon_by_tvk(db: Session, env: EnvSettings, tvk: str) -> Taxon:
     ).first()
     if not taxon:
         # If not found, add from the remote database.
-        taxon = add_taxon_by_tvk(db, env, tvk)
+        taxon = _add_taxon_by_tvk(db, env, tvk)
     return taxon
 
 
-def add_taxon_by_tvk(db: Session,  env: EnvSettings, tvk: str) -> Taxon:
-    """Look up taxon with given TVK and add to cache."""
+def _add_taxon_by_tvk(db: Session,  env: EnvSettings, tvk: str) -> Taxon:
+    """Look up taxon with given TVK and add to cache.
+
+    Exceptions are returned so that they can be cached.
+     """
     params = {
         'search_code': tvk,
         'include': '["data"]'
@@ -121,7 +138,7 @@ def add_taxon_by_tvk(db: Session,  env: EnvSettings, tvk: str) -> Taxon:
     taxa = driver.parse_response_taxa(response)
 
     if len(taxa) == 0:
-        raise ValueError(f"TVK {tvk} not recognised.")
+        return ValueError(f"TVK {tvk} not recognised.")
     else:
         taxon = taxa[0]
         db.add(taxon)
@@ -130,9 +147,22 @@ def add_taxon_by_tvk(db: Session,  env: EnvSettings, tvk: str) -> Taxon:
         return taxon
 
 
-@lru_cache(maxsize=1024)
 def get_taxon_by_name(db: Session, env: EnvSettings, name: str) -> Taxon:
-    """Look up taxon with given name."""
+    """Look up taxon with given name.
+
+    Wrapper for _get_taxon_by_name_wrapped so that exceptions can be cached.
+    """
+
+    taxon = _get_taxon_by_name_wrapped(db, env, name)
+    if isinstance(taxon, Exception):
+        raise taxon
+    else:
+        return taxon
+
+
+@cached(cache=LRUCache(maxsize=1024), key=lambda db, env, name: hashkey(name))
+def _get_taxon_by_name_wrapped(db: Session, env: EnvSettings, name: str) -> Taxon:
+    """Look up taxon with given name in local database."""
 
     search_name = Search.get_search_name(name)
     # First check our local database.
@@ -141,12 +171,15 @@ def get_taxon_by_name(db: Session, env: EnvSettings, name: str) -> Taxon:
     ).first()
     if not taxon:
         # If not found, add from the remote database.
-        taxon = add_taxon_by_name(db, env, name)
+        taxon = _add_taxon_by_name(db, env, name)
     return taxon
 
 
-def add_taxon_by_name(db: Session, env: EnvSettings, name: str) -> Taxon:
-    """Look up taxon and add to cache."""
+def _add_taxon_by_name(db: Session, env: EnvSettings, name: str) -> Taxon:
+    """Look up taxon in remote database and add to local.
+
+    Exceptions are returned so that they can be cached.
+    """
     params = {
         'searchQuery': name,
         'include': '["data"]',
@@ -156,7 +189,7 @@ def add_taxon_by_name(db: Session, env: EnvSettings, name: str) -> Taxon:
     taxa = driver.parse_response_taxa(response)
 
     if len(taxa) == 0:
-        raise ValueError(f"Name '{name}' not recognised.")
+        return ValueError(f"Name '{name}' not recognised.")
     else:
         # Use the first suggestion. This may be naive but Indicia does seem to
         # sort the results in a helpful way.
@@ -169,7 +202,7 @@ def add_taxon_by_name(db: Session, env: EnvSettings, name: str) -> Taxon:
             error = f"Name '{name}' not recognised. "
             suggestions = ', '.join(taxon.name for taxon in taxa)
             error += f"Suggestions: {suggestions}"
-            raise ValueError(error)
+            return ValueError(error)
 
         # Add the new taxon to the cache.
         db.add(taxon)
