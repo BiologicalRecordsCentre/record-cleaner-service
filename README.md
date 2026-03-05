@@ -133,7 +133,7 @@ be captured in code and committed to the repo.
  needs to be nullable, have a default vaule or you need to be prepared to 
  truncate the table contents and rebuild. Moreover, in the last case, all 
  relevant code and tests will need updating simultanously.
- 2. Execute `alembic revision --autogenerate -m "{a short description}` at a
+ 2. Execute `"alembic revision --autogenerate -m "{a short description}"` at a
  command prompt in the root directory of the code.
  3. Examine the update file created in the alembic/versions folder and ensure it
  looks okay.
