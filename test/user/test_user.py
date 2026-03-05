@@ -1,7 +1,5 @@
 from fastapi.testclient import TestClient
 
-from app.settings_env import EnvSettings
-
 
 class TestUser:
 
