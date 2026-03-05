@@ -109,7 +109,7 @@ class TestAdditional:
             assert result[0]['code'] == 1
             assert result[0]['text'] == 'Rare'
 
-            # Request additional rules for invlaid organism key.
+            # Request additional rules for invalid organism key.
             response = client.get('/rules/additional/organism_key/ABC123')
             assert response.status_code == 200
             result = response.json()
