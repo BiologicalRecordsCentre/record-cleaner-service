@@ -107,11 +107,12 @@ def get_taxon_by_tvk(db: Session, env: EnvSettings, tvk: str) -> Taxon:
     if isinstance(taxon, Exception):
         raise taxon
     else:
-        return taxon
+        # Return the deserialized taxon
+        return Taxon(**taxon)
 
 
-@cached(cache=LRUCache(maxsize=1024), key=lambda db, env, tvk: hashkey(tvk))
-def _get_taxon_by_tvk_wrapped(db: Session, env: EnvSettings, tvk: str) -> Taxon:
+@cached(cache=LRUCache(maxsize=1024),  key=lambda db, env, tvk: hashkey(tvk))
+def _get_taxon_by_tvk_wrapped(db: Session, env: EnvSettings, tvk: str) -> dict:
     """Look up the taxon with given TVK."""
 
     # First check our local database
@@ -122,7 +123,16 @@ def _get_taxon_by_tvk_wrapped(db: Session, env: EnvSettings, tvk: str) -> Taxon:
     if not taxon:
         # If not found, add from the remote database.
         taxon = _add_taxon_by_tvk(db, env, tvk)
-    return taxon
+
+    if isinstance(taxon, Exception):
+        return taxon
+    else:
+        # Return the serialized taxon.
+        # This is a workaround to a problem returning the taxon as a model.
+        # There seemed to be a link between the model and the database
+        # session which meant the cache response was invalid in a different
+        # session if I cached the model. Not well understood.
+        return taxon.model_dump()
 
 
 def _add_taxon_by_tvk(db: Session,  env: EnvSettings, tvk: str) -> Taxon:
@@ -157,11 +167,12 @@ def get_taxon_by_name(db: Session, env: EnvSettings, name: str) -> Taxon:
     if isinstance(taxon, Exception):
         raise taxon
     else:
-        return taxon
+        # Return the deserialized taxon
+        return Taxon(**taxon)
 
 
 @cached(cache=LRUCache(maxsize=1024), key=lambda db, env, name: hashkey(name))
-def _get_taxon_by_name_wrapped(db: Session, env: EnvSettings, name: str) -> Taxon:
+def _get_taxon_by_name_wrapped(db: Session, env: EnvSettings, name: str) -> dict:
     """Look up taxon with given name in local database."""
 
     search_name = Search.get_search_name(name)
@@ -172,7 +183,16 @@ def _get_taxon_by_name_wrapped(db: Session, env: EnvSettings, name: str) -> Taxo
     if not taxon:
         # If not found, add from the remote database.
         taxon = _add_taxon_by_name(db, env, name)
-    return taxon
+
+    if isinstance(taxon, Exception):
+        return taxon
+    else:
+        # Return the serialized taxon.
+        # This is a workaround to a problem returning the taxon as a model.
+        # There seemed to be a link between the model and the database
+        # session which meant the cache response was invalid in a different
+        # session if I cached the model. Not well understood.
+        return taxon.model_dump()
 
 
 def _add_taxon_by_name(db: Session, env: EnvSettings, name: str) -> Taxon:
