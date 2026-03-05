@@ -1,13 +1,14 @@
 import time
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter
 
-from app.auth import get_current_user
+from app.auth import UserDependency
 from app.database import DbDependency
 from app.rule.org_group.org_group_repo import OrgGroupRepo
 from app.rule.rule_repo import RuleRepo
 from app.settings import SettingsDependency
 import app.species.cache as cache
+from app.usage.usage_repo import UsageRepo
 from app.utility.sref.sref_factory import SrefFactory
 from app.utility.vague_date import VagueDate
 
@@ -16,7 +17,6 @@ from .verify_models import VerifyPack, Verified, VerifiedPack
 
 router = APIRouter(
     tags=["Verify"],
-    dependencies=[Depends(get_current_user)]
 )
 
 
@@ -28,6 +28,7 @@ router = APIRouter(
 async def verify(
     db: DbDependency,
     settings: SettingsDependency,
+    user: UserDependency,
     data: VerifyPack,
     verbose: int = 1,
 ):
@@ -136,6 +137,9 @@ async def verify(
             results.append(verified)
 
     duration = time.time_ns() - start
+
+    repo = UsageRepo(db)
+    repo.update_verification_usage(user.name, len(results))
 
     return VerifiedPack(
         org_group_rules_list=data.org_group_rules_list,

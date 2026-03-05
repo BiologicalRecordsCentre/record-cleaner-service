@@ -11,6 +11,7 @@ from app.county.county_routes import router as county_router
 from app.rule.rule_routes import router as rule_router
 from app.settings import SettingsDependency
 from app.species.species_routes import router as species_router
+from app.usage.usage_routes import router as usage_router
 from app.user.user_routes import router as user_router
 from app.validate.validate_routes import router as validate_router
 from app.verify.verify_routes import router as verify_router
@@ -53,6 +54,7 @@ router.include_router(user_router)
 router.include_router(validate_router)
 router.include_router(verify_router)
 router.include_router(county_router)
+router.include_router(usage_router)
 
 
 @router.get(

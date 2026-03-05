@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from fastapi.testclient import TestClient
 from sqlmodel import Session
 
@@ -280,3 +282,27 @@ class TestVerify:
                 "distribution.")
             assert verified['rules_commit'] == 'test123'
             assert verified['rules_update_time'] == '2026-02-23 16:59:59'
+
+            # Put two records in the pack.
+            record = pack.records[0]
+            pack.records.append(record)
+            response = client.post(
+                '/verify',
+                json=pack.model_dump(),
+            )
+            assert response.status_code == 200
+            verified = response.json()
+            assert len(verified['records']) == 2
+
+            # Check usage
+            year = datetime.now().year
+            response = client.get(f"/usage/{year}")
+            assert response.status_code == 200
+            usages = response.json()
+            assert len(usages) == 1
+            usage = usages[0]
+            assert usage['user_name'] == 'Tom'
+            assert usage['verification_requests'] == 10
+            assert usage['validation_requests'] == 0
+            assert usage['verification_records'] == 11
+            assert usage['validation_records'] == 0

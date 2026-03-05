@@ -1,10 +1,11 @@
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter
 
-from app.auth import get_current_user
+from app.auth import UserDependency
 from app.database import DbDependency
 from app.settings_env import EnvDependency
 import app.species.cache as cache
+from app.usage.usage_repo import UsageRepo
 from app.utility.sref.sref_factory import SrefFactory
 from app.utility.vice_county.vc_checker import (
     VcChecker, NoVcFoundWarning, NoVcAllocation, NoVcTestWarning
@@ -15,7 +16,6 @@ from .validate_models import Validate, Validated
 
 router = APIRouter(
     tags=["Validate"],
-    dependencies=[Depends(get_current_user)]
 )
 
 
@@ -27,6 +27,7 @@ router = APIRouter(
 async def validate(
     db: DbDependency,
     env: EnvDependency,
+    user: UserDependency,
     records: list[Validate]
 ):
     """You must provide **name** or **tvk** (taxon version key) to identify the
@@ -164,5 +165,8 @@ async def validate(
             validated.messages.append(str(e))
 
         results.append(validated)
+
+    repo = UsageRepo(db)
+    repo.update_validation_usage(user.name, len(results))
 
     return results

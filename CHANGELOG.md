@@ -10,6 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
  - rules_commit to verify response.
  - rules_update_time to verify response.
+ - Usage table for monitoring number of requests for validation/verification.
+ - End point usage/user/{username}
+ - End point usage/user/{username}/{year}
+ - End point usage/{year}
+ - End point usage/{year}/{month}
 
 ### Changed
  - Python modules to latest versions.

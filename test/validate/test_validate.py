@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from fastapi.testclient import TestClient
 
 from ..mocks import mock_make_search_request
@@ -322,3 +324,41 @@ class TestValidate:
         assert validated['result'] == 'warn'
         assert len(validated['messages']) == 1
         assert validated['messages'][0] == "No vice county found for location."
+
+    def test_valid_usage(self, client: TestClient, mocker):
+        # Mock the Indicia warehouse.
+        mocker.patch(
+            'app.species.indicia.make_search_request',
+            mock_make_search_request
+        )
+
+        record = {
+            "id": 1,
+            "date": "3/4/2024",
+            "sref": {
+                    "srid": 0,
+                    "gridref": "TL 123 456"
+            },
+            "tvk": "NBNSYS0000008319"
+        }
+
+        response = client.post(
+            "/validate",
+            json=[record, record]
+        )
+        assert response.status_code == 200
+        validated = response.json()
+        assert len(validated) == 2
+
+        # Check usage
+        year = datetime.now().year
+        response = client.get(f"/usage/{year}")
+        assert response.status_code == 200
+        usages = response.json()
+        assert len(usages) == 1
+        usage = usages[0]
+        assert usage['user_name'] == 'Tom'
+        assert usage['verification_requests'] == 0
+        assert usage['validation_requests'] == 1
+        assert usage['verification_records'] == 0
+        assert usage['validation_records'] == 2
