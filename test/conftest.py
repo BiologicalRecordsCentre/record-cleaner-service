@@ -65,6 +65,7 @@ def client_fixture(mocker) -> Generator[TestClient, None, None]:
     """Fixture for testing API endpoints.
 
     This starts the app and triggers the lifespan function.
+    The mocker fixture comes from pytest-mock.
 
     Use client.app.context['engine'] to access the database engine
     in tests and client.app.context['settings'] to access the settings."""
