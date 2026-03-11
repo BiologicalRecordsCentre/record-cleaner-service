@@ -1,5 +1,4 @@
 from fastapi.testclient import TestClient
-from sqlmodel import Session
 
 import app.auth as auth
 

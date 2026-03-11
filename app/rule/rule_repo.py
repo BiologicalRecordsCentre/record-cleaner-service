@@ -153,6 +153,8 @@ class RuleRepo:
             result = self.db_update(settings, full)
             result['commit'] = self.rules_commit
             logger.info("Rule update complete.")
+            # Save update time to database.
+            settings.db.rules_update_time = self.loading_time
         except Exception as e:
             result = {
                 'ok': False,

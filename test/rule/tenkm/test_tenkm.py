@@ -1,7 +1,11 @@
+import json
+
 from fastapi.testclient import TestClient
 from sqlmodel import Session
 
 from app.sqlmodels import OrgGroup, Taxon, TenkmRule
+
+from ...mocks import mock_make_search_request
 
 
 class TestTenkmRule:
@@ -9,7 +13,13 @@ class TestTenkmRule:
 
     Fixtures for database and authentication come from ../conftest.py"""
 
-    def test_tenkm_rule(self, client: TestClient):
+    def test_tenkm_rule(self, client: TestClient, mocker):
+        # Mock the Indicia warehouse.
+        mocker.patch(
+            'app.species.indicia.make_search_request',
+            mock_make_search_request
+        )
+
         # Get database connection from client.
         engine = client.app.context['engine']
         with Session(engine) as db:
@@ -67,6 +77,12 @@ class TestTenkmRule:
             assert result[0]['km10'] == '17'
             assert result[0]['coord_system'] == 'OSGB'
 
+            # Request tenkm rules for invalidtvk.
+            response = client.get('/rules/tenkm/tvk/ABC123')
+            assert response.status_code == 404
+            result = json.loads(response.text)
+            assert result['detail'] == 'TVK ABC123 not recognised.'
+
             # Request tenkm rules for organism_key.
             response = client.get(
                 f'/rules/tenkm/organism_key/{taxon.organism_key}')
@@ -77,3 +93,9 @@ class TestTenkmRule:
             assert result[0]['km100'] == 'NZ'
             assert result[0]['km10'] == '17'
             assert result[0]['coord_system'] == 'OSGB'
+
+            # Request tenkm rules for invalid organism_key.
+            response = client.get('/rules/tenkm/organism_key/ABC123')
+            assert response.status_code == 200
+            result = response.json()
+            assert len(result) == 0

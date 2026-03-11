@@ -52,13 +52,12 @@ async def read_taxon_by_name(
 
     try:
         taxon = cache.get_taxon_by_name(db, env, name)
-        if taxon is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Taxon not found with name {name}.")
-
         return taxon
 
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e))
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

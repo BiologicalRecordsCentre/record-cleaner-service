@@ -162,3 +162,14 @@ class User(SQLModel, table=True):
     hash: str
     is_admin: bool = Field(default=False)
     is_disabled: bool = Field(default=False)
+
+
+class Usage(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_name: str = Field(foreign_key='user.name', index=True)
+    year: int
+    month: int
+    verification_requests: int = Field(default=0)
+    validation_requests: int = Field(default=0)
+    verification_records: int = Field(default=0)
+    validation_records: int = Field(default=0)

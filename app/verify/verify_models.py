@@ -36,3 +36,5 @@ class VerifiedPack(BaseModel):
     org_group_rules_list: Optional[List[OrgGroupRules]] = None
     records: List[Verified]
     duration_ns: int
+    rules_commit: str
+    rules_update_time: str

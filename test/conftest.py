@@ -10,7 +10,12 @@ from app.main import app
 from app.settings_env import get_env_settings
 from app.user.user_repo import UserRepo
 
-from .mocks import mock_env_settings, mock_env_tolerant_settings, mock_create_db, mock_settings
+from .mocks import (
+    mock_env_settings,
+    mock_env_tolerant_settings,
+    mock_create_db,
+    mock_settings
+)
 
 
 @pytest.fixture(name="env")
@@ -60,6 +65,7 @@ def client_fixture(mocker) -> Generator[TestClient, None, None]:
     """Fixture for testing API endpoints.
 
     This starts the app and triggers the lifespan function.
+    The mocker fixture comes from pytest-mock.
 
     Use client.app.context['engine'] to access the database engine
     in tests and client.app.context['settings'] to access the settings."""

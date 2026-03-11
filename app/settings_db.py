@@ -57,13 +57,21 @@ class DbSetting:
 
 
 class DbSettings:
+    # True if in maintenance mode. Inhibits access to rule checking.
     maintenance_mode = DbSetting(False)
+    # A message explining the reason for maintenance mode.
     maintenance_message = DbSetting('Normal operation.')
+    # The commit hash of the rules currently in use.
     rules_commit = DbSetting('')
+    # True if a rule update is in progress.
     rules_updating = DbSetting(False)
+    # The ruleset currently being updated as an indicator of update progress.
     rules_updating_now = DbSetting('')
+    # A list of messages arising from the last rule update.
     rules_update_result = DbSetting(
         '{"ok": true, "data": "Rules not yet updated."}')
+    # The date and time of the last rule update.
+    rules_update_time = DbSetting('')
 
     def __init__(self, engine):
         self.engine = engine

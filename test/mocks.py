@@ -190,6 +190,25 @@ def mock_make_search_request(env: EnvSettings, params: dict) -> dict:
                     'parent_id': 4483,
                     'taxon_rank': 'Species'
                 }]}
+            # Mal-formed response having no external_key, search_code, or
+            # organism_key.
+            case 'Argynnis aglaja':
+                return {'data': [{
+                    "taxa_taxon_list_id": "137077",
+                    "searchterm": "Argynnis aglaja Linnaeus",
+                    "taxon": "Argynnis aglaja",
+                    "language_iso": "lat",
+                    "preferred_taxon": "Speyeria aglaja",
+                    "preferred_authority": "Linnaeus, 1758)",
+                    "default_common_name": "Dark Green Fritillary",
+                    "taxon_group": "insect - butterfly",
+                    "preferred": "f",
+                    "preferred_taxa_taxon_list_id": "471438",
+                    "taxon_meaning_id": "231973",
+                    "taxon_group_id": "104",
+                    "parent_id": "290495",
+                    "taxon_rank": "Species"
+                }]}
 
     # Response when no matches.
     return {'data': []}

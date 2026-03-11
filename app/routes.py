@@ -11,6 +11,7 @@ from app.county.county_routes import router as county_router
 from app.rule.rule_routes import router as rule_router
 from app.settings import SettingsDependency
 from app.species.species_routes import router as species_router
+from app.usage.usage_routes import router as usage_router
 from app.user.user_routes import router as user_router
 from app.validate.validate_routes import router as validate_router
 from app.verify.verify_routes import router as verify_router
@@ -29,6 +30,7 @@ class Service(BaseModel):
     rules_repo: str
     rules_branch: str
     rules_commit: str
+    rules_update_time: str
     maintenance_mode: bool
     maintenance_message: str
 
@@ -52,6 +54,7 @@ router.include_router(user_router)
 router.include_router(validate_router)
 router.include_router(verify_router)
 router.include_router(county_router)
+router.include_router(usage_router)
 
 
 @router.get(
@@ -82,6 +85,7 @@ async def read_service(request: Request, settings: SettingsDependency):
         rules_repo=settings.env.rules_repo,
         rules_branch=settings.env.rules_branch,
         rules_commit=settings.db.rules_commit,
+        rules_update_time=settings.db.rules_update_time,
         maintenance_mode=settings.db.maintenance_mode,
         maintenance_message=settings.db.maintenance_message,
     )
@@ -116,7 +120,7 @@ async def set_maintenance(
     dependencies=[Depends(get_current_admin_user)]
 )
 async def read_settings(settings: SettingsDependency):
-    """The current settings include
+    """The settings include
     - **maintenance_mode**, true if the service is under maintenance.
     - **maintenance_message** explains the cause and extent of maintenance.
     - **rules_commit** is the commit hash of the rules currently in use.
@@ -125,7 +129,8 @@ async def read_settings(settings: SettingsDependency):
       will be in maintenance mode while a rule update happens.
     - **rules_updating_now** is an indication of progress during rule updates.
     - **rules_update_result** is a list of messages arising from the last rule
-      update. This can indicate errors in rule files, for example."""
+      update. This can indicate errors in rule files, for example.
+    - **rules_update_time** is the time the rules were last updated."""
     return settings.db.list()
 
 

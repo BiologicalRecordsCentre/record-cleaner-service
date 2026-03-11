@@ -1,7 +1,11 @@
+import json
+
 from fastapi.testclient import TestClient
 from sqlmodel import Session
 
 from app.sqlmodels import OrgGroup, Taxon, PhenologyRule, Stage
+
+from ...mocks import mock_make_search_request
 
 
 class TestPhenologyRule:
@@ -9,7 +13,13 @@ class TestPhenologyRule:
 
     Fixtures for database and authentication come from ../conftest.py"""
 
-    def test_phenology_rule(self, client: TestClient):
+    def test_phenology_rule(self, client: TestClient, mocker):
+        # Mock the Indicia warehouse.
+        mocker.patch(
+            'app.species.indicia.make_search_request',
+            mock_make_search_request
+        )
+
         # Get database connection from client.
         engine = client.app.context['engine']
         with Session(engine) as db:
@@ -76,6 +86,12 @@ class TestPhenologyRule:
             assert result[0]['start_date'] == '8/6'
             assert result[0]['end_date'] == '6/10'
 
+            # Request phenology rules for invalidtvk.
+            response = client.get('/rules/phenology/tvk/ABC123')
+            assert response.status_code == 404
+            result = json.loads(response.text)
+            assert result['detail'] == 'TVK ABC123 not recognised.'
+
             # Request phenology rules for organism key.
             response = client.get(
                 f'/rules/phenology/organism_key/{taxon.organism_key}')
@@ -86,3 +102,9 @@ class TestPhenologyRule:
             assert result[0]['stage'] == 'mature'
             assert result[0]['start_date'] == '8/6'
             assert result[0]['end_date'] == '6/10'
+
+            # Request phenology rules for invalid organism key.
+            response = client.get('/rules/phenology/organism_key/ABC123')
+            assert response.status_code == 200
+            result = response.json()
+            assert len(result) == 0

@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException, status, Depends
 from pydantic import BaseModel
 from sqlmodel import select
 
-from app.auth import hash_password, get_current_admin_user, Auth
+from app.auth import hash_password, get_current_admin_user, UserDependency
 from app.database import DbDependency
 from app.settings_env import EnvDependency
 from app.sqlmodels import User
@@ -52,7 +52,7 @@ async def read_users(db: DbDependency):
 
 
 @router.get('/me', summary="Get logged in user.", response_model=UserGet)
-async def login(user: Auth):
+async def login(user: UserDependency):
     return user
 
 

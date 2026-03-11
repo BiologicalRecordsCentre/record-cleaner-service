@@ -103,11 +103,16 @@ embarrassment.
 NB. When running tests locally, if you have a .env file rename it otherwise
 its contents will override the mocks.
 
-Python package changes
+### Python package changes
 
 To ensure all installations of Record Cleaner are identical, Python packages are
 pinned to exact versions. During a development cycle they should be updated to 
-incorporate fixes and enhancements
+incorporate fixes and enhancements.
+
+The following assumes that you have already done 
+`pip install -r requirements.txt` to get the packages specified in the 
+previous iteration of developtment. You should be doing that within a venv
+that you have set up for the project as a matter of good practise.
 
 1. Execute `pip-review` at a command prompt in the root directory of the code
    to see the available updates.
@@ -128,7 +133,7 @@ be captured in code and committed to the repo.
  needs to be nullable, have a default vaule or you need to be prepared to 
  truncate the table contents and rebuild. Moreover, in the last case, all 
  relevant code and tests will need updating simultanously.
- 2. Execute `alembic revision --autogenerate -m "{a short description}` at a
+ 2. Execute `"alembic revision --autogenerate -m "{a short description}"` at a
  command prompt in the root directory of the code.
  3. Examine the update file created in the alembic/versions folder and ensure it
  looks okay.
@@ -212,7 +217,9 @@ to debug the code locally or in a container.
 }
 ```
 
-## Testing
+## Deployment
+
+### Staging
 If a commit is tagged `v{semver}-{type}{N} where
 
 - {semver} is a semantic version number like 1.2.3
@@ -228,7 +235,7 @@ The url is https://record-cleaner.staging.ceh.ac.uk/
 
 Full releases will also be deployed to staging.
 
-## Production
+### Production
 If a commit is tagged `v{semver} where
 
 - {semver} is a semantic version number like 1.2.3

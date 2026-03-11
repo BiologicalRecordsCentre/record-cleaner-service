@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.0]
+
+### Added
+ - rules_commit to verify response.
+ - rules_update_time to verify response.
+ - Usage table for monitoring number of requests for validation/verification.
+ - End point usage/user/{username}
+ - End point usage/user/{username}/{year}
+ - End point usage/{year}
+ - End point usage/{year}/{month}
+
+### Changed
+ - Python modules to latest versions.
+ - Caching of taxa so that:
+   - Exception responses are cached,
+   - Database session is not part of key.
+
+### Fixed
+ - Server error on requesting rules by unknown TVK.
+ - Server error on requesting species/cache/taxon_by_tvk with unknown TVK.
+ - Server error on requesting species/taxon_by_name with unknown name.
+ - Error when searching for taxon with malformed response from Indicia.
+   [#34](https://github.com/BiologicalRecordsCentre/record-cleaner-ui/issues/34)
+ - Error when searching for taxon by common name
+   [#35](https://github.com/BiologicalRecordsCentre/record-cleaner-ui/issues/35)
+ 
 ## [3.0.2]
 
 ### Fixed
@@ -14,12 +40,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
  - Rule updates to not git reset. This ensures only modified files are loaded.
  - Logging of rule files loaded.
 
+
 ## [3.0.1]
 
 ### Fixed
  - Unable to update rules from new branch.
  - Unable to update rules in maintenance mode.
  - Server error listing period rules with no end date.
+
 
 ## [3.0.0]
 
@@ -50,7 +78,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [2.1.0]
 
 ### Added
-- Env setting for phelology tolerance.
+- Env setting for phenology tolerance.
 - Env setting for tenkm tolerance.
 - Verbose parameter to /verify endpoint
 
@@ -88,6 +116,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 - id_difficulty from /validate response.
 - ok from /verify and /validate response
+
 
 ## [1.0.0]
 
