@@ -54,11 +54,12 @@ async def lifespan(app: FastAPI):
     with Session(engine) as session:
         repo = UserRepo(session)
         repo.create_initial_user(env)
-
+logger.info("After create_initial_user")
     # Load the county data once.
     VcChecker.load_data()
-
+logger.info("After load_data")
     context = {'engine': engine, 'settings': settings}
+logger.info("Before yield")    
     # Store the context so it is available in unit tests.
     app.context = context
 

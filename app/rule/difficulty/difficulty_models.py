@@ -9,6 +9,7 @@ class DifficultyCodeResponse(BaseModel):
 class DifficultyRuleResponse(BaseModel):
     organism_key: str
     taxon: str
+    stage: str
     difficulty: int
 
 

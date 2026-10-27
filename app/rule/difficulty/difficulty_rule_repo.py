@@ -27,6 +27,7 @@ class DifficultyRuleRepo(RuleRepoBase):
             rules.append({
                 'organism_key': difficulty_rule.organism_key,
                 'taxon': difficulty_rule.taxon,
+                'stage': difficulty_rule.stage,
                 'difficulty': difficulty_code.code
             })
 
@@ -102,7 +103,7 @@ class DifficultyRuleRepo(RuleRepoBase):
         # Read the id difficulty file into a dataframe.
         difficulties = pd.read_csv(
             f'{dir}/{file}',
-            usecols=['organism_key', 'taxon', 'code'],
+            usecols=['organism_key', 'taxon', 'stage', 'code'],
             dtype={'organism_key': str, 'taxon': str, 'code': 'Int64'}
         )
 
@@ -122,7 +123,10 @@ class DifficultyRuleRepo(RuleRepoBase):
 
             # Add the rule to the db.
             difficulty_rule = self.get_or_create(
-                org_group_id, row['organism_key'])
+                org_group_id,
+                row['organism_key'],
+                row['stage']
+            )
             difficulty_rule.taxon = row['taxon']
             difficulty_rule.difficulty_code_id = code_lookup[row['code']]
             difficulty_rule.commit = rules_commit
@@ -150,13 +154,20 @@ class DifficultyRuleRepo(RuleRepoBase):
         messages = []
         id_difficulty = 0
 
+        if record.stage is None:
+            stage = 'mature'
+        else:
+            stage = record.stage        
+
         query = (
             select(OrgGroup, DifficultyCode)
             .select_from(DifficultyRule)
             .join(DifficultyCode)
             .join(OrgGroup)
             .where(DifficultyRule.organism_key == record.organism_key)
+                .where( DifficultyRule.stage == stage  )
         )
+
         if org_group_id is not None:
             query = query.where(OrgGroup.id == org_group_id)
 
